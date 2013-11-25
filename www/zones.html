@@ -1,0 +1,640 @@
+<html>
+<head>
+<title>Robin's Irrigation Controller!!</title>
+
+<style>
+  .no_select { border:2px solid black;  color: black; background-color: #dee; opacity:0.4;filter:alpha(opacity=40); }
+  .idle      { border:2px solid black;  color: black; background-color: transparent; opacity:1;filter:alpha(opacity=100); }
+  .error     { border:2px solid black;  color: black; background-color: fuchsia; opacity:0.4;filter:alpha(opacity=40); }
+  .queued    { border:2px solid black;  color: black; background-color: green; opacity:0.4;filter:alpha(opacity=40); }
+  .active    { border:2px solid black;  color: black; background-color: red;   opacity:0.4;filter:alpha(opacity=40); }
+  .locked    { border:2px solid black;  color: black; background-color: blue;  opacity:0.4;filter:alpha(opacity=40); }
+  .repeating { border:2px solid black;  color: black; background-color: cyan;  opacity:0.4;filter:alpha(opacity=40); }
+//  .frostoff  { color: black; background-color: transparent;  }
+  .frostoff  { }
+  .froston   { color: black; background-color: blue;   }
+  .frostman  { color: black; background-color: red;   }
+  .frostarm  { color: black; background-color: green;   }
+  .frostrun  { color: black; background-color: fuchsia;   }
+
+
+   body      { font-family: sans-serif; font-size: 16px; }
+  #map       { border:1px solid black; background-color:transparent; height:661px; width: 1110px; overflow: auto;}
+  .high      { position: absolute; border:5px dotted black; margin:2px;  color: black; background-color: transparent; opacity:1;filter:alpha(opacity=100); cursor:pointer; }
+  .over      { position: absolute; border:5px solid red;    margin:2px;  color: black; background-color: transparent; opacity:1;filter:alpha(opacity=100); cursor:pointer; }
+  .input     { border:1px solid black; margin: 5px; padding:5px; display: inline;}
+
+  .zone_name      { _position: absolute; display: table-cell; vertical-align: middle; text-align: center;}
+  .zone_name_high { _position: absolute; display: table-cell; vertical-align: middle; text-align: center; font-weight: bold; }
+</style>
+
+<script src="basic.js"></script>
+<script src="event.js"></script>
+<script src="json2.js"></script>
+<script src="xmlHttp.js"></script>
+<script src="zones.conf"></script>
+
+
+
+<script>
+
+var frost = new Array();
+frost["on"]  = "Frost Protect: activated by low temperature"
+frost["man"] = "Frost Protect: activated by manual override"
+frost["arm"] = "Frost Protect: monitoring automatic temperature control"
+frost["run"] = "Frost Protect: start trigger activated - counting down..."
+frost["off"] = "Frost Protect: off"
+
+var error_count = 0
+
+function error(msg)
+{
+   error_count += 1
+   get("error").innerHTML = "  Errors: " + error_count
+}
+
+
+function test_error(obj)
+{
+   var cmd = obj.cmd
+   if(obj.error)
+   {
+      error(obj.error)
+      return true
+   }
+   if(!cmd)
+   {
+      error('Not a valid command',cmd)
+      return true
+   }
+   if(cmd == "error")
+   {
+      error(obj.result)
+      return true
+   }
+   return false
+}
+
+function zeroPad(num, count)
+{
+   var numZeropad = num + '';
+   while(numZeropad.length < count) 
+   {
+      numZeropad = "0" + numZeropad;
+   }
+   return numZeropad;
+}
+
+
+function get_status()
+{
+   var request =
+   {
+      'cmd': 'get_status'
+   }
+   submit_object_as_JSON(request, "status", status_reply, 0)
+}
+
+
+function status_reply(obj,id)
+{
+   if(test_error(obj))
+   {
+//      alert("Could not send data to controller "+id)
+      return
+   }
+   get("timer").innerHTML = "Time: " + obj.time
+   get("temperature").innerHTML = "Temperature: " + obj.temperature / 100 + "C"
+   get("current").innerHTML = "Current: " + obj.current / 1000 + "A"
+   get("frost").className = "frost" + obj.frost
+   get("frost").title = frost[obj.frost]
+
+   for(i in obj.zones)
+   {
+      var z = zone_id_search[obj.zones[i].zone]
+      z.state = obj.zones[i].status
+      var day = ""
+      if (z.state == "queued")
+      {
+         if (obj.zones[i].day.length)
+            day = "on " + obj.zones[i].day
+         z.div.title   = z.name + " scheduled to start at " + zeroPad(obj.zones[i].starttime, 4) + " for " + (obj.zones[i].duration / 60).toFixed(0) + " mins " + obj.zones[i].frequency + day
+         z.o_div.title = z.div.title
+         z.h_div.title = z.div.title
+      }
+      else if (z.state == "repeating")
+      {
+         if (obj.zones[i].day.length)
+            day = "from " + obj.zones[i].day
+         z.div.title   = z.name + " repeating at " + zeroPad(obj.zones[i].starttime, 4)  + " for " + (obj.zones[i].duration / 60).toFixed(0) + " mins " + obj.zones[i].frequency + day
+         z.o_div.title = z.div.title
+         z.h_div.title = z.div.title
+      }
+      else if (z.state == "active")
+      {
+         if (obj.zones[i].starttime == obj.zones[i].endtime)
+         {
+            z.div.title   = z.name + " started at " + zeroPad(obj.zones[i].starttime, 4)
+         }
+         else
+         {
+            z.div.title   = z.name + " started at " + zeroPad(obj.zones[i].starttime, 4) + " ending at " + zeroPad(obj.zones[i].endtime, 4) + " " + obj.zones[i].frequency
+         }
+         z.o_div.title = z.div.title
+         z.h_div.title = z.div.title
+      }
+      else if (z.state == "locked")
+      {
+         z.div.title   = z.name + " locked until " + zeroPad(obj.zones[i].endtime, 4)
+         z.o_div.title = z.div.title
+         z.h_div.title = z.div.title
+      }
+      else
+      {
+         z.div.title   = z.name + " - nothing scheduled"
+         z.o_div.title = z.div.title
+         z.h_div.title = z.div.title
+      }
+      redraw_zone(z)
+   }
+}
+
+
+
+
+
+var timer = 0
+function start_timer()
+{
+   if(timer)
+      clearTimeout(timer)
+   timer = setTimeout("next_timer_tick()",2000)
+}
+
+function next_timer_tick()
+{
+   get_status()
+   start_timer()
+}
+
+addLoadEvent(next_timer_tick)
+addLoadEvent(end_popup)
+
+
+function get_event_object(event)
+{
+   if (!event) 
+      var event = window.event
+ 
+  if(event.target)
+      return event.target
+   else
+      return event.srcElement;
+
+}
+
+
+var zoom_level = 10
+
+function redraw_zone(z)
+{
+   z.div.className = z.state
+
+   if(z.zoom > zoom_level)
+      z.div_name.innerHTML = ""
+   else
+      z.div_name.innerHTML = z.name
+
+   if(z.high)
+   {
+      show(z.h_div)
+      z.div.style.fontWeight = "bold"
+   }
+   else
+   {
+      z.div.style.fontWeight=""
+      hide(z.h_div)
+   }
+
+   if(z.over)
+      show(z.o_div)
+   else
+      hide(z.o_div)
+
+   if(z.high || z.over)
+   {
+      z.div_name.className = 'zone_name_high'
+   }
+   else
+   {
+      z.div_name.className = 'zone_name'
+   }
+
+}
+
+
+
+function redraw_map(zoom_percent)
+{
+   current_zoom = Math.round(zoom_percent)
+   var map = get("map")
+   
+   var height_mult = get_height(map) /100 * zoom_percent/100
+   var width_mult  = get_width(map) /100 * zoom_percent/100
+//   alert(get_height(map)+"/100 * "+zoom_percent+"/100 = "+height_mult)
+
+   for(var zi in zones)
+   {
+      var z = zones[zi]
+      var x = Math.round(z.x * width_mult)
+      var y = Math.round(z.y * height_mult)
+      var w = Math.round(z.w * width_mult)
+      var h = Math.round(z.h * height_mult)
+
+      z.div.style.left     = x + 'px';
+      z.div.style.top      = y + 'px';
+      z.div.style.width    = w + 'px';
+      z.div.style.height   = h + 'px';
+      z.div.title = z.name
+
+      z.o_div.style.left     = x + 'px';
+      z.o_div.style.top      = y + 'px';
+      z.o_div.style.width    = w-10 + 'px';
+      z.o_div.style.height   = h-10 + 'px';
+      z.o_div.title = z.name
+
+      z.h_div.style.left     = x + 'px';
+      z.h_div.style.top      = y + 'px';
+      z.h_div.style.width    = w-10 + 'px';
+      z.h_div.style.height   = h-10 + 'px';
+      z.h_div.title = z.name
+
+      redraw_zone(z)
+   }
+}
+
+
+var zone_id_search = []
+function get_zone_from_event(event)
+{
+   var obj = get_event_object(event)
+   return zone_id_search[parseInt(obj.id)]
+}
+
+
+function over_it(event)
+{
+   var z = get_zone_from_event(event)
+   if(!z.selectable)
+      return
+   z.over = true
+//   alert("over "+z.id)
+   redraw_zone(z)
+}
+
+function out_it(event)
+{
+   var z = get_zone_from_event(event)
+   z.over = false
+//   alert("out "+z.id)
+   redraw_zone(z)
+}
+
+var high_zone = ""
+
+function click(event)
+{
+   var z = get_zone_from_event(event)
+   if(!z.selectable)
+      return
+//   alert("click "+z.id)
+
+   select_zone(z.zone)
+}
+
+function select_zone(new_zone_id)
+{
+   var z = zone_id_search[new_zone_id]
+
+   if(high_zone)
+   {
+      high_zone.high = false
+      redraw_zone(high_zone)
+   }   
+   high_zone = z
+   z.high = true
+   redraw_zone(z)
+
+   get("zone_sel").selectedIndex = z.index
+
+}
+
+
+function display_map()
+{
+   var map = get("map")
+   map.style.position = "relative"
+
+   var indexes = 0
+
+   var zone_input = "<select id=zone_sel onchange='select_zone(this.value)'>"
+
+   for(var zi in zones)
+   {
+      var z = zones[zi]
+//      alert(z.id+","+z.x+","+z.y+","+z.w+","+z.h)
+      var z_div = document.createElement('div');
+      z_div.className = 'idle';
+      z_div.style.position = "absolute"
+      z_div.style.display = "table";
+      z_div.style.overflow = "hidden";
+//      z_div.innerHTML = z.name;   
+      z_div.id = z.zone
+
+      var div2 = document.createElement('div');
+      div2.className = 'zone_name'
+      div2.innerHTML = z.name+" yes mate"
+      z_div.appendChild(div2)    
+
+      z.div_name = div2
+      z.div_name.id = z.zone
+
+      z.state = "idle"
+      if(!z.selectable)
+         z.state = "no_select"
+      z.high = false
+      z.over = false
+
+      z.div = z_div
+      map.appendChild(z.div)
+
+      z.o_div = document.createElement('div');
+      z.h_div = document.createElement('div');
+      z.o_div.className = 'over';
+      z.h_div.className = 'high';
+      z.o_div.id = z.zone
+      z.h_div.id = z.zone
+
+      map.appendChild(z.o_div)
+      map.appendChild(z.h_div)
+      hide(z.o_div)
+      hide(z.h_div)
+      fade(z.o_div,0.4)
+      fade(z.h_div,0.4)
+
+      zone_id_search[z_div.id] = z
+
+      addEvent(z.div,"mousedown",click)
+      addEvent(z.div,"mouseover",over_it)
+      addEvent(z.div,"mouseout",out_it)
+      addEvent(z.o_div,"mousedown",click)
+      addEvent(z.o_div,"mouseover",over_it)
+      addEvent(z.o_div,"mouseout",out_it)
+      addEvent(z.h_div,"mousedown",click)
+      addEvent(z.h_div,"mouseover",over_it)
+      addEvent(z.h_div,"mouseout",out_it)
+
+      if(z.selectable)
+      {
+         z.index = indexes++
+         zone_input +="<option value="+z.zone+">"+z.name
+
+//         if(indexes==1)
+//            high_zone = z
+      }
+   }
+   redraw_map(100)
+   zone_input += "</select>"
+   get("zone_selected").innerHTML = zone_input
+}
+
+addLoadEvent(display_map)
+
+function program()
+{
+   if(! high_zone)
+      return;
+
+   var result = {}
+   
+   result.cmd        = "program"
+   result.zone       = high_zone.zone
+   result.id         = high_zone.id
+   result.start      = get("start").value
+   result.duration   = get("duration").value
+   result.frequency  = get("frequency").value
+
+//   alert(JSON.stringify(result))
+
+   submit_object_as_JSON(result, "set_state", status_reply, 0)
+}
+
+function cancel()
+{
+   if(! high_zone)
+      return;
+
+   var result = {}
+
+   result.cmd        = "cancel"
+   result.zone       = high_zone.zone
+   result.id         = high_zone.id
+
+//   alert(JSON.stringify(result))
+
+   submit_object_as_JSON(result, "set_state", status_reply, 0)
+}
+
+
+function delay()
+{
+   if(! high_zone)
+      return;
+
+   var result = {}
+
+   result.cmd        = "delay"
+   result.zone       = high_zone.zone
+   result.id         = high_zone.id
+
+//   if (confirm("Do you really want to delay the current program by 24 hours?"))
+      submit_object_as_JSON(result, "set_state", status_reply, 0)
+}
+
+function advance()
+{
+   if(! high_zone)
+      return;
+
+   var result = {}
+
+   result.cmd        = "advance"
+   result.zone       = high_zone.zone
+   result.id         = high_zone.id
+
+//   if (confirm("Do you really want to advance the current program by 24 hours?"))
+      submit_object_as_JSON(result, "set_state", status_reply, 0)
+}
+
+//callback function
+function setFrostMode(frostMode){
+
+   var result = {}
+
+   result.cmd        = "frost"
+   result.mode       = frostMode
+//   alert(JSON.stringify(result))
+   if (frostMode == "on")
+   {
+      if (confirm("Do you really want to mess with the Frost Protect system?"))
+      {
+         submit_object_as_JSON(result, "set_frost", status_reply, 0)
+      }
+   }
+   else
+   {
+      submit_object_as_JSON(result, "set_frost", status_reply, 0)
+   }
+   end_popup();
+}
+
+
+function test_mode()
+{
+   var result = {}
+
+   result.cmd        = "test"
+   // dummy value for zone
+   result.zone       = "1"
+   if (confirm("Make sure the well pump is OFF and the domestic pump feed valve is CLOSED"))
+   {
+      submit_object_as_JSON(result, "set_state", status_reply, 0)
+   }
+}
+
+function display_popup()
+{
+   show(get("hide_main"))
+   show(get("popup_window"))
+}
+
+function end_popup()
+{
+   hide(get("hide_main"))
+   hide(get("popup_window"))
+}
+
+
+</script>
+
+</head>
+<body>
+
+<div id=hide_main style="position: absolute; height:100%; width:100%; top: 0px; left:0px; background-color:black; opacity:0.5; filter:alpha(opacity=50); z-index:5000;"></div>
+
+<div id="popup_window" style="height:100%; width:100%; position:absolute; top:0px; left:0px; z-index:5010;">
+<table style="height:100%; width:100%; border:1px solid blue;">
+<tr><th style="vertical-align:middle;">
+   <table style="padding:0px; position:relative; margin: auto; background-color:white;">
+   <tr><th> Frost Protect system
+   <tr><th>
+   <input type='button' name='On' value='On' title='Manual override of the Frost Protect system' onclick='setFrostMode("on")'>
+   <input type='button' name='Auto' value='Auto' title='Arm the temperature detectors for the Frost Protect system' onclick='setFrostMode("arm")'>
+   <input type='button' name='Off' value='Off' title='Turn off the Frost Protect system' onclick='setFrostMode("off")'>
+   <input type='button' name='Cancel' value='Cancel' title='Get me out of here'  onclick='end_popup()'>
+   </table>
+
+</table>
+</div>
+
+
+<div id="map">
+<img src="zones.jpg">
+</div>
+<div>
+<input type="button" name="link" value="Timeline" title="Timeline display for last and next week of watering" onclick="window.location='timedata.html'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span id=timer></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span id=temperature></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span id=current></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span id=error></span>
+</div>
+<br>
+<div>
+<div class=input>
+<span id=zone_selected title="Select the Zone to water or program"></span>
+     Start:
+   <select title="When to start watering the Zone" name="start" id="start">
+     <option value="2400">Now</option>
+     <option value="2500">Auto</option>
+     <option value="0000">0000</option>
+     <option value="0100">0100</option>
+     <option value="0200">0200</option>
+     <option value="0300">0300</option>
+     <option value="0400">0400</option>
+     <option value="0500">0500</option>
+     <option value="0600">0600</option>
+     <option value="0700">0700</option>
+     <option value="0800">0800</option>
+     <option value="0900">0900</option>
+     <option value="1000">1000</option>
+     <option value="1100">1100</option>
+     <option value="1200">1200</option>
+     <option value="1300">1300</option>
+     <option value="1400">1400</option>
+     <option value="1500">1500</option>
+     <option value="1600">1600</option>
+     <option value="1700">1700</option>
+     <option value="1800">1800</option>
+     <option value="1900">1900</option>
+     <option value="2000">2000</option>
+     <option value="2100">2100</option>
+     <option value="2200">2200</option>
+     <option value="2300">2300</option>
+     <option value="0000">2400</option>
+   </select>
+
+     Runtime:
+   <select title="How long to water the Zone for" name="duration" id="duration">
+     <option value="10">10 Mins</option>
+     <option value="20">20 Mins</option>
+     <option value="30">30 Mins</option>
+     <option value="40">40 Mins</option>
+     <option value="50">50 Mins</option>
+     <option value="60">60 Mins</option>
+     <option value="90">90 Mins</option>
+     <option value="120">2 Hrs</option>
+     <option value="180">3 Hrs</option>
+     <option value="240">4 Hrs</option>
+     <option value="300">5 Hrs</option>
+     <option value="360">6 Hrs</option>
+     <option value="540">9 Hrs</option>
+     <option value="720">12 Hrs</option>
+   </select>
+     Frequency:
+   <select title="How often to repeat the watering of the Zone" name="frequency" id="frequency">
+     <option value=0>Once</option>
+     <option value=6>4 times daily</option>
+     <option value=12>Twice daily</option>
+     <option value=24>Daily</option>
+     <option value=48>Every 2 days</option>
+     <option value=72>Every 3 days</option>
+     <option value=96>Every 4 days</option>
+     <option value=168>Weekly</option>
+   </select>
+
+   <input type="button" name="program" value="Go" title="Start or program the watering for this Zone" onclick="program()"> 
+   <div class=input>
+   <input type="button" name="cancel" value="Cancel" title="Stop off the watering on this Zone and clear the programming on it" onclick="cancel()"> 
+   <input type="button" name="advance" value="Advance 24hrs" title="Bring forward (advance) selected Zone by 24hrs" onclick="advance()"> 
+   <input type="button" name="delay" value="Delay 24hrs" title="Put off (delay) selected Zone by 24hrs" onclick="delay()"> 
+   <div class=input>
+   <input type="button" name="frost" value="Frost Protect"  id="frost" onclick="display_popup()"> 
+   <input type="button" name="test" value="Test" title="Check all solenoids" onclick="test_mode()">
+   </div>
+
+
+</div>
+
+</body>
+</html>
+

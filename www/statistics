@@ -1,0 +1,18 @@
+{ "zone": 1, "name": "Walnuts 1", "totalflow": 18.250000 }
+{ "zone": 2, "name": "Walnuts 2", "totalflow": 18.238000 }
+{ "zone": 3, "name": "Walnuts 3", "totalflow": 11.081000 }
+{ "zone": 4, "name": "Walnuts 4", "totalflow": 10.078000 }
+{ "zone": 5, "name": "Walnuts 5", "totalflow": 9.514000 }
+{ "zone": 6, "name": "Willows", "totalflow": 0.038000 }
+{ "zone": 7, "name": "Veg Plot 1", "totalflow": 0.124000 }
+{ "zone": 8, "name": "Tunnel House", "totalflow": 0.082000 }
+{ "zone": 10, "name": "Veg Plot 2", "totalflow": 0.312000 }
+{ "zone": 11, "name": "Veg Plot 3", "totalflow": 0.012000 }
+{ "zone": 12, "name": "Long Border", "totalflow": 0.022000 }
+{ "zone": 13, "name": "Native Border", "totalflow": 0.011000 }
+{ "zone": 14, "name": "Firewood", "totalflow": 0.014000 }
+{ "zone": 15, "name": "Chook Border", "totalflow": 0.002000 }
+{ "zone": 16, "name": "Well Pump", "totalflow": 0.010000 }
+{ "zone": 17, "name": "Cottage Garden", "totalflow": 0.140000 }
+{ "zone": 19, "name": "Big Gun", "totalflow": 0.073000 }
+{ "pumptime": 11.196944 }

@@ -1,0 +1,768 @@
+//---------------------------------------------------------------------------
+// Copyright (C) 2009-2010 Robin Gilks
+//
+//
+//  irr_web.c   -   This section looks after the interface to the mongoose threaded web server
+//
+//             0.70 - split into several files
+//
+//    This program is free software; you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation; either version 2 of the License.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program; if not, write to the Free Software
+//    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+#include "irrigate.h"
+#include <pthread.h>
+
+#define MAX_OPTIONS 40
+
+struct mg_context *ctx;
+pthread_mutex_t state_mutex;
+
+void show_jsonlogs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
+void show_root (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
+void show_logs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
+void show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
+void show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
+void set_state (struct mg_connection *conn, const struct mg_request_info *request_info);
+void set_frost (struct mg_connection *conn, const struct mg_request_info *request_info);
+
+const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
+static const char *ajax_reply_start =
+   "HTTP/1.1 200 OK\r\n" "Cache: no-cache\r\n" "Content-Type: application/x-javascript\r\n" "\r\n";
+
+static const struct web_config
+{
+   enum mg_event event;
+   const char *uri;
+   void (*func) (struct mg_connection *, const struct mg_request_info *);
+} web_config[] =
+{
+   { MG_NEW_REQUEST, "/", &show_root},
+   { MG_NEW_REQUEST, "/status", &show_status},
+   { MG_NEW_REQUEST, "/timedata", &show_timedata},
+   { MG_NEW_REQUEST, "/set_state", &set_state},
+   { MG_NEW_REQUEST, "/set_frost", &set_frost},
+   { MG_NEW_REQUEST, "/jlogs", &show_jsonlogs},
+   { MG_NEW_REQUEST, "/logs", &show_logs},
+   { 0, NULL, NULL}
+};
+
+
+static void *
+callback (enum mg_event event, struct mg_connection *conn, const struct mg_request_info *request_info)
+{
+   int i;
+
+   for (i = 0; web_config[i].uri != NULL; i++)
+   {
+      if ((event == web_config[i].event) && (!strcmp (request_info->uri, web_config[i].uri)))
+      {
+         web_config[i].func (conn, request_info);
+         return "processed";
+      }
+   }
+   return NULL;
+}
+
+static char *
+sdup (const char *str)
+{
+   char *p;
+   if ((p = malloc (strlen (str) + 1)) != NULL)
+   {
+      strcpy (p, str);
+   }
+   return p;
+}
+
+
+static void
+set_option (char **options, const char *name, const char *value)
+{
+   int i;
+
+   for (i = 0; i < MAX_OPTIONS - 3; i++)
+   {
+      if (options[i] == NULL)
+      {
+         options[i] = sdup (name);
+         options[i + 1] = sdup (value);
+         options[i + 2] = NULL;
+         break;
+      }
+   }
+
+}
+
+   /*
+    * Initialize HTTPD context.
+    * Attach a redirect to the status page on web root
+    * Put pasword protect on set_state page
+    * Set WWW root as defined by command line
+    * Start listening on port as defined by command line
+    */
+void
+irr_web_init (void)
+{
+   char *options[MAX_OPTIONS];
+   int i;
+
+   options[0] = NULL;
+   set_option (options, "listening_ports", httpport);
+   set_option (options, "document_root", httproot);
+   set_option (options, "authentication_domain", "gilks.ath.cx");
+   set_option (options, "protect_uri", "/set_state=www/passfile");
+   set_option (options, "num_threads", "5");
+   if (errorlog[0] != '\0')
+      set_option (options, "error_log_file", errorlog);
+   if (accesslog[0] != '\0')
+      set_option (options, "access_log_file", accesslog);
+
+   ctx = mg_start (callback, NULL, (const char **) options);
+
+   for (i = 0; options[i] != NULL; i++)
+   {
+      free (options[i]);
+   }
+
+   pthread_mutex_init (&state_mutex, NULL);
+
+}
+
+void
+irr_web_stop (void)
+{
+   mg_stop (ctx);
+}
+
+
+/*
+ * Basic redirect to keep people out of the root directory
+ */
+void
+show_root (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+{
+
+   mg_printf (conn, "HTTP/1.1 301 Moved Permanently\r\n" "Location: %s\r\n\r\n", "zones.html");
+
+}
+
+
+
+/*
+ *       webmsg(conn, p->time, p->pri, textpri(p->pri), p->log);
+*/
+
+void
+sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, char *msg)
+{
+   char timestr[64];
+   struct json_object *jobj;
+
+//   ctime_r (&time, timestr);
+   strftime(timestr, sizeof(timestr), fmt, localtime(&time));
+
+   jobj = json_object_new_object ();
+   json_object_object_add (jobj, "time", json_object_new_string (timestr));
+   json_object_object_add (jobj, "priority", json_object_new_int (priority));
+   json_object_object_add (jobj, "desc", json_object_new_string (desc));
+   json_object_object_add (jobj, "log", json_object_new_string (msg));
+
+   mg_printf (conn, "%s", json_object_to_json_string (jobj));
+   json_object_put (jobj);
+
+}
+
+void
+show_jsonlogs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+{
+   mg_printf (conn, "%s", ajax_reply_start);
+
+   mg_printf (conn, "%s", "{ \"logs\":[ ");
+
+   send_log_msgs (conn, sendjsonmsg);
+
+   mg_printf (conn, "%s", " ] }");
+}
+
+void
+sendmsg (struct mg_connection *conn, time_t time, int UNUSED (priority), char *desc, char *msg)
+{
+   char timestr[64];
+
+//   ctime_r (&time, timestr);
+   strftime(timestr, sizeof(timestr), fmt, localtime(&time));
+   mg_printf (conn, "%s irrigate %s: %s<br>", timestr, desc, msg);
+
+}
+
+void
+show_logs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+{
+   mg_printf (conn, "%s", "HTTP/1.1 200 OK\r\n");
+   mg_printf (conn, "%s", "Content-Type: text/html\r\n\r\n");
+
+   send_log_msgs (conn, sendmsg);
+
+}
+
+/*
+To track past events we need to populate a dummy chanmap with the following values taken at the time
+the event is logged
+
+state IDLE/ERROR
+frequency
+starttime
+period
+
+Should be able to then create everything the same as a future event plus show errors
+Errors also have a code to indicate what failed
+
+*/
+
+
+// create a json object for a zone by decoding the various attributes
+struct json_object *
+create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
+{
+   struct json_object *jobj;
+   struct tm tm;
+   time_t t;
+   int startval, endval;
+
+   char descstr[120];
+   char startstr[64];
+   char endstr[64];
+   char colour[10];
+   char ing_ed[10];
+   char is_was[10];
+   char tmpstr[30];
+   char rptstr[30];
+
+   if (cmap->state == ACTIVE)
+   {
+      if (starttime > basictime)        // more than one instance queued, only the 1st is active
+         strncpy (colour, "green", 6);
+      else
+         strncpy (colour, "red", 4);
+      strncpy (tmpstr, "active", 7);
+   }
+   else if (cmap->state == ERROR)
+   {
+      strncpy (colour, "fuchsia", 8);
+      strncpy (tmpstr, "in error", 9);
+   }
+   else if (cmap->state == WASOK)
+   {
+      strncpy (colour, "green", 6);
+      strncpy (tmpstr, "completed OK", 13);
+   }
+   else if (cmap->state == WASCANCEL)
+   {
+      strncpy (colour, "blue", 5);
+      strncpy (tmpstr, "cancelled", 10);
+   }
+   else if (cmap->state == WASFAIL)
+   {
+      strncpy (colour, "fuchsia", 8);
+      strncpy (tmpstr, "failed", 7);
+   }
+   else if (cmap->frequency)
+   {
+      strncpy (colour, "cyan", 5);
+      strncpy (tmpstr, "repeating", 10);
+   }
+   else if (cmap->locked)
+   {
+      strncpy (colour, "blue", 5);
+      strncpy (tmpstr, "locked", 7);
+   }
+   else if (findonqueue (zone) > 0)
+   {
+      strncpy (colour, "green", 6);
+      strncpy (tmpstr, "queued", 7);
+   }
+   else if (cmap->useful)
+   {
+      strncpy (colour, "green", 6);
+      strncpy (tmpstr, "queued", 7);
+   }
+   else
+   {
+      strncpy (colour, "white", 6);
+      strncpy (tmpstr, "idle", 5);
+   }
+
+   switch (cmap->frequency / (60 * 60)) // convert secs to hours as that is what the user inputs
+   {
+   case 6:
+      strncpy (rptstr, "4 times daily ", 15);
+      break;
+   case 12:
+      strncpy (rptstr, "twice daily ", 13);
+      break;
+   case 24:
+      strncpy (rptstr, "daily ", 7);
+      break;
+   case 48:
+      strncpy (rptstr, "every 2 days ", 14);
+      break;
+   case 72:
+      strncpy (rptstr, "every 3 days ", 14);
+      break;
+   case 96:
+      strncpy (rptstr, "every 4 days ", 14);
+      break;
+   case 168:
+      strncpy (rptstr, "weekly ", 8);
+      break;
+   default:
+      strncpy (rptstr, "", 2);
+      break;
+   }
+
+   jobj = json_object_new_object ();
+//   ctime_r (&starttime, startstr);
+   strftime(startstr, sizeof(startstr), fmt, localtime(&starttime));
+   t = starttime + cmap->period;
+//   ctime_r (&t, endstr);
+   strftime(endstr, sizeof(endstr), fmt, localtime(&t));
+
+   localtime_r (&t, &tm);
+   endval = tm.tm_hour * 100 + tm.tm_min;
+
+   localtime_r (&starttime, &tm);
+   startval = tm.tm_hour * 100 + tm.tm_min;
+
+   // description is 
+   // start{ing/ed}(1) at <time> for a duration of <period> and {is/was}(2) <state>  {and is repeating/""}(3) <rptstr>
+   // (1) start time < basictime
+   // (2) start time + period < basictime
+   // (3) frequency > 0
+   localtime_r (&starttime, &tm);
+   if (starttime < basictime)
+      strncpy (ing_ed, "ed", 3);
+   else
+      strncpy (ing_ed, "ing", 4);
+
+   if (starttime + cmap->period < basictime)
+      strncpy (is_was, "was", 4);
+   else
+      strncpy (is_was, "is", 3);
+
+   if (cmap->frequency == 0)
+      sprintf (descstr, "Start%s at %02d:%02d:%02d for a duration of %3d minutes and %s %s", 
+         ing_ed, tm.tm_hour, tm.tm_min, tm.tm_sec, cmap->duration / 60, is_was, tmpstr);
+   else
+      sprintf (descstr, "Start%s at %02d:%02d:%02d for a duration of %3d minutes and %s %s %s", 
+         ing_ed, tm.tm_hour, tm.tm_min, tm.tm_sec, cmap->duration / 60, is_was, tmpstr, rptstr);
+
+   json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
+   json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
+   json_object_object_add (jobj, "duration", json_object_new_int (chanmap[zone].duration));
+   json_object_object_add (jobj, "starttime", json_object_new_int (startval));
+   json_object_object_add (jobj, "endtime", json_object_new_int (endval));
+   json_object_object_add (jobj, "frequency", json_object_new_string (rptstr));
+   json_object_object_add (jobj, "start", json_object_new_string (startstr));
+   json_object_object_add (jobj, "end", json_object_new_string (endstr));
+   json_object_object_add (jobj, "durationEvent", json_object_new_boolean (TRUE));
+   json_object_object_add (jobj, "color", json_object_new_string (colour));
+   json_object_object_add (jobj, "title", json_object_new_string (chanmap[zone].name));
+   json_object_object_add (jobj, "description", json_object_new_string (descstr));
+
+   return jobj;
+}
+
+
+// send a json object as an ASCII string to the web client. Broken into
+// chunks to avoid buffer overflows in the web server
+void
+send_object (struct mg_connection *conn, struct json_object *jobj)
+{
+   char *s, c;
+   unsigned int i, j;
+#define CHUNK 512
+
+   s = (char *) json_object_to_json_string (jobj);
+   j = strlen (s);
+   for (i = 0; i < j; i += CHUNK)
+   {
+      if (i + CHUNK < j)
+      {
+         c = s[i + CHUNK];
+         s[i + CHUNK] = '\0';
+         mg_printf (conn, "%s", &s[i]);
+         s[i + CHUNK] = c;
+      }
+      else
+         mg_printf (conn, "%s", &s[i]);
+   }
+}
+
+
+
+
+
+/*
+ * This callback function is attached to the URI "/status"
+ * It returns a json object with all the status information
+ */
+void
+show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+{
+   uint8_t zone;
+   struct json_object *jobj, *jzones;
+   char tmpstr[80];
+
+   struct tm tm;
+   time_t t;
+
+   mg_printf (conn, "%s", ajax_reply_start);
+
+   jzones = json_object_new_array ();
+
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      if (chanmap[zone].valid)
+      {
+
+         jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
+
+         localtime_r (&chanmap[zone].starttime, &tm);
+
+         /* *INDENT-OFF* */
+         if (((chanmap[zone].starttime > basictime) 
+               && (chanmap[zone].starttime < (basictime + 60 * 60 * 24))) 
+            || ((chanmap[zone].starttime + chanmap[zone].frequency > basictime) 
+               && (chanmap[zone].starttime + chanmap[zone].frequency < (basictime + 60 * 60 * 24))))        // start OR repeat is today
+         {
+            json_object_object_add (jobj, "day", json_object_new_string (""));
+         }
+         else if (chanmap[zone].starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
+         {
+            json_object_object_add (jobj, "day", json_object_new_string (daystr[tm.tm_wday]));     // use starttime to find day
+         }
+         else if (chanmap[zone].starttime + chanmap[zone].frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead
+         {
+            t = chanmap[zone].starttime + chanmap[zone].frequency;
+            localtime_r (&t, &tm);
+            json_object_object_add (jobj, "day", json_object_new_string (daystr[tm.tm_wday]));     // use starttime + freq to find day
+         }
+         else
+         {
+            json_object_object_add (jobj, "day", json_object_new_string (""));                     // some other condition - like ages in the past
+         }
+         /* *INDENT-ON* */
+
+         json_object_array_add (jzones, jobj);
+      }
+   }
+   jobj = json_object_new_object ();
+   json_object_object_add (jobj, "cmd", json_object_new_string ("status"));
+   localtime_r (&basictime, &tm);
+   sprintf (tmpstr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+   json_object_object_add (jobj, "time", json_object_new_string (tmpstr));
+
+   sprintf (tmpstr, "Version %s compiled on %s at %s", VERSION, __DATE__, __TIME__);
+   json_object_object_add (jobj, "version", json_object_new_string (tmpstr));
+
+   json_object_object_add (jobj, "temp_sensor_1", json_object_new_int (temperature1 * 100));
+   json_object_object_add (jobj, "temp_sensor_2", json_object_new_int (temperature2 * 100));
+
+   // frost can be on (manual or cold!), armed or off - 4 different outcomes
+   // might need to use Tintegral here (or equiv)
+   switch (frost_mode)
+   {
+   case FROST_MANUAL:
+      strncpy (tmpstr, "man", 4);
+      break;
+   case FROST_ACTIVE:
+      strncpy (tmpstr, "on", 3);
+      break;
+   case FROST_OFF:
+      if (frost_armed)
+         if (Tintegral > 0)
+            strncpy (tmpstr, "run", 4);
+         else
+            strncpy (tmpstr, "arm", 4);
+      else
+         strncpy (tmpstr, "off", 4);
+      break;
+   }
+   json_object_object_add (jobj, "frost", json_object_new_string (tmpstr));
+   json_object_object_add (jobj, "temperature", json_object_new_int ((int) (temperature * 100)));
+   json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));
+   json_object_object_add (jobj, "zones", jzones);
+
+   send_object (conn, jobj);
+   json_object_put (jobj);
+}
+
+
+/*
+ * This callback function is attached to the URI "/timedata"
+ * It returns a json object with all the timeline information
+ */
+void
+show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+{
+   uint8_t zone, index, action;
+   struct json_object *jobj, *jzones;
+   FILE *fd;
+   time_t starttime;
+   struct mapstruct cmap;
+
+   mg_printf (conn, "%s", ajax_reply_start);
+
+   jzones = json_object_new_array ();
+
+   // note all the currently active zones
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      if (chanmap[zone].state == ACTIVE)
+      {
+         jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
+         json_object_array_add (jzones, jobj);
+      }
+   }
+
+// walk the time queue to find the future active zones
+   for (index = 0;;)
+   {
+      index = walk_queue (index, &zone, &starttime, &action);
+      if (index == 0)
+         break;
+      if ((action == TURNON) || (action == TESTON))
+      {
+         jobj = create_json_zone (zone, starttime, &chanmap[zone]);
+         json_object_array_add (jzones, jobj);
+      }
+   }
+
+   // read the values from the history file
+   if ((fd = open_history ()) != NULL)
+   {
+
+      while (read_history (&cmap, fd))
+      {
+         jobj = create_json_zone (cmap.zone, cmap.starttime, &cmap);
+         json_object_array_add (jzones, jobj);
+      }
+      close_history (fd);
+   }
+
+   jobj = json_object_new_object ();
+   json_object_object_add (jobj, "cmd", json_object_new_string ("timedata"));
+   json_object_object_add (jobj, "events", jzones);
+
+   send_object (conn, jobj);
+   json_object_put (jobj);
+}
+
+
+/*
+ * This callback is attached to the URI "/set_state"
+ * It receives a json object from the client web browser with a command and data
+ * The command updates the chanmap and queues any immediate events
+ * Persistent data is written at the end
+ */
+void
+set_state (struct mg_connection *conn, const struct mg_request_info *request_info)
+{
+   struct json_object *jobj;
+   char cmd[12];
+   uint8_t zone;
+   int32_t frequency;
+   time_t starttime;
+   struct tm tm;
+
+   char *buf;
+   const char *cl;
+   size_t buf_len;
+
+   pthread_mutex_lock (&state_mutex);
+   cl = mg_get_header (conn, "Content-Length");
+   buf_len = atoi (cl);
+   buf = malloc (buf_len);
+   mg_read (conn, buf, buf_len);
+   if (debug)
+      printf ("Received data: %s\n", buf);
+   jobj = json_tokener_parse (buf);
+   free (buf);
+   if (is_error (jobj))
+   {
+      sprintf (logbuf, "error parsing json object %s\n", buf);
+      syslog (LOG_NOTICE, "%s", logbuf);
+      json_object_put (jobj);
+      pthread_mutex_unlock (&state_mutex);
+      return;
+   }
+
+   zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+   strncpy (cmd, json_object_get_string (json_object_object_get (jobj, "cmd")), 10);
+   starttime = chanmap[zone].starttime; // save the current start time & freq for a mo
+   frequency = chanmap[zone].frequency;
+   chanmap[zone].useful = FALSE;        // assume we won't be using it any more
+   // see if this is a virtual channel handling groups
+   if (chanmap[zone].type & ISGROUP)
+   {
+      group_cancel (zone, IDLE);
+   }
+   else
+   {
+      // all other actions require that we cancel any existing activity in the zone
+      zone_cancel (zone, IDLE);
+      chanmap[zone].locked = FALSE;        // manually clearing also unlocks
+   }
+   // program puts in new values for the zone
+   if (strncmp (cmd, "program", 7) == 0)
+   {
+      // start time will required extra decoding
+      starttime = json_object_get_int (json_object_object_get (jobj, "start"));
+      // duration for the whole of this zone or group members
+      chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration")) * 60;    // we get it in minutes
+      // use frequency as a repeat
+      chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency")) * 60 * 60;     // convert hours to seconds
+      // find the start time
+      if (starttime == 2400)    // magic number for now
+         starttime = basictime;
+      else if (starttime == 2500)       // magic number for auto
+         // haven't done auto yet - will be based on 2300 - 0700 cheap electric!!
+         starttime = basictime + 10;
+      else
+      {
+         localtime_r (&basictime, &tm);
+         tm.tm_hour = starttime / 100;
+         tm.tm_min = starttime - (tm.tm_hour * 100);    // might allow mins later
+         tm.tm_sec = 0;
+         starttime = mktime (&tm);
+         if (starttime < basictime)     // if time < now then must be tomorrow!!
+            starttime += 60 * 60 * 24;
+      }
+      chanmap[zone].starttime = starttime;
+      chanmap[zone].useful = TRUE;      // got some useful data here!!
+      chanmap[zone].period = chanmap[zone].duration;
+//      insert (starttime, zone, TURNON);
+   }
+   // delay puts back the values we saved earlier but 24hrs further on
+   else if (strncmp (cmd, "delay", 5) == 0)
+   {
+      starttime += 60 * 60 * 24;        // delay by 24 hrs
+      chanmap[zone].starttime = starttime;
+      chanmap[zone].frequency = frequency;
+      chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
+   }
+   else if (strncmp (cmd, "advance", 7) == 0)
+   {
+      starttime -= 60 * 60 * 24;        // advance by 24 hrs - if ends up in the past then check_schedule will sort it out
+      chanmap[zone].starttime = starttime;
+      chanmap[zone].frequency = frequency;
+      chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
+   }
+   else if (strncmp (cmd, "test", 4) == 0)
+   {
+      test_load ();
+   }
+   else if (strncmp (cmd, "cancel", 6) == 0)
+   {
+      // already done
+   }
+   else
+   {
+      log_printf (LOG_ERR, "Invalid command %s", cmd);
+   }
+
+   json_object_put (jobj);
+   check_schedule (TRUE);       // assume major changes to the schedule
+   show_status (conn, request_info);
+   pthread_mutex_unlock (&state_mutex);
+}
+
+/*
+ * This callback is attached to the URI "/set_frost"
+ * It receives a json object from the client web browser with a command and data
+ * The command updates the chanmap and queues any immediate events
+ * Persistent data is written at the end
+ */
+void
+set_frost (struct mg_connection *conn, const struct mg_request_info *request_info)
+{
+   struct json_object *jobj;
+   char *buf;
+   const char *cl;
+   size_t buf_len;
+   char cmd[12];
+
+   pthread_mutex_lock (&state_mutex);
+   cl = mg_get_header (conn, "Content-Length");
+   buf_len = atoi (cl);
+   buf = malloc (buf_len);
+   mg_read (conn, buf, buf_len);
+   if (debug)
+      printf ("Received data: %s\n", buf);
+   jobj = json_tokener_parse (buf);
+   free (buf);
+   if (is_error (jobj))
+   {
+      sprintf (logbuf, "error parsing json object %s\n", buf);
+      syslog (LOG_NOTICE, "%s", logbuf);
+      json_object_put (jobj);
+      pthread_mutex_unlock (&state_mutex);
+      return;
+   }
+
+
+   strncpy (cmd, json_object_get_string (json_object_object_get (jobj, "cmd")), 10);
+   if (strncmp (cmd, "frost", 5) == 0)
+   {
+      char mode[7];
+      strncpy (mode, json_object_get_string (json_object_object_get (jobj, "mode")), 6);
+      if (strncmp (mode, "on", 2) == 0)
+      {
+         frost_cancel ();       // clear any current activity
+         frost_load ();         // before running the frost program
+         frost_mode = FROST_MANUAL;     // leave armed state alone
+      }
+      else if (strncmp (mode, "off", 3) == 0)
+      {
+         if (frost_mode == FROST_MANUAL)        // cancel when manually activated
+         {
+            frost_cancel ();
+            frost_mode = FROST_OFF;
+         }
+         else if (frost_mode == FROST_ACTIVE)
+         {
+            frost_cancel ();
+            frost_mode = FROST_OFF;
+            frost_armed = FALSE;        // if we're temp triggered then cancel and clear armed state
+         }
+         else
+         {
+            frost_armed = FALSE;        // if we're not on at all then clear armed state
+            Tintegral = 0;      // stop integration indicator
+         }
+      }
+      else if (strncmp (mode, "arm", 3) == 0)
+      {
+         if (frost_mode == FROST_MANUAL)        // if arming and already in manual then clear down
+         {
+            frost_cancel ();
+            frost_mode = FROST_OFF;
+         }
+         frost_armed = TRUE;
+      }
+      check_schedule (TRUE);
+   }
+   show_status (conn, request_info);
+   pthread_mutex_unlock (&state_mutex);
+}
