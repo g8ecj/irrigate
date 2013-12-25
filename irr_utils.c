@@ -82,3 +82,38 @@ hours2time(uint16_t decahours)
    return starttime;
 }
 
+// get expected solenoid current by adding up all the active valves
+uint16_t get_expected_current(void)
+{
+   uint16_t current = 0;
+   uint8_t zone;
+
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      // we're only interested in zones that are active
+      if (chanmap[zone].output == ON)
+         current += chanmap[zone].current;
+   }
+
+   return current;
+}
+
+
+// get expected flow rate by adding up all the active zones
+// skip pumps
+uint16_t get_expected_flow(void)
+{
+   uint16_t flow = 0;
+   uint8_t zone;
+
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      // we're only interested in zones that are active but not the well pump or any other feed
+      if ((chanmap[zone].output == ON) && ((chanmap[zone].type & (ISPUMP | ISDPFEED)) == 0))
+         flow += chanmap[zone].flow;
+   }
+
+   return flow;
+}
+
+

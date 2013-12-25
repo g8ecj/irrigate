@@ -36,7 +36,6 @@ doaction (uint8_t zone, uint8_t action)
       {
          insert (basictime + chanmap[zone].period, zone, TURNOFF);
          chanmap[zone].starttime = basictime;   // make sure start time reflects what the zone is actually doing, not what is queued
-         totalflow += chanmap[zone].flow;       // up the flow only if we are pretty sure it all worked OK
          chanmap[zone].state = ACTIVE;
          log_printf (LOG_NOTICE, "switch ON zone %d (%s) for %d minutes", zone, chanmap[zone].name, chanmap[zone].period / 60);
          chanmap[zone].actualstart = basictime;
@@ -55,8 +54,6 @@ doaction (uint8_t zone, uint8_t action)
 
    case TURNOFF:
       // switch off
-      if (totalflow > 0)
-         totalflow -= chanmap[zone].flow;         // assume switchoff will work (failsafe)
       flow = (basictime - chanmap[zone].starttime) * chanmap[zone].flow / 60;   // convert secs to mins * l/min
       chanmap[zone].totalflow += (flow / 1000);   // add up the number of cubic metres
       if (SetOutput (zone, OFF))
@@ -84,8 +81,6 @@ doaction (uint8_t zone, uint8_t action)
    case CANCEL:                // used from the event queue to cancel zones
       if (chanmap[zone].output == ON)       // attempt switchoff if active 
       {
-         if (totalflow > 0)
-            totalflow -= chanmap[zone].flow;
          flow = (basictime - chanmap[zone].starttime) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
          chanmap[zone].totalflow += (flow / 1000);      // add up the number of cubic metres
          SetOutput (zone, OFF);
@@ -343,6 +338,7 @@ manage_pumps (void)
 // If the total flow is below the well pump threshold then see if the timeframe is suitable for starting the
 // domestic feed then start it else stop it if the totalflow is zero
 
+   uint16_t totalflow = get_expected_flow();
 
    // if the load is high enough for the well pump and its not locked
    if ((totalflow > chanmap[wellzone].flow) && (chanmap[wellzone].locked == FALSE))
@@ -509,7 +505,6 @@ doreset(uint16_t numgpio)
    general_reset (numgpio);
    for (zone = 1; zone < REALZONES; zone++)
       chanmap[zone].output = OFF;
-   totalflow = 0;
    log_printf (LOG_NOTICE, "Done general reset");
 
 }

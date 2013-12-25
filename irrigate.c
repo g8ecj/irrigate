@@ -46,8 +46,6 @@ struct mapstruct chanmap[MAXZONES];
 
 time_t basictime;
 
-uint16_t totalflow = 0;
-
 int8_t wellzone = -1;
 int16_t wellmaxflow = 0;
 int16_t wellmaxstarts = 0;

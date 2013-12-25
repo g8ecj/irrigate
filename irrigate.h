@@ -154,7 +154,6 @@ typedef struct tqueue
 extern time_t basictime;
 extern time_t ampstime;
 extern struct mapstruct chanmap[];
-extern uint16_t totalflow;
 extern int8_t wellzone;
 extern int16_t wellmaxflow;
 extern int16_t wellmaxstarts;
@@ -371,3 +370,10 @@ void dump_log_msgs(void);
 typedef void (*msgfunc_t)(struct mg_connection *conn, time_t time, int priority, char * desc, char * msg);
 
 void send_log_msgs(struct mg_connection *conn, msgfunc_t sendmsg);
+
+// get expected solenoid current by adding up all the active valves
+uint16_t get_expected_current(void);
+// get expected flow rate by adding up all the active zones
+uint16_t get_expected_flow(void);
+
+

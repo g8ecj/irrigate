@@ -392,18 +392,13 @@ check_current(void)
 {
    uint16_t expected_current = 0, minC, maxC, actual_current;
 
-   uint8_t zone;
    boolean ret = TRUE;
 
    if (monitor)
    {
 
-      for (zone = 1; zone < REALZONES; zone++)
-      {
-         // we're only interested in zones that are active
-         if (chanmap[zone].output == ON)
-            expected_current += chanmap[zone].current;
-      }
+      expected_current = get_expected_current();
+
       // allow 20% slack in current that is read
       minC = expected_current * 0.8;
       maxC = expected_current * 1.2;
