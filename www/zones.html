@@ -106,6 +106,7 @@ function status_reply(obj,id)
    get("timer").innerHTML = "Time: " + obj.time
    get("temperature").innerHTML = "Temperature: " + obj.temperature / 100 + "C"
    get("current").innerHTML = "Current: " + obj.current / 1000 + "A"
+   get("flow").innerHTML = "Flow: " + obj.flow + "l/min"
    get("frost").className = "frost" + obj.frost
    get("frost").title = frost[obj.frost]
 
@@ -556,6 +557,7 @@ function end_popup()
 <span id=timer></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=temperature></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=current></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span id=flow></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=error></span>
 </div>
 <br>
