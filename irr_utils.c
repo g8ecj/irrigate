@@ -91,7 +91,7 @@ uint16_t get_expected_current(void)
    for (zone = 1; zone < REALZONES; zone++)
    {
       // we're only interested in zones that are active
-      if (chanmap[zone].output == ON)
+      if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))
          current += chanmap[zone].current;
    }
 

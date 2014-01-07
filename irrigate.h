@@ -80,7 +80,8 @@ struct mapstruct
    uint8_t zone;                // replicates the index into the map array
    uint16_t valid;              // bit ORed for validation of the zone in various modes
    uint8_t useful;              // whether the zone has useful scheduling data in it
-   uint8_t output;              // track the actual state of the output + used for user input while configuring the hardware
+   uint8_t output;              // track the actual state of the output. One of OFF, ON, TEST
+                                // + used for user input while configuring the hardware
    uint8_t dev;                 // device index into the address array
    uint8_t AorB;                // whether this zone is on port A (TRUE) or B of the IO chip
    char address[17];            // 8 byte chip address in hex - derived from famsw[dev]? includes null terminator
@@ -112,6 +113,7 @@ struct mapstruct
 // what an output can do
 #define OFF       0
 #define ON        1
+#define TEST      2
 
 
 // what 'type' attributes a zone has
