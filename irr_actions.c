@@ -79,7 +79,7 @@ doaction (uint8_t zone, uint8_t action)
       break;
 
    case CANCEL:                // used from the event queue to cancel zones
-      if (chanmap[zone].output == ON)       // attempt switchoff if active 
+      if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))       // attempt switchoff if active 
       {
          flow = (basictime - chanmap[zone].starttime) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
          chanmap[zone].totalflow += (flow / 1000);      // add up the number of cubic metres
@@ -90,8 +90,8 @@ doaction (uint8_t zone, uint8_t action)
       break;
 
    case TESTON:
-      // switch on and make another entry for the off time, don't record flow (this stops pumps being activated)
-      if (SetOutput (zone, ON))
+      // switch on and make another entry for the off time
+      if (SetOutput (zone, TEST))
       {
          insert (basictime + chanmap[zone].period, zone, TESTOFF);
          chanmap[zone].starttime = basictime;   // make sure start time reflects what the zone is actually doing, not what is queued

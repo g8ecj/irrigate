@@ -88,12 +88,12 @@ GetCurrent (void)
    {
       if (debug > 0)
       {
-         if ((chanmap[zone].output == ON) && (zone != 3))      // fail zone 3 for testing
+         if (((chanmap[zone].output == ON) || (chanmap[zone].output == TEST)) && (zone != 3))      // fail zone 3 for testing
             mycurrent += chanmap[zone].current;
       }
       else
       {
-         if (chanmap[zone].output == ON)
+         if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))
             mycurrent += chanmap[zone].current;
       }
    }
@@ -334,7 +334,7 @@ DoOutput (uint8_t zone, uint8_t state)
    uint8_t ioval;
 
    pthread_mutex_lock (&onewire_mutex);
-   if (((chanmap[zone].valid & HARDWARE) == 0) && (state == ON))    // if no hardware and trying to switch on then fail
+   if (((chanmap[zone].valid & HARDWARE) == 0) && (state != OFF))    // if no hardware and trying to switch on then fail
    {
       pthread_mutex_unlock (&onewire_mutex);
       return FALSE;
