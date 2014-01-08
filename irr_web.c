@@ -619,6 +619,10 @@ set_state (struct mg_connection *conn, const struct mg_request_info *request_inf
    {
       group_cancel (zone, IDLE);
    }
+   else if (chanmap[zone].type & ISTEST)
+   {
+      test_cancel (zone);
+   }
    else
    {
       // all other actions require that we cancel any existing activity in the zone
@@ -669,10 +673,6 @@ set_state (struct mg_connection *conn, const struct mg_request_info *request_inf
       chanmap[zone].starttime = starttime;
       chanmap[zone].frequency = frequency;
       chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
-   }
-   else if (strncmp (cmd, "test", 4) == 0)
-   {
-      test_load ();
    }
    else if (strncmp (cmd, "cancel", 6) == 0)
    {

@@ -253,6 +253,10 @@ main (int argc, char **argv)
          {
             dogroup (zone, action);
          }
+         else if (chanmap[zone].type & ISTEST)
+         {
+            test_load (zone, action);
+         }
          else
          {
             doaction (zone, action);
@@ -273,7 +277,7 @@ main (int argc, char **argv)
          {
             log_printf (LOG_ERR,
                      "Polled current out of spec. Doing emergency shutdown");
-            emergency_off();
+            emergency_off(ERROR);
          }
 
          // see if we are running a test on the valves
@@ -383,9 +387,9 @@ main (int argc, char **argv)
 #ifdef PC
          extern uint16_t testcurrent;
          testcurrent = 0;
-#else
+//#else
          dump_log_msgs();
-         print_chanmap ();
+//         print_chanmap ();
          print_queue ();
          update_statistics ();
          check_schedule (FALSE);

@@ -500,18 +500,6 @@ function setFrostMode(frostMode){
 }
 
 
-function test_mode()
-{
-   var result = {}
-
-   result.cmd        = "test"
-   // dummy value for zone
-   result.zone       = "1"
-   if (confirm("Make sure the well pump is OFF and the domestic pump feed valve is CLOSED"))
-   {
-      submit_object_as_JSON(result, "set_state", status_reply, 0)
-   }
-}
 
 function display_popup()
 {
@@ -634,7 +622,6 @@ function end_popup()
    <input type="button" name="delay" value="Delay 24hrs" title="Put off (delay) selected Zone by 24hrs" onclick="delay()"> 
    <div class=input>
    <input type="button" name="frost" value="Frost Protect"  id="frost" onclick="display_popup()"> 
-   <input type="button" name="test" value="Test" title="Check all solenoids" onclick="test_mode()">
    </div>
 
 

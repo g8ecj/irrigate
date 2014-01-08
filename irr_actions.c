@@ -135,18 +135,51 @@ doaction (uint8_t zone, uint8_t action)
 }
 
 
+// clear all aspects of a zone - its timer queue entries etc
+// always try and set output off, if it was active then adjust flow and log it
+// do this by queueing a CANCEL event that gets executed in the main thread
+void
+zone_cancel (uint8_t zone, uint8_t state)
+{
+
+   while (delete (zone));
+   insert (basictime - 1, zone, CANCEL);        // ensure it goes to the front of the time queue
+   chanmap[zone].state = state;
+   chanmap[zone].frequency = 0;
+   chanmap[zone].useful = FALSE;
+}
+
+
 /* load all zones with an action to test the solenoid continuity (except the well pump) */
 void
-test_load (void)
+test_load (uint8_t testzone, uint8_t action)
 {
 
    uint8_t zone;
-   time_t start = basictime;
+   time_t start = basictime + TEST_TIME;    // start after the reset has occured
+
+   if (action == TURNOFF)       // use this to toggle the display status
+   {
+      chanmap[testzone].state = IDLE;
+      if ((findonqueue (testzone) == 0) && (chanmap[testzone].frequency == 0))
+      {
+         chanmap[testzone].useful = FALSE;
+      }
+      return;
+   }
+   else if (action == CANCEL)
+   {
+      test_cancel (testzone);
+      return;
+   }
+
+   // the starttime has already passed so set it to NOW
+   chanmap[testzone].starttime = basictime;
 
    for (zone = 1; zone < REALZONES; zone++)
    {
       // valid zone, not a pump or group, has a flow associated with it (i.e. not a spare)
-      if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
+      if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
          chanmap[zone].duration = TEST_TIME;    // used by status display
          chanmap[zone].period = TEST_TIME;
@@ -155,7 +188,27 @@ test_load (void)
          start += TEST_TIME;
       }
    }
+   chanmap[testzone].state = ACTIVE;       // say we're active
+   chanmap[testzone].period = start - chanmap[testzone].starttime;
+   insert (basictime + chanmap[testzone].period, testzone, TURNOFF);  // switch off display at the end
 }
+
+/* check for any zones having a test on/off command queued and any found then reset everything */
+void
+test_cancel (uint8_t testzone)
+{
+
+   // TODO - scan for existing test commands
+   while (delete (testzone));
+   emergency_off(IDLE);
+   chanmap[testzone].state = IDLE;
+   chanmap[testzone].frequency = 0;
+   chanmap[testzone].useful = FALSE;
+
+}
+
+
+
 
 
 /* load up 'ISFROST' zones to run in a 'round-robin' with 1 minute duration with 1 second overlap */
@@ -289,21 +342,6 @@ dogroup (uint8_t group, uint8_t action)
    chanmap[group].state = ACTIVE;       // say we're active
    chanmap[group].period = start - chanmap[group].starttime + (chanmap[group].duration / numpass);
    insert (basictime + chanmap[group].period, group, TURNOFF);  // switch off display at the end
-}
-
-
-// clear all aspects of a zone - its timer queue entries etc
-// always try and set output off, if it was active then adjust flow and log it
-// do this by queueing a CANCEL event that gets executed in the main thread
-void
-zone_cancel (uint8_t zone, uint8_t state)
-{
-
-   while (delete (zone));
-   insert (basictime - 1, zone, CANCEL);        // ensure it goes to the front of the time queue
-   chanmap[zone].state = state;
-   chanmap[zone].frequency = 0;
-   chanmap[zone].useful = FALSE;
 }
 
 
@@ -458,7 +496,7 @@ well_off (uint8_t zone)
 
 // switch off all active zones and put into error state
 void
-emergency_off (void)
+emergency_off (uint8_t newstate)
 {
    uint8_t zone;
 
@@ -477,11 +515,11 @@ emergency_off (void)
          }
          else if (chanmap[zone].type & ISGROUP)
          {
-            group_cancel (zone, ERROR);
+            group_cancel (zone, newstate);
          }
          else
          {
-            zone_cancel (zone, ERROR);  // all those switched due to error condition mark as such
+            zone_cancel (zone, newstate);  // all those switched due to error condition mark as such
          }
       }
       if (zone == dpfeed)
@@ -493,8 +531,8 @@ emergency_off (void)
    // schedule a general reset AFTER we have tried to clean things up
    insert (basictime + 1, RESET, NOACTION);
 
-
 }
+
 
 void
 doreset(uint16_t numgpio)

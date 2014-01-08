@@ -57,7 +57,7 @@ readchanmap (void)
       else
       {
          zone = json_object_get_int (json_object_object_get (jobj, "zone"));
-         if (zone > 0)
+         if ((zone > 0) && (zone <= REALZONES))
          {
             chanmap[zone].zone = zone;
             chanmap[zone].type = 0;
@@ -66,6 +66,7 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "ispump")) ? ISPUMP : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isfrost")) ? ISFROST : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isdpfeed")) ? ISDPFEED : 0;
+            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "istest")) ? ISTEST : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
             if ((chanmap[zone].type & ISPUMP) && (wellzone == -1))
             {

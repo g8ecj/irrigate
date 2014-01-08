@@ -172,7 +172,7 @@ dump_log_msgs (void)
    {
       localtime_r (&p->time, &tm);
       strftime (timestamp, 32, "%b %d %H:%M:%S", &tm);
-      printf ("%s irrigate %s: %s", timestamp, textpri (p->pri), p->log);
+      printf ("%s irrigate %s: %s\r\n", timestamp, textpri (p->pri), p->log);
       p = p->next;
    }
 }

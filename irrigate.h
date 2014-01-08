@@ -40,7 +40,9 @@
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 
-//#typedef bool boolean;
+#if !defined boolean
+typedef bool boolean;
+#endif
 
 // Constant definitions
 #define SWITCH_FAMILY      0x3A
@@ -121,6 +123,7 @@ struct mapstruct
 #define ISFROST  2
 #define ISGROUP  4              // first bit of several groups possible
 #define ISDPFEED 8
+#define ISTEST   16
 #define ISSPARE  64
 
 #define FROST_OFF    1
@@ -206,7 +209,8 @@ uint8_t walk_queue(uint8_t index, uint8_t * zone, time_t * starttime, uint8_t *a
 void doaction (uint8_t zone, uint8_t action);
 
 /* load all zones with an action to test the solenoid continuity (except the well pump) */
-void test_load (void);
+void test_load (uint8_t zone, uint8_t action);
+void test_cancel (uint8_t zone);
 
 /* load up 'ISFROST' zones to run in a 'round-robin' with 1 minute duration with 1 second overlap */
 void frost_load (void);
@@ -240,7 +244,7 @@ void manage_pumps(void);
 uint8_t find_dpfeed(void);
 
 // switch off all active zones and put into error state
-void emergency_off(void);
+void emergency_off(uint8_t newstate);
 
 void doreset (uint16_t numgpio);
 
