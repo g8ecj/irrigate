@@ -40,9 +40,6 @@
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 
-#if !defined boolean
-typedef bool boolean;
-#endif
 
 // Constant definitions
 #define SWITCH_FAMILY      0x3A
@@ -166,8 +163,8 @@ extern int8_t dpfeed;
 extern int16_t dpstart;
 extern int16_t dpend;
 extern uint8_t frost_mode;
-extern boolean frost_armed;
-extern boolean monitor;
+extern bool frost_armed;
+extern bool monitor;
 extern int16_t interrupt;
 extern uint32_t welltime;
 extern double temperature;
@@ -176,11 +173,11 @@ extern double Tintegral;
 extern char daystr[][10];
 
 // config items
-extern boolean debug;
-extern boolean timestamp;
-extern boolean fileflag;
-extern boolean background;
-extern boolean config;
+extern bool debug;
+extern bool timestamp;
+extern bool fileflag;
+extern bool background;
+extern bool config;
 extern char device[];
 extern char configfile[];
 extern char datapath[];
@@ -196,7 +193,7 @@ extern uint8_t testmode;
 
 // prototypes
 void insert (time_t starttime, uint8_t zone, uint8_t action);
-boolean delete (uint8_t zone);
+bool delete (uint8_t zone);
 time_t findonqueue (uint8_t zone);
 uint8_t dequeuezone(uint8_t *action);
 uint8_t walk_queue(uint8_t index, uint8_t * zone, time_t * starttime, uint8_t *action);
@@ -258,7 +255,7 @@ void parseArguments (int argc, char **argv);
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
-boolean readchanmap (void);
+bool readchanmap (void);
 
 // create a load of mapstruct entries from interactive user input
 // this function only gets the 1-wire relevant data (address and port)
@@ -266,7 +263,7 @@ void createchanmap (int numdev);
 
 // save the chanmap mapstruct array to a file
 // this will require editing by hand to create the display map and other parameters
-boolean savechanmap (void);
+bool savechanmap (void);
 
 void irr_web_init(void);
 void irr_web_stop(void);
@@ -276,20 +273,20 @@ void irr_web_stop(void);
   Each time the schedule is updated, dump the current state to a file in case
   we get a restart and we need to pick up where we left off
   */
-boolean write_schedule (void);
+bool write_schedule (void);
 
 /*
   Read the current scheduling data from a file and populate the channel map
   Used at program startup to recover data
   */
-boolean read_schedule (void);
+bool read_schedule (void);
 
 /*
   Iterate the chanmap and insert items into the time queue that haven't yet expired
   This function will only schedule items up to 24 hours ahead so it should be called 
   at least once a day as well as on startup
   */
-void check_schedule (boolean changes);
+void check_schedule (bool changes);
 
 
 /*
@@ -322,7 +319,7 @@ char * getGPIOAddr (uint8_t index);
 // Returns: TRUE(1):    If set is successful
 //          FALSE(0):   If set is not successful
 //
-boolean SetOutput (uint8_t zone, uint8_t state);
+bool SetOutput (uint8_t zone, uint8_t state);
 
 //--------------------------------------------------------------------------
 // function - check_current
@@ -332,7 +329,7 @@ boolean SetOutput (uint8_t zone, uint8_t state);
 // Returns: TRUE(1):    If set is successful
 //          FALSE(0):   If set is not successful
 //
-boolean check_current(void);
+bool check_current(void);
 
 /*
 * diagnostic and user I/O functions

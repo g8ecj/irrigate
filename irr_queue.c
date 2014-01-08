@@ -99,7 +99,7 @@ findonqueue (uint8_t zone)
    return 0;
 }
 
-boolean
+bool
 delete (uint8_t zone)
 {
    TQ *p = NULL;

@@ -27,7 +27,7 @@
   Each time the schedule is updated, dump the current state to a file in case
   we get a restart and we need to pick up where we left off
   */
-boolean
+bool
 write_schedule (void)
 {
    uint8_t zone;
@@ -72,11 +72,11 @@ write_schedule (void)
   Read the current scheduling data from a file and populate the channel map
   Used at program startup to recover data
   */
-boolean
+bool
 read_schedule (void)
 {
    uint8_t zone;
-   boolean ret = FALSE;
+   bool ret = FALSE;
    FILE *fd;
    struct json_object *jobj;
    char schedulefile[MAXFILELEN];
@@ -127,7 +127,7 @@ read_schedule (void)
   at least once a day as well as on startup
   */
 void
-check_schedule (boolean changes)
+check_schedule (bool changes)
 {
    uint8_t zone, updatestart;
    int32_t timediff;

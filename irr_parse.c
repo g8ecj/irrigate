@@ -27,12 +27,12 @@
 
 
 // config items
-boolean debug = FALSE;
-boolean timestamp = FALSE;
-boolean fileflag = FALSE;
-boolean background = FALSE;
-boolean config = FALSE;
-boolean monitor = FALSE;
+bool debug = FALSE;
+bool timestamp = FALSE;
+bool fileflag = FALSE;
+bool background = FALSE;
+bool config = FALSE;
+bool monitor = FALSE;
 char device[MAXDEVLEN] = "/dev/tts/1";
 char configfile[MAXFILELEN] = "/www/zones.conf";
 char datapath[MAXFILELEN] = "/www";

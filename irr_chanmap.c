@@ -27,11 +27,11 @@
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
-boolean
+bool
 readchanmap (void)
 {
    uint8_t zone, group;
-   boolean ret = FALSE;
+   bool ret = FALSE;
    int offset;
    char *p;
    char *input;
@@ -163,7 +163,7 @@ createchanmap (int numdev)
 
 // save the chanmap mapstruct array to a file
 // this will require editing by hand to create the display map and other parameters
-boolean
+bool
 savechanmap (void)
 {
    int i;

@@ -57,7 +57,7 @@ irr_onewire_stop (void)
 {
 }
 
-boolean
+bool
 //DoOutput (uint8_t UNUSED (zone), uint8_t UNUSED (state))
 DoOutput (uint8_t zone, uint8_t state)
 {
@@ -327,10 +327,10 @@ getGPIOAddr (uint8_t index)
 //          FALSE(0):   If set is not successful
 //
 
-boolean
+bool
 DoOutput (uint8_t zone, uint8_t state)
 {
-   boolean ret = TRUE;
+   bool ret = TRUE;
    uint8_t ioval;
 
    pthread_mutex_lock (&onewire_mutex);
@@ -387,12 +387,12 @@ DoOutput (uint8_t zone, uint8_t state)
 // Returns: TRUE(1):    If set is successful
 //          FALSE(0):   If set is not successful
 //
-boolean 
+bool 
 check_current(void)
 {
    uint16_t expected_current = 0, minC, maxC, actual_current;
 
-   boolean ret = TRUE;
+   bool ret = TRUE;
 
    if (monitor)
    {
@@ -427,10 +427,10 @@ check_current(void)
 // Returns: TRUE(1):    If set is successful
 //          FALSE(0):   If set is not successful
 //
-boolean
+bool
 SetOutput (uint8_t zone, uint8_t state)
 {
-   boolean ret = TRUE;
+   bool ret = TRUE;
 
    ret = DoOutput (zone, state);
    if (ret)
