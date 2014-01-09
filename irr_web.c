@@ -614,7 +614,6 @@ irr_web_init (struct mg_server *server)
    mg_set_option (server, "document_root", httproot);
    mg_set_option (server, "auth_domain", "gilks.ath.cx");
    mg_set_option (server, "index_files", "zones.html");
-   mg_set_option (server, "protect_uri", "/set_state=www/passfile");
    if (accesslog[0] != '\0')
       mg_set_option (server, "access_log_file", accesslog);
 
