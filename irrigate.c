@@ -46,6 +46,8 @@ struct mapstruct chanmap[MAXZONES];
 
 time_t basictime;
 
+struct mg_server *server;
+
 int8_t wellzone = -1;
 int16_t wellmaxflow = 0;
 int16_t wellmaxstarts = 0;
@@ -215,7 +217,8 @@ main (int argc, char **argv)
       close (STDERR_FILENO);
    }
 
-   irr_web_init ();
+   server = mg_create_server(NULL);
+   irr_web_init (server);
 
 
    // read scheduling info from file (persistent data)
@@ -225,6 +228,9 @@ main (int argc, char **argv)
 /* The Big Loop */
    do
    {
+      // poll the web server
+      mg_poll_server(server, 0);
+
       // all actions are synchronised by the seconds count of the timer
       basictime = time (NULL);
       // every time round the loop, check the head of the timer queue and see if anything needs processing
@@ -266,9 +272,6 @@ main (int argc, char **argv)
 
       // manage the pumps
       manage_pumps();
-
-      // poll the web server
-      mg_poll_server(server, 1000);
 
       // a couple of things we do every second
       if (basictime >= lastsec + 1)
@@ -400,7 +403,6 @@ main (int argc, char **argv)
 
          interrupt = 0;
       }
-
    }
    while (!controlC);
 
@@ -412,7 +414,7 @@ main (int argc, char **argv)
    irr_onewire_stop ();
 
    update_statistics ();
-   irr_web_stop ();
+   mg_destroy_server(&server);
 
    return 0;
 }

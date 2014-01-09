@@ -25,8 +25,6 @@
 
 #define MAX_OPTIONS 40
 
-struct mg_server *server;
-pthread_mutex_t state_mutex;
 
 const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
 static const char *ajax_reply_start =
@@ -36,13 +34,13 @@ static const char *ajax_reply_start =
 /*
  * Basic redirect to keep people out of the root directory
  */
-static int
-show_root (struct mg_connection *conn)
-{
-
-   mg_printf (conn, "HTTP/1.1 301 Moved Permanently\r\n" "Location: %s\r\n\r\n", "zones.html");
-   return 1;
-}
+//static int
+//show_root (struct mg_connection *conn)
+//{
+//
+//   mg_printf (conn, "HTTP/1.1 301 Moved Permanently\r\n" "Location: %s\r\n\r\n", "zones.html");
+//   return 1;
+//}
 
 
 
@@ -478,7 +476,6 @@ set_state (struct mg_connection *conn)
    time_t starttime;
    struct tm tm;
 
-   pthread_mutex_lock (&state_mutex);
    if (debug)
       printf ("Received data: %s\n", conn->content);
    jobj = json_tokener_parse (conn->content);
@@ -487,7 +484,6 @@ set_state (struct mg_connection *conn)
       sprintf (logbuf, "error parsing json object %s\n", conn->content);
       syslog (LOG_NOTICE, "%s", logbuf);
       json_object_put (jobj);
-      pthread_mutex_unlock (&state_mutex);
       return 0;
    }
 
@@ -568,7 +564,6 @@ set_state (struct mg_connection *conn)
    json_object_put (jobj);
    check_schedule (TRUE);       // assume major changes to the schedule
    show_status (conn);
-   pthread_mutex_unlock (&state_mutex);
    return 1;
 }
 
@@ -584,7 +579,6 @@ set_frost (struct mg_connection *conn)
    struct json_object *jobj;
    char cmd[12];
 
-   pthread_mutex_lock (&state_mutex);
    if (debug)
       printf ("Received data: %s\n", conn->content);
    jobj = json_tokener_parse (conn->content);
@@ -593,7 +587,6 @@ set_frost (struct mg_connection *conn)
       sprintf (logbuf, "error parsing json object %s\n", conn->content);
       syslog (LOG_NOTICE, "%s", logbuf);
       json_object_put (jobj);
-      pthread_mutex_unlock (&state_mutex);
       return 0;
    }
 
@@ -640,7 +633,6 @@ set_frost (struct mg_connection *conn)
       check_schedule (TRUE);
    }
    show_status (conn);
-   pthread_mutex_unlock (&state_mutex);
    return 1;
 }
 
@@ -653,16 +645,13 @@ set_frost (struct mg_connection *conn)
     * Start listening on port as defined by command line
     */
 void
-irr_web_init (void)
+irr_web_init (struct mg_server *server)
 {
 
-   server = mg_create_server(NULL);
-
-   mg_set_option (server, "listening_ports", httpport);
+   mg_set_option (server, "listening_port", httpport);
    mg_set_option (server, "document_root", httproot);
    mg_set_option (server, "auth_domain", "gilks.ath.cx");
    mg_set_option (server, "protect_uri", "/set_state=www/passfile");
-   mg_set_option (server, "num_threads", "5");
    if (accesslog[0] != '\0')
       mg_set_option (server, "access_log_file", accesslog);
 
@@ -672,16 +661,10 @@ irr_web_init (void)
    mg_add_uri_handler(server, "/set_frost", set_frost);
    mg_add_uri_handler(server, "/jlogs", show_jsonlogs);
    mg_add_uri_handler(server, "/logs", show_logs);
-   mg_add_uri_handler(server, "/", show_root);
+//   mg_add_uri_handler(server, "/", show_root);
+   mg_set_option(server, "url_rewrite_patterns", "/$=www/zones.html");
 
 
-   pthread_mutex_init (&state_mutex, NULL);
 
-}
-
-void
-irr_web_stop (void)
-{
-   mg_destroy_server(&server);
 }
 

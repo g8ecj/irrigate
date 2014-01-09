@@ -171,7 +171,6 @@ extern double temperature;
 extern double temperature1, temperature2;
 extern double Tintegral;
 extern char daystr[][10];
-extern struct mg_server *server;
 
 // config items
 extern bool debug;
@@ -266,8 +265,7 @@ void createchanmap (int numdev);
 // this will require editing by hand to create the display map and other parameters
 bool savechanmap (void);
 
-void irr_web_init(void);
-void irr_web_stop(void);
+void irr_web_init (struct mg_server *server);
 
 
 /*
