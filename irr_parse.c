@@ -156,7 +156,7 @@ parseArguments (int argc, char **argv)
          log_printf (LOG_NOTICE, "Frost protection threshold temperature is %2.2f", Tthreshold);
          break;
       case 'v':
-         printf ("Irrigation Controller Version %s Copyright (c) 2009-2012 Robin Gilks\n", VERSION);
+         printf ("Irrigation Controller Version %s Copyright (c) 2009-2014 Robin Gilks\n", VERSION);
          printf ("Released under GPL Version 2\n");
          break;
       case 'x':

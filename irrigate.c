@@ -125,7 +125,7 @@ main (int argc, char **argv)
 
    openlog ("irrigate", LOG_PERROR, LOG_USER);
 
-   log_printf (LOG_NOTICE, "Irrigation Controller Version %s Copyright (c) 2009-2012 Robin Gilks", VERSION);
+   log_printf (LOG_NOTICE, "Irrigation Controller Version %s Copyright (c) 2009-2014 Robin Gilks", VERSION);
 
    parseArguments (argc, argv);
 

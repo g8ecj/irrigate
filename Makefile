@@ -11,8 +11,7 @@ endif
 
 
 
-DEFINES = -DSMALL_MEMORY_TARGET -DENABLE_DBG
-
+DEFINES = -DSMALL_MEMORY_TARGET
 override LIBS += -l json -ldl -lpthread
 override CFLAGS += $(DEFINES) -O1 -g -Wall -W 
 
