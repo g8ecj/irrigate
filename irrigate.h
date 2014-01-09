@@ -171,6 +171,7 @@ extern double temperature;
 extern double temperature1, temperature2;
 extern double Tintegral;
 extern char daystr[][10];
+extern struct mg_server *server;
 
 // config items
 extern bool debug;

@@ -25,136 +25,23 @@
 
 #define MAX_OPTIONS 40
 
-struct mg_context *ctx;
+struct mg_server *server;
 pthread_mutex_t state_mutex;
-
-void show_jsonlogs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
-void show_root (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
-void show_logs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
-void show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
-void show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info));
-void set_state (struct mg_connection *conn, const struct mg_request_info *request_info);
-void set_frost (struct mg_connection *conn, const struct mg_request_info *request_info);
 
 const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
 static const char *ajax_reply_start =
    "HTTP/1.1 200 OK\r\n" "Cache: no-cache\r\n" "Content-Type: application/x-javascript\r\n" "\r\n";
 
-static const struct web_config
-{
-   enum mg_event event;
-   const char *uri;
-   void (*func) (struct mg_connection *, const struct mg_request_info *);
-} web_config[] =
-{
-   { MG_NEW_REQUEST, "/", &show_root},
-   { MG_NEW_REQUEST, "/status", &show_status},
-   { MG_NEW_REQUEST, "/timedata", &show_timedata},
-   { MG_NEW_REQUEST, "/set_state", &set_state},
-   { MG_NEW_REQUEST, "/set_frost", &set_frost},
-   { MG_NEW_REQUEST, "/jlogs", &show_jsonlogs},
-   { MG_NEW_REQUEST, "/logs", &show_logs},
-   { 0, NULL, NULL}
-};
-
-
-static void *
-callback (enum mg_event event, struct mg_connection *conn, const struct mg_request_info *request_info)
-{
-   int i;
-
-   for (i = 0; web_config[i].uri != NULL; i++)
-   {
-      if ((event == web_config[i].event) && (!strcmp (request_info->uri, web_config[i].uri)))
-      {
-         web_config[i].func (conn, request_info);
-         return "processed";
-      }
-   }
-   return NULL;
-}
-
-static char *
-sdup (const char *str)
-{
-   char *p;
-   if ((p = malloc (strlen (str) + 1)) != NULL)
-   {
-      strcpy (p, str);
-   }
-   return p;
-}
-
-
-static void
-set_option (char **options, const char *name, const char *value)
-{
-   int i;
-
-   for (i = 0; i < MAX_OPTIONS - 3; i++)
-   {
-      if (options[i] == NULL)
-      {
-         options[i] = sdup (name);
-         options[i + 1] = sdup (value);
-         options[i + 2] = NULL;
-         break;
-      }
-   }
-
-}
-
-   /*
-    * Initialize HTTPD context.
-    * Attach a redirect to the status page on web root
-    * Put pasword protect on set_state page
-    * Set WWW root as defined by command line
-    * Start listening on port as defined by command line
-    */
-void
-irr_web_init (void)
-{
-   char *options[MAX_OPTIONS];
-   int i;
-
-   options[0] = NULL;
-   set_option (options, "listening_ports", httpport);
-   set_option (options, "document_root", httproot);
-   set_option (options, "authentication_domain", "gilks.ath.cx");
-   set_option (options, "protect_uri", "/set_state=www/passfile");
-   set_option (options, "num_threads", "5");
-   if (errorlog[0] != '\0')
-      set_option (options, "error_log_file", errorlog);
-   if (accesslog[0] != '\0')
-      set_option (options, "access_log_file", accesslog);
-
-   ctx = mg_start (callback, NULL, (const char **) options);
-
-   for (i = 0; options[i] != NULL; i++)
-   {
-      free (options[i]);
-   }
-
-   pthread_mutex_init (&state_mutex, NULL);
-
-}
-
-void
-irr_web_stop (void)
-{
-   mg_stop (ctx);
-}
-
 
 /*
  * Basic redirect to keep people out of the root directory
  */
-void
-show_root (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+static int
+show_root (struct mg_connection *conn)
 {
 
    mg_printf (conn, "HTTP/1.1 301 Moved Permanently\r\n" "Location: %s\r\n\r\n", "zones.html");
-
+   return 1;
 }
 
 
@@ -183,8 +70,8 @@ sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, 
 
 }
 
-void
-show_jsonlogs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+static int
+show_jsonlogs (struct mg_connection *conn)
 {
    mg_printf (conn, "%s", ajax_reply_start);
 
@@ -193,6 +80,7 @@ show_jsonlogs (struct mg_connection *conn, const struct mg_request_info UNUSED (
    send_log_msgs (conn, sendjsonmsg);
 
    mg_printf (conn, "%s", " ] }");
+   return 1;
 }
 
 void
@@ -206,13 +94,14 @@ sendmsg (struct mg_connection *conn, time_t time, int UNUSED (priority), char *d
 
 }
 
-void
-show_logs (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+static int
+show_logs (struct mg_connection *conn)
 {
    mg_printf (conn, "%s", "HTTP/1.1 200 OK\r\n");
    mg_printf (conn, "%s", "Content-Type: text/html\r\n\r\n");
 
    send_log_msgs (conn, sendmsg);
+   return 1;
 
 }
 
@@ -417,8 +306,8 @@ send_object (struct mg_connection *conn, struct json_object *jobj)
  * This callback function is attached to the URI "/status"
  * It returns a json object with all the status information
  */
-void
-show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+static int
+show_status (struct mg_connection *conn)
 {
    uint8_t zone;
    struct json_object *jobj, *jzones;
@@ -507,6 +396,7 @@ show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*r
 
    send_object (conn, jobj);
    json_object_put (jobj);
+   return 1;
 }
 
 
@@ -514,8 +404,8 @@ show_status (struct mg_connection *conn, const struct mg_request_info UNUSED (*r
  * This callback function is attached to the URI "/timedata"
  * It returns a json object with all the timeline information
  */
-void
-show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (*request_info))
+static int
+show_timedata (struct mg_connection *conn)
 {
    uint8_t zone, index, action;
    struct json_object *jobj, *jzones;
@@ -568,6 +458,7 @@ show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (
 
    send_object (conn, jobj);
    json_object_put (jobj);
+   return 1;
 }
 
 
@@ -577,8 +468,8 @@ show_timedata (struct mg_connection *conn, const struct mg_request_info UNUSED (
  * The command updates the chanmap and queues any immediate events
  * Persistent data is written at the end
  */
-void
-set_state (struct mg_connection *conn, const struct mg_request_info *request_info)
+static int
+set_state (struct mg_connection *conn)
 {
    struct json_object *jobj;
    char cmd[12];
@@ -587,26 +478,17 @@ set_state (struct mg_connection *conn, const struct mg_request_info *request_inf
    time_t starttime;
    struct tm tm;
 
-   char *buf;
-   const char *cl;
-   size_t buf_len;
-
    pthread_mutex_lock (&state_mutex);
-   cl = mg_get_header (conn, "Content-Length");
-   buf_len = atoi (cl);
-   buf = malloc (buf_len);
-   mg_read (conn, buf, buf_len);
    if (debug)
-      printf ("Received data: %s\n", buf);
-   jobj = json_tokener_parse (buf);
-   free (buf);
+      printf ("Received data: %s\n", conn->content);
+   jobj = json_tokener_parse (conn->content);
    if (is_error (jobj))
    {
-      sprintf (logbuf, "error parsing json object %s\n", buf);
+      sprintf (logbuf, "error parsing json object %s\n", conn->content);
       syslog (LOG_NOTICE, "%s", logbuf);
       json_object_put (jobj);
       pthread_mutex_unlock (&state_mutex);
-      return;
+      return 0;
    }
 
    zone = json_object_get_int (json_object_object_get (jobj, "zone"));
@@ -685,8 +567,9 @@ set_state (struct mg_connection *conn, const struct mg_request_info *request_inf
 
    json_object_put (jobj);
    check_schedule (TRUE);       // assume major changes to the schedule
-   show_status (conn, request_info);
+   show_status (conn);
    pthread_mutex_unlock (&state_mutex);
+   return 1;
 }
 
 /*
@@ -695,31 +578,23 @@ set_state (struct mg_connection *conn, const struct mg_request_info *request_inf
  * The command updates the chanmap and queues any immediate events
  * Persistent data is written at the end
  */
-void
-set_frost (struct mg_connection *conn, const struct mg_request_info *request_info)
+static int
+set_frost (struct mg_connection *conn)
 {
    struct json_object *jobj;
-   char *buf;
-   const char *cl;
-   size_t buf_len;
    char cmd[12];
 
    pthread_mutex_lock (&state_mutex);
-   cl = mg_get_header (conn, "Content-Length");
-   buf_len = atoi (cl);
-   buf = malloc (buf_len);
-   mg_read (conn, buf, buf_len);
    if (debug)
-      printf ("Received data: %s\n", buf);
-   jobj = json_tokener_parse (buf);
-   free (buf);
+      printf ("Received data: %s\n", conn->content);
+   jobj = json_tokener_parse (conn->content);
    if (is_error (jobj))
    {
-      sprintf (logbuf, "error parsing json object %s\n", buf);
+      sprintf (logbuf, "error parsing json object %s\n", conn->content);
       syslog (LOG_NOTICE, "%s", logbuf);
       json_object_put (jobj);
       pthread_mutex_unlock (&state_mutex);
-      return;
+      return 0;
    }
 
 
@@ -764,6 +639,49 @@ set_frost (struct mg_connection *conn, const struct mg_request_info *request_inf
       }
       check_schedule (TRUE);
    }
-   show_status (conn, request_info);
+   show_status (conn);
    pthread_mutex_unlock (&state_mutex);
+   return 1;
 }
+
+
+   /*
+    * Initialize HTTPD context.
+    * Attach a redirect to the status page on web root
+    * Put pasword protect on set_state page
+    * Set WWW root as defined by command line
+    * Start listening on port as defined by command line
+    */
+void
+irr_web_init (void)
+{
+
+   server = mg_create_server(NULL);
+
+   mg_set_option (server, "listening_ports", httpport);
+   mg_set_option (server, "document_root", httproot);
+   mg_set_option (server, "auth_domain", "gilks.ath.cx");
+   mg_set_option (server, "protect_uri", "/set_state=www/passfile");
+   mg_set_option (server, "num_threads", "5");
+   if (accesslog[0] != '\0')
+      mg_set_option (server, "access_log_file", accesslog);
+
+   mg_add_uri_handler(server, "/status", show_status);
+   mg_add_uri_handler(server, "/timedata", show_timedata);
+   mg_add_uri_handler(server, "/set_state", set_state);
+   mg_add_uri_handler(server, "/set_frost", set_frost);
+   mg_add_uri_handler(server, "/jlogs", show_jsonlogs);
+   mg_add_uri_handler(server, "/logs", show_logs);
+   mg_add_uri_handler(server, "/", show_root);
+
+
+   pthread_mutex_init (&state_mutex, NULL);
+
+}
+
+void
+irr_web_stop (void)
+{
+   mg_destroy_server(&server);
+}
+

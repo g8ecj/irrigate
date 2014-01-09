@@ -36,7 +36,7 @@ int
 getNumber (int min, int max)
 {
    int value = min, cnt;
-   boolean done = FALSE;
+   bool done = FALSE;
    do
    {
       cnt = scanf ("%d", &value);

@@ -267,6 +267,9 @@ main (int argc, char **argv)
       // manage the pumps
       manage_pumps();
 
+      // poll the web server
+      mg_poll_server(server, 1000);
+
       // a couple of things we do every second
       if (basictime >= lastsec + 1)
       {

@@ -224,7 +224,8 @@ enum {
 #ifdef USE_SSL
   SSL_CERTIFICATE,
 #endif
-  URL_REWRITES, NUM_OPTIONS
+  URL_REWRITES, NUM_OPTIONS,
+  PROTECT_URI
 };
 
 struct mg_server {
@@ -358,6 +359,7 @@ static const char *static_config_options[] = {
   "ssl_certificate", NULL,
 #endif
   "url_rewrites", NULL,
+  "protect_uri", NULL,
   NULL
 };
 
@@ -2738,6 +2740,40 @@ static int authorize(struct connection *conn, FILE *fp) {
 }
 
 
+#if 1
+// Return 1 if request is authorised, 0 otherwise.
+static int is_authorized(struct connection *conn, const char *path) {
+  FILE *fp;
+  char fname[MAX_PATH_SIZE];
+  struct vec uri_vec, filename_vec;
+  const char *list;
+  int authorized = 1;
+
+  fp = NULL;
+
+  list = conn->server->config_options[PROTECT_URI];
+  while ((list = next_option(list, &uri_vec, &filename_vec)) != NULL) {
+    if (!memcmp(conn->mg_conn.uri, uri_vec.ptr, uri_vec.len)) {
+      (void) mg_snprintf(fname, sizeof(fname), "%.*s",
+          filename_vec.len, filename_vec.ptr);
+      fp = fopen(fname, "r");
+    }
+    break;
+  }
+
+  if (fp == NULL) {
+    fp = open_auth_file(conn, path);
+  }
+
+  if (fp != NULL) {
+    authorized = authorize(conn, fp);
+    (void) fclose(fp);
+  }
+
+  return authorized;
+}
+
+#else
 // Return 1 if request is authorised, 0 otherwise.
 static int is_authorized(struct connection *conn, const char *path) {
   FILE *fp;
@@ -2750,6 +2786,7 @@ static int is_authorized(struct connection *conn, const char *path) {
 
   return authorized;
 }
+#endif
 
 static int is_authorized_for_dav(struct connection *conn) {
   const char *auth_file = conn->server->config_options[DAV_AUTH_FILE];
