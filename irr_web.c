@@ -31,18 +31,6 @@ static const char *ajax_reply_start =
    "HTTP/1.1 200 OK\r\n" "Cache: no-cache\r\n" "Content-Type: application/x-javascript\r\n" "\r\n";
 
 
-/*
- * Basic redirect to keep people out of the root directory
- */
-//static int
-//show_root (struct mg_connection *conn)
-//{
-//
-//   mg_printf (conn, "HTTP/1.1 301 Moved Permanently\r\n" "Location: %s\r\n\r\n", "zones.html");
-//   return 1;
-//}
-
-
 
 /*
  *       webmsg(conn, p->time, p->pri, textpri(p->pri), p->log);
@@ -271,34 +259,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 }
 
 
-// send a json object as an ASCII string to the web client. Broken into
-// chunks to avoid buffer overflows in the web server
-void
-send_object (struct mg_connection *conn, struct json_object *jobj)
-{
-   char *s, c;
-   unsigned int i, j;
-#define CHUNK 512
-
-   s = (char *) json_object_to_json_string (jobj);
-   j = strlen (s);
-   for (i = 0; i < j; i += CHUNK)
-   {
-      if (i + CHUNK < j)
-      {
-         c = s[i + CHUNK];
-         s[i + CHUNK] = '\0';
-         mg_printf (conn, "%s", &s[i]);
-         s[i + CHUNK] = c;
-      }
-      else
-         mg_printf (conn, "%s", &s[i]);
-   }
-}
-
-
-
-
 
 /*
  * This callback function is attached to the URI "/status"
@@ -392,7 +352,7 @@ show_status (struct mg_connection *conn)
    json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));
    json_object_object_add (jobj, "zones", jzones);
 
-   send_object (conn, jobj);
+   mg_printf (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
    return 1;
 }
@@ -454,7 +414,7 @@ show_timedata (struct mg_connection *conn)
    json_object_object_add (jobj, "cmd", json_object_new_string ("timedata"));
    json_object_object_add (jobj, "events", jzones);
 
-   send_object (conn, jobj);
+   mg_printf (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
    return 1;
 }
@@ -476,6 +436,7 @@ set_state (struct mg_connection *conn)
    time_t starttime;
    struct tm tm;
 
+   conn->content[conn->content_len] = 0;
    if (debug)
       printf ("Received data: %s\n", conn->content);
    jobj = json_tokener_parse (conn->content);
@@ -579,6 +540,7 @@ set_frost (struct mg_connection *conn)
    struct json_object *jobj;
    char cmd[12];
 
+   conn->content[conn->content_len] = 0;
    if (debug)
       printf ("Received data: %s\n", conn->content);
    jobj = json_tokener_parse (conn->content);
@@ -651,6 +613,7 @@ irr_web_init (struct mg_server *server)
    mg_set_option (server, "listening_port", httpport);
    mg_set_option (server, "document_root", httproot);
    mg_set_option (server, "auth_domain", "gilks.ath.cx");
+   mg_set_option (server, "index_files", "zones.html");
    mg_set_option (server, "protect_uri", "/set_state=www/passfile");
    if (accesslog[0] != '\0')
       mg_set_option (server, "access_log_file", accesslog);
@@ -661,10 +624,6 @@ irr_web_init (struct mg_server *server)
    mg_add_uri_handler(server, "/set_frost", set_frost);
    mg_add_uri_handler(server, "/jlogs", show_jsonlogs);
    mg_add_uri_handler(server, "/logs", show_logs);
-//   mg_add_uri_handler(server, "/", show_root);
-   mg_set_option(server, "url_rewrite_patterns", "/$=www/zones.html");
-
-
 
 }
 

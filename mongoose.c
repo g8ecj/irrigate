@@ -2752,11 +2752,13 @@ static int is_authorized(struct connection *conn, const char *path) {
   fp = NULL;
 
   list = conn->server->config_options[PROTECT_URI];
+  DBG(("list [%s] uri [%s]", list, conn->mg_conn.uri));
   while ((list = next_option(list, &uri_vec, &filename_vec)) != NULL) {
     if (!memcmp(conn->mg_conn.uri, uri_vec.ptr, uri_vec.len)) {
       (void) mg_snprintf(fname, sizeof(fname), "%.*s",
           filename_vec.len, filename_vec.ptr);
       fp = fopen(fname, "r");
+      DBG(("file [%s]", fname));
     }
     break;
   }
