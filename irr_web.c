@@ -27,9 +27,40 @@
 
 
 const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
-static const char *ajax_reply_start =
-   "HTTP/1.1 200 OK\r\n" "Cache: no-cache\r\n" "Content-Type: application/x-javascript\r\n" "\r\n";
 
+static void
+send_headers (struct mg_connection *conn)
+{
+   mg_send_header (conn, "Cache", "no-cache");
+   mg_send_header (conn, "Content-Type", "application/x-javascript");
+}
+
+
+static int
+check_authorised(struct mg_connection *conn)
+{
+   FILE *fp;
+   int authorized = 0;
+   char pass_file[50] = "www/passfile";
+   char auth_realm[50] = "gilks.ath.cx";
+
+   if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
+      authorized = mg_authorize_digest(conn, fp);
+      fclose(fp);
+   }
+
+   if (!authorized) {
+      conn->status_code = 401;
+      mg_printf(conn,
+            "HTTP/1.1 401 Unauthorized\r\n"
+            "WWW-Authenticate: Digest qop=\"auth\", "
+            "realm=\"%s\", nonce=\"%lu\"\r\n\r\n",
+            auth_realm,
+            (unsigned long) time(NULL));
+   return 1;
+   }
+  return 0;
+}
 
 
 /*
@@ -59,7 +90,7 @@ sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, 
 static int
 show_jsonlogs (struct mg_connection *conn)
 {
-   mg_printf (conn, "%s", ajax_reply_start);
+   send_headers (conn);
 
    mg_printf (conn, "%s", "{ \"logs\":[ ");
 
@@ -274,7 +305,7 @@ show_status (struct mg_connection *conn)
    struct tm tm;
    time_t t;
 
-   mg_printf (conn, "%s", ajax_reply_start);
+   send_headers(conn);
 
    jzones = json_object_new_array ();
 
@@ -352,7 +383,7 @@ show_status (struct mg_connection *conn)
    json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));
    json_object_object_add (jobj, "zones", jzones);
 
-   mg_printf (conn, "%s", json_object_to_json_string (jobj));
+   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
    return 1;
 }
@@ -371,7 +402,7 @@ show_timedata (struct mg_connection *conn)
    time_t starttime;
    struct mapstruct cmap;
 
-   mg_printf (conn, "%s", ajax_reply_start);
+   send_headers(conn);
 
    jzones = json_object_new_array ();
 
@@ -414,35 +445,9 @@ show_timedata (struct mg_connection *conn)
    json_object_object_add (jobj, "cmd", json_object_new_string ("timedata"));
    json_object_object_add (jobj, "events", jzones);
 
-   mg_printf (conn, "%s", json_object_to_json_string (jobj));
+   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
    return 1;
-}
-
-static int
-check_authorised(struct mg_connection *conn)
-{
-   FILE *fp;
-   int authorized = 0;
-   char pass_file[50] = "www/passfile";
-   char auth_realm[50] = "gilks.ath.cx";
-
-   if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
-      authorized = mg_authorize_digest(conn, fp);
-      fclose(fp);
-   }
-
-   if (!authorized) {
-      conn->status_code = 401;
-      mg_printf(conn,
-            "HTTP/1.1 401 Unauthorized\r\n"
-            "WWW-Authenticate: Digest qop=\"auth\", "
-            "realm=\"%s\", nonce=\"%lu\"\r\n\r\n",
-            auth_realm,
-            (unsigned long) time(NULL));
-   return 1;
-   }
-  return 0;
 }
 
 /*
