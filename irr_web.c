@@ -419,6 +419,31 @@ show_timedata (struct mg_connection *conn)
    return 1;
 }
 
+static int
+check_authorised(struct mg_connection *conn)
+{
+   FILE *fp;
+   int authorized = 0;
+   char pass_file[50] = "www/passfile";
+   char auth_realm[50] = "gilks.ath.cx";
+
+   if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
+      authorized = mg_authorize_digest(conn, fp);
+      fclose(fp);
+   }
+
+   if (!authorized) {
+      conn->status_code = 401;
+      mg_printf(conn,
+            "HTTP/1.1 401 Unauthorized\r\n"
+            "WWW-Authenticate: Digest qop=\"auth\", "
+            "realm=\"%s\", nonce=\"%lu\"\r\n\r\n",
+            auth_realm,
+            (unsigned long) time(NULL));
+   return 1;
+   }
+  return 0;
+}
 
 /*
  * This callback is attached to the URI "/set_state"
@@ -435,6 +460,9 @@ set_state (struct mg_connection *conn)
    int32_t frequency;
    time_t starttime;
    struct tm tm;
+
+   if (check_authorised(conn))
+      return 1;
 
    conn->content[conn->content_len] = 0;
    if (debug)
@@ -540,6 +568,9 @@ set_frost (struct mg_connection *conn)
    struct json_object *jobj;
    char cmd[12];
 
+   if (check_authorised(conn))
+      return 1;
+
    conn->content[conn->content_len] = 0;
    if (debug)
       printf ("Received data: %s\n", conn->content);
@@ -614,7 +645,6 @@ irr_web_init (struct mg_server *server)
    mg_set_option (server, "document_root", httproot);
    mg_set_option (server, "auth_domain", "gilks.ath.cx");
    mg_set_option (server, "index_files", "zones.html");
-   mg_set_option (server, "protect_uri", "/set_state=www/passfile");
    if (accesslog[0] != '\0')
       mg_set_option (server, "access_log_file", accesslog);
 
