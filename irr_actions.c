@@ -178,12 +178,16 @@ test_load (uint8_t testzone, uint8_t action)
    chanmap[testzone].starttime = basictime;
    chanmap[testzone].duration = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
 
+   while (delete (dpfeed));                          // remove the queued up turn off & unlock commands
+   insert (start, dpfeed, TURNOFF);
+   chanmap[dpfeed].locked = TRUE;
+
    for (zone = 1; zone < REALZONES; zone++)
    {
       // valid zone, not a pump or group, has a flow associated with it (i.e. not a spare)
       if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
-         chanmap[zone].duration = chanmap[testzone].duration;    // interpret value as seconds, not minutes
+         chanmap[zone].duration = chanmap[testzone].duration;
          chanmap[zone].period = chanmap[testzone].duration;
          insert (start, zone, TESTON);
          chanmap[zone].starttime = start;
@@ -193,6 +197,7 @@ test_load (uint8_t testzone, uint8_t action)
    chanmap[testzone].state = ACTIVE;       // say we're active
    chanmap[testzone].period = start - chanmap[testzone].starttime;
    insert (basictime + chanmap[testzone].period, testzone, TURNOFF);  // switch off display at the end
+   insert (basictime + chanmap[testzone].period, dpfeed, UNLOCK);     // then allow domestic feed to start again
 }
 
 /* check for any zones having a test on/off command queued and any found then reset everything */
@@ -204,8 +209,10 @@ test_cancel (uint8_t testzone)
    while (delete (testzone));
    emergency_off(IDLE);
    chanmap[testzone].state = IDLE;
+   chanmap[testzone].starttime = 0;
    chanmap[testzone].frequency = 0;
    chanmap[testzone].useful = FALSE;
+   insert (basictime - 1, dpfeed, UNLOCK);
 
 }
 
