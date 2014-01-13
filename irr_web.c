@@ -82,7 +82,7 @@ sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, 
    json_object_object_add (jobj, "desc", json_object_new_string (desc));
    json_object_object_add (jobj, "log", json_object_new_string (msg));
 
-   mg_printf (conn, "%s", json_object_to_json_string (jobj));
+   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
 
 }
@@ -92,11 +92,11 @@ show_jsonlogs (struct mg_connection *conn)
 {
    send_headers (conn);
 
-   mg_printf (conn, "%s", "{ \"logs\":[ ");
+   mg_printf_data (conn, "%s", "{ \"logs\":[ ");
 
    send_log_msgs (conn, sendjsonmsg);
 
-   mg_printf (conn, "%s", " ] }");
+   mg_printf_data (conn, "%s", " ] }");
    return 1;
 }
 
@@ -107,15 +107,14 @@ sendmsg (struct mg_connection *conn, time_t time, int UNUSED (priority), char *d
 
 //   ctime_r (&time, timestr);
    strftime(timestr, sizeof(timestr), fmt, localtime(&time));
-   mg_printf (conn, "%s irrigate %s: %s<br>", timestr, desc, msg);
+   mg_printf_data (conn, "%s irrigate %s: %s<br>", timestr, desc, msg);
 
 }
 
 static int
 show_logs (struct mg_connection *conn)
 {
-   mg_printf (conn, "%s", "HTTP/1.1 200 OK\r\n");
-   mg_printf (conn, "%s", "Content-Type: text/html\r\n\r\n");
+   mg_send_header (conn, "Content-Type", "text/html");
 
    send_log_msgs (conn, sendmsg);
    return 1;
