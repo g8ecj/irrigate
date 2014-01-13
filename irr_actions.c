@@ -156,7 +156,8 @@ test_load (uint8_t testzone, uint8_t action)
 {
 
    uint8_t zone;
-   time_t start = basictime + TEST_TIME;    // start after the reset has occured
+
+   time_t start = basictime + 2;    // start after the reset has occured
 
    if (action == TURNOFF)       // use this to toggle the display status
    {
@@ -175,17 +176,18 @@ test_load (uint8_t testzone, uint8_t action)
 
    // the starttime has already passed so set it to NOW
    chanmap[testzone].starttime = basictime;
+   chanmap[testzone].duration = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
 
    for (zone = 1; zone < REALZONES; zone++)
    {
       // valid zone, not a pump or group, has a flow associated with it (i.e. not a spare)
       if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
-         chanmap[zone].duration = TEST_TIME;    // used by status display
-         chanmap[zone].period = TEST_TIME;
+         chanmap[zone].duration = chanmap[testzone].duration;    // interpret value as seconds, not minutes
+         chanmap[zone].period = chanmap[testzone].duration;
          insert (start, zone, TESTON);
          chanmap[zone].starttime = start;
-         start += TEST_TIME;
+         start += chanmap[zone].duration;
       }
    }
    chanmap[testzone].state = ACTIVE;       // say we're active
