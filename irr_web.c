@@ -42,22 +42,16 @@ check_authorised(struct mg_connection *conn)
    FILE *fp;
    int authorized = 0;
    char pass_file[50] = "www/passfile";
-   char auth_realm[50] = "gilks.ath.cx";
 
    if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
       authorized = mg_authorize_digest(conn, fp);
       fclose(fp);
    }
 
-   if (!authorized) {
-      conn->status_code = 401;
-      mg_printf(conn,
-            "HTTP/1.1 401 Unauthorized\r\n"
-            "WWW-Authenticate: Digest qop=\"auth\", "
-            "realm=\"%s\", nonce=\"%lu\"\r\n\r\n",
-            auth_realm,
-            (unsigned long) time(NULL));
-   return 1;
+   if (!authorized) 
+   {
+      mg_send_digest_auth_request(conn);
+      return 1;
    }
   return 0;
 }

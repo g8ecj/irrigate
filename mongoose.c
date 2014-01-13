@@ -285,6 +285,7 @@ struct mg_server {
   union socket_address lsa;   // Listening socket address
   struct ll active_connections;
   struct ll uri_handlers;
+  mg_handler_t error_handler;
   char *config_options[NUM_OPTIONS];
   void *server_data;
   void *ssl_ctx;    // SSL context
@@ -414,7 +415,7 @@ void *mg_start_thread(void *(*f)(void *), void *p) {
 #ifdef _WIN32
 // Encode 'path' which is assumed UTF-8 string, into UNICODE string.
 // wbuf and wbuf_len is a target buffer and its length.
-static void to_unicode(const char *path, wchar_t *wbuf, size_t wbuf_len) {
+static void to_wchar(const char *path, wchar_t *wbuf, size_t wbuf_len) {
   char buf[MAX_PATH_SIZE * 2], buf2[MAX_PATH_SIZE * 2], *p;
 
   strncpy(buf, path, sizeof(buf));
@@ -438,21 +439,21 @@ static void to_unicode(const char *path, wchar_t *wbuf, size_t wbuf_len) {
 
 static int mg_stat(const char *path, file_stat_t *st) {
   wchar_t wpath[MAX_PATH_SIZE];
-  to_unicode(path, wpath, ARRAY_SIZE(wpath));
+  to_wchar(path, wpath, ARRAY_SIZE(wpath));
   DBG(("[%ls] -> %d", wpath, _wstati64(wpath, st)));
   return _wstati64(wpath, st);
 }
 
 static FILE *mg_fopen(const char *path, const char *mode) {
   wchar_t wpath[MAX_PATH_SIZE], wmode[10];
-  to_unicode(path, wpath, ARRAY_SIZE(wpath));
-  to_unicode(mode, wmode, ARRAY_SIZE(wmode));
+  to_wchar(path, wpath, ARRAY_SIZE(wpath));
+  to_wchar(mode, wmode, ARRAY_SIZE(wmode));
   return _wfopen(wpath, wmode);
 }
 
 static int mg_open(const char *path, int flag) {
   wchar_t wpath[MAX_PATH_SIZE];
-  to_unicode(path, wpath, ARRAY_SIZE(wpath));
+  to_wchar(path, wpath, ARRAY_SIZE(wpath));
   return _wopen(wpath, flag);
 }
 #endif
@@ -653,6 +654,15 @@ static void send_http_error(struct connection *conn, int code,
   va_list ap;
   int body_len, headers_len, match_code;
 
+  conn->mg_conn.status_code = code;
+
+  // Invoke error handler if it is set
+  if (conn->server->error_handler != NULL &&
+      conn->server->error_handler(&conn->mg_conn)) {
+    close_local_endpoint(conn);
+    return;
+  }
+
   // Handle error code rewrites
   while ((rewrites = next_option(rewrites, &a, &b)) != NULL) {
     if ((match_code = atoi(a.ptr)) > 0 && match_code == code) {
@@ -666,7 +676,6 @@ static void send_http_error(struct connection *conn, int code,
     }
   }
 
-  conn->mg_conn.status_code = code;
   body_len = mg_snprintf(body, sizeof(body), "%d %s\n", code, message);
   if (fmt != NULL) {
     body[body_len++] = '\n';
@@ -851,12 +860,21 @@ static void spawn_stdio_thread(int sock, HANDLE hPipe, void *(*func)(void *)) {
   }
 }
 
+static void abs_path(const char *utf8_path, char *abs_path, size_t len) {
+  wchar_t buf[MAX_PATH_SIZE], buf2[MAX_PATH_SIZE];
+  to_wchar(utf8_path, buf, ARRAY_SIZE(buf));
+  GetFullPathNameW(buf, ARRAY_SIZE(buf2), buf2, NULL);
+  WideCharToMultiByte(CP_UTF8, 0, buf2, wcslen(buf2) + 1, abs_path, len, 0, 0);
+}
+
 static pid_t start_process(char *interp, const char *cmd, const char *env,
                            const char *envp[], const char *dir, sock_t sock) {
-  STARTUPINFOA si = {0};
+  STARTUPINFOW si = {0};
   PROCESS_INFORMATION pi = {0};
   HANDLE a[2], b[2], me = GetCurrentProcess();
-  char cmdline[MAX_PATH_SIZE], full_dir[MAX_PATH_SIZE], buf[MAX_PATH_SIZE], *p;
+  wchar_t wcmd[MAX_PATH_SIZE], full_dir[MAX_PATH_SIZE];
+  char buf[MAX_PATH_SIZE], buf4[MAX_PATH_SIZE], buf5[MAX_PATH_SIZE],
+       cmdline[MAX_PATH_SIZE], *p;
   DWORD flags = DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS;
   FILE *fp;
 
@@ -883,15 +901,17 @@ static pid_t start_process(char *interp, const char *cmd, const char *env,
   }
 
   if (interp != NULL) {
-    GetFullPathName(interp, sizeof(buf), buf, NULL);
-    interp = buf;
+    abs_path(interp, buf4, ARRAY_SIZE(buf4));
+    interp = buf4;
   }
-  GetFullPathName(dir, sizeof(full_dir), full_dir, NULL);
+  abs_path(dir, buf5, ARRAY_SIZE(buf5));
+  to_wchar(dir, full_dir, ARRAY_SIZE(full_dir));
   mg_snprintf(cmdline, sizeof(cmdline), "%s%s\"%s\"",
               interp ? interp : "", interp ? " " : "", cmd);
+  to_wchar(cmdline, wcmd, ARRAY_SIZE(wcmd));
 
-  if (CreateProcess(NULL, cmdline, NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP,
-                    (void *) env, full_dir, &si, &pi) != 0) {
+  if (CreateProcessW(NULL, wcmd, NULL, NULL, TRUE, CREATE_NEW_PROCESS_GROUP,
+                     (void *) env, full_dir, &si, &pi) != 0) {
     spawn_stdio_thread(sock, a[1], push_to_stdin);
     spawn_stdio_thread(sock, b[0], pull_from_stdout);
   } else {
@@ -899,7 +919,7 @@ static pid_t start_process(char *interp, const char *cmd, const char *env,
     CloseHandle(b[0]);
     closesocket(sock);
   }
-  DBG(("CGI command: [%s] -> %p", cmdline, pi.hProcess));
+  DBG(("CGI command: [%ls] -> %p", wcmd, pi.hProcess));
 
   CloseHandle(si.hStdOutput);
   CloseHandle(si.hStdInput);
@@ -2187,7 +2207,7 @@ static DIR *opendir(const char *name) {
   } else if ((dir = (DIR *) malloc(sizeof(*dir))) == NULL) {
     SetLastError(ERROR_NOT_ENOUGH_MEMORY);
   } else {
-    to_unicode(name, wpath, ARRAY_SIZE(wpath));
+    to_wchar(name, wpath, ARRAY_SIZE(wpath));
     attrs = GetFileAttributesW(wpath);
     if (attrs != 0xFFFFFFFF &&
         ((attrs & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)) {
@@ -2617,15 +2637,15 @@ static void send_options(struct connection *conn) {
 #endif //  NO_DAV
 
 #ifndef NO_AUTH
-static void send_authorization_request(struct connection *conn) {
-  conn->mg_conn.status_code = 401;
-  mg_printf(&conn->mg_conn,
+void mg_send_digest_auth_request(struct mg_connection *c) {
+  struct connection *conn = (struct connection *) c;
+  c->status_code = 401;
+  mg_printf(c,
             "HTTP/1.1 401 Unauthorized\r\n"
             "WWW-Authenticate: Digest qop=\"auth\", "
             "realm=\"%s\", nonce=\"%lu\"\r\n\r\n",
             conn->server->config_options[AUTH_DOMAIN],
             (unsigned long) time(NULL));
-  close_local_endpoint(conn);
 }
 
 // Use the global passwords file, if specified by auth_gpass option,
@@ -2901,11 +2921,13 @@ static int check_password(const char *method, const char *ha1, const char *uri,
 // Authorize against the opened passwords file. Return 1 if authorized.
 int mg_authorize_digest(struct mg_connection *c, FILE *fp) {
   struct connection *conn = (struct connection *) c;
-  const char *hdr = mg_get_header(c, "Authorization");
+  const char *hdr;
   char line[256], f_user[256], ha1[256], f_domain[256], user[100], nonce[100],
        uri[MAX_REQUEST_SIZE], cnonce[100], resp[100], qop[100], nc[100];
 
-  if (hdr == NULL || mg_strncasecmp(hdr, "Digest ", 7) != 0) return 0;
+  if (c == NULL || fp == NULL) return 0;
+  if ((hdr = mg_get_header(c, "Authorization")) == NULL ||
+      mg_strncasecmp(hdr, "Digest ", 7) != 0) return 0;
   if (!mg_parse_header(hdr, "username", user, sizeof(user))) return 0;
   if (!mg_parse_header(hdr, "cnonce", cnonce, sizeof(cnonce))) return 0;
   if (!mg_parse_header(hdr, "response", resp, sizeof(resp))) return 0;
@@ -2952,31 +2974,31 @@ static int is_authorized_for_dav(struct connection *conn) {
   return authorized;
 }
 
-static int is_dangerous_dav_request(const struct connection *conn) {
+static int is_dav_mutation(const struct connection *conn) {
   const char *s = conn->mg_conn.request_method;
   return s && (!strcmp(s, "PUT") || !strcmp(s, "DELETE") ||
                !strcmp(s, "MKCOL"));
 }
 #endif // NO_AUTH
 
-int mg_parse_header(const char *str, const char *var_name, char *buf,
-                    size_t buf_size) {
+int parse_header(const char *str, int str_len, const char *var_name, char *buf,
+                 size_t buf_size) {
   int ch = ' ', len = 0, n = strlen(var_name);
-  const char *p, *s = NULL;
+  const char *p, *end = str + str_len, *s = NULL;
 
   if (buf != NULL) buf[0] = '\0';
 
   // Find where variable starts
-  while (str != NULL && (s = strstr(str, var_name)) != NULL &&
-         ((s > str && s[-1] != ' ') || s[n] != '=')) {
-    str = s + n;
+  for (s = str; s != NULL && &s[n] < end; s++) {
+    if ((s == str || s[-1] == ' ') && s[n] == '=' &&
+        !memcmp(s, var_name, n)) break;
   }
 
-  if (s != NULL && s[n + 1] != '\0') {
+  if (s != NULL && &s[n + 1] < end) {
     s += n + 1;
     if (*s == '"' || *s == '\'') ch = *s++;
     p = s;
-    while (p[0] != '\0' && p[0] != ch && len < (int) buf_size) {
+    while (p < end && p[0] != ch && len < (int) buf_size) {
       if (p[0] == '\\' && p[1] == ch) p++;
       buf[len++] = *p++;
     }
@@ -2984,11 +3006,17 @@ int mg_parse_header(const char *str, const char *var_name, char *buf,
       len = 0;
     } else {
       if (len > 0 && s[len - 1] == ',') len--;
+      if (len > 0 && s[len - 1] == ';') len--;
       buf[len] = '\0';
     }
   }
 
   return len;
+}
+
+int mg_parse_header(const char *str, const char *var_name, char *buf,
+                    size_t buf_size) {
+  return parse_header(str, strlen(str), var_name, buf, buf_size);
 }
 
 #ifdef USE_LUA
@@ -3175,6 +3203,10 @@ static void prepare_lua_environment(struct mg_connection *ri, lua_State *L) {
   reg_string(L, "query_string", ri->query_string);
   reg_string(L, "remote_ip", ri->remote_ip);
   reg_int(L, "remote_port", ri->remote_port);
+  lua_pushstring(L, "content");
+  lua_pushlstring(L, ri->content == NULL ? "" : ri->content, 0);
+  lua_rawset(L, -3);
+  reg_int(L, "content_len", ri->content_len);
   reg_int(L, "num_headers", ri->num_headers);
   lua_pushstring(L, "http_headers");
   lua_newtable(L);
@@ -3299,9 +3331,10 @@ static void open_local_endpoint(struct connection *conn) {
   } else if (conn->server->config_options[DOCUMENT_ROOT] == NULL) {
     send_http_error(conn, 404, NULL);
 #ifndef NO_AUTH
-  } else if ((!is_dangerous_dav_request(conn) && !is_authorized(conn, path)) ||
-             (is_dangerous_dav_request(conn) && !is_authorized_for_dav(conn))) {
-    send_authorization_request(conn);
+  } else if ((!is_dav_mutation(conn) && !is_authorized(conn, path)) ||
+             (is_dav_mutation(conn) && !is_authorized_for_dav(conn))) {
+    mg_send_digest_auth_request(&conn->mg_conn);
+    close_local_endpoint(conn);
 #endif
 #ifndef NO_DAV
   } else if (!strcmp(conn->mg_conn.request_method, "PROPFIND")) {
@@ -3744,6 +3777,51 @@ int mg_get_var(const struct mg_connection *conn, const char *name,
   return len;
 }
 
+static int get_line_len(const char *buf, int buf_len) {
+  int len = 0;
+  while (len < buf_len && buf[len] != '\n') len++;
+  return buf[len] == '\n' ? len + 1: -1;
+}
+
+int mg_parse_multipart(const char *buf, int buf_len,
+                       char *var_name, int var_name_len,
+                       char *file_name, int file_name_len,
+                       const char **data, int *data_len) {
+  static const char cd[] = "Content-Disposition: ";
+  //struct mg_connection c;
+  int hl, bl, n, ll, pos, cdl = sizeof(cd) - 1;
+  //char *p;
+
+  if (buf == NULL || buf_len <= 0) return 0;
+  if ((hl = get_request_len(buf, buf_len)) <= 0) return 0;
+  if (buf[0] != '-' || buf[1] != '-' || buf[2] == '\n') return 0;
+
+  // Get boundary length
+  bl = get_line_len(buf, buf_len);
+
+  // Loop through headers, fetch variable name and file name
+  var_name[0] = file_name[0] = '\0';
+  for (n = bl; (ll = get_line_len(buf + n, hl - n)) > 0; n += ll) {
+    if (mg_strncasecmp(cd, buf + n, cdl) == 0) {
+      parse_header(buf + n + cdl, ll - (cdl + 2), "name",
+                   var_name, var_name_len);
+      parse_header(buf + n + cdl, ll - (cdl + 2), "filename",
+                   file_name, file_name_len);
+    }
+  }
+
+  // Scan body, search for terminating boundary
+  for (pos = hl; pos + (bl - 2) < buf_len; pos++) {
+    if (buf[pos] == '-' && !memcmp(buf, &buf[pos], bl - 2)) {
+      if (data_len != NULL) *data_len = (pos - 2) - hl;
+      if (data != NULL) *data = buf + hl;
+      return pos;
+    }
+  }
+
+  return 0;
+}
+
 const char **mg_get_valid_option_names(void) {
   return static_config_options;
 }
@@ -3858,6 +3936,11 @@ const char *mg_set_option(struct mg_server *server, const char *name,
   }
 
   return error_msg;
+}
+
+
+void mg_set_http_error_handler(struct mg_server *server, mg_handler_t handler) {
+  server->error_handler = handler;
 }
 
 void mg_set_listening_socket(struct mg_server *server, int sock) {
