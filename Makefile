@@ -11,9 +11,9 @@ endif
 
 
 
-DEFINES = -DSMALL_MEMORY_TARGET
+DEFINES = -DSMALL_MEMORY_TARGET -DNO_THREADS
 
-override LIBS += -l json -ldl -lpthread
+override LIBS += -ljson
 override CFLAGS += $(DEFINES) -O1 -g -Wall -W 
 
 RM := rm -rf

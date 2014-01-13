@@ -29,7 +29,6 @@
 #include "swt3A.h"
 #include "findtype.h"
 
-pthread_mutex_t onewire_mutex;
 int8_t VI = -1;
 uint8_t iocache[MAXDEVICES];
 uint8_t famsw[MAXDEVICES][8];
@@ -223,7 +222,6 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       }
       monitor = FALSE;
    }
-   pthread_mutex_init (&onewire_mutex, NULL);
 
    return numgpio;
 }
@@ -278,9 +276,7 @@ GetCurrent (void)
 
    if (VI < 0)
       return 0;
-   pthread_mutex_lock (&onewire_mutex);
    i = ReadVad (portnum, famvolt[VI]) * VoltToMilliAmp;
-   pthread_mutex_unlock (&onewire_mutex);
 // can't read reliably below 1.5 volts (but need down to ~0.1V)
    if (i < 50)
       i = 0;
@@ -293,9 +289,7 @@ GetTemp(uint16_t index)
 {
    double temp;
 
-   pthread_mutex_lock (&onewire_mutex);
    temp = ReadTemp (portnum, famvolt[index]);
-   pthread_mutex_unlock (&onewire_mutex);
    return temp;
 }
 
@@ -303,9 +297,7 @@ GetTemp(uint16_t index)
 void
 setGPIOraw(uint8_t index, uint8_t value)
 {
-   pthread_mutex_lock (&onewire_mutex);
    owAccessWrite (portnum, famsw[index], TRUE, value);
-   pthread_mutex_unlock (&onewire_mutex);
 }
 
 char *
@@ -333,10 +325,8 @@ DoOutput (uint8_t zone, uint8_t state)
    bool ret = TRUE;
    uint8_t ioval;
 
-   pthread_mutex_lock (&onewire_mutex);
    if (((chanmap[zone].valid & HARDWARE) == 0) && (state != OFF))    // if no hardware and trying to switch on then fail
    {
-      pthread_mutex_unlock (&onewire_mutex);
       return FALSE;
    }
 
@@ -373,7 +363,6 @@ DoOutput (uint8_t zone, uint8_t state)
    {
       log_printf (LOG_ERR, "Failed to switch zone %d %s", zone, state ? "ON" : "OFF");
    }
-   pthread_mutex_unlock (&onewire_mutex);
    return ret;
 }
 

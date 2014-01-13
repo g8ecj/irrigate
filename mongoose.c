@@ -390,6 +390,7 @@ static const struct {
   {NULL,  0, NULL}
 };
 
+#ifndef NO_THREADS
 void *mg_start_thread(void *(*f)(void *), void *p) {
 #ifdef _WIN32
   return (void *) _beginthread((void (__cdecl *)(void *)) f, 0, p);
@@ -411,6 +412,7 @@ void *mg_start_thread(void *(*f)(void *), void *p) {
   return (void *) thread_id;
 #endif
 }
+#endif  // NO_THREADS
 
 #ifdef _WIN32
 // Encode 'path' which is assumed UTF-8 string, into UNICODE string.
@@ -2986,10 +2988,10 @@ int parse_header(const char *str, int str_len, const char *var_name, char *buf,
   int ch = ' ', len = 0, n = strlen(var_name);
   const char *p, *end = str + str_len, *s = NULL;
 
-  if (buf != NULL) buf[0] = '\0';
+  if (buf != NULL && buf_size > 0) buf[0] = '\0';
 
   // Find where variable starts
-  for (s = str; s != NULL && &s[n] < end; s++) {
+  for (s = str; s != NULL && s + n < end; s++) {
     if ((s == str || s[-1] == ' ') && s[n] == '=' &&
         !memcmp(s, var_name, n)) break;
   }
@@ -3014,9 +3016,9 @@ int parse_header(const char *str, int str_len, const char *var_name, char *buf,
   return len;
 }
 
-int mg_parse_header(const char *str, const char *var_name, char *buf,
+int mg_parse_header(const char *s, const char *var_name, char *buf,
                     size_t buf_size) {
-  return parse_header(str, strlen(str), var_name, buf, buf_size);
+  return parse_header(s, s == NULL ? 0 : strlen(s), var_name, buf, buf_size);
 }
 
 #ifdef USE_LUA
@@ -3426,7 +3428,7 @@ static void process_request(struct connection *conn) {
                                            &conn->mg_conn);
   }
 
-  DBG(("%p %d %d", conn, conn->request_len, io->len));
+  DBG(("%p %d %d [%.*s]", conn, conn->request_len, io->len, io->len, io->buf));
   if (conn->request_len < 0 ||
       (conn->request_len > 0 && !is_valid_uri(conn->mg_conn.uri))) {
     send_http_error(conn, 400, NULL);
