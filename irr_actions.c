@@ -155,7 +155,7 @@ void
 test_load (uint8_t testzone, uint8_t action)
 {
 
-   uint8_t zone;
+   uint8_t zone, dpz = 0, wellz = 0;
 
    time_t start = basictime + 2;    // start after the reset has occured
 
@@ -178,13 +178,26 @@ test_load (uint8_t testzone, uint8_t action)
    chanmap[testzone].starttime = basictime;
    chanmap[testzone].duration = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
 
-   while (delete (dpfeed));                          // remove the queued up turn off & unlock commands
-   insert (start, dpfeed, TURNOFF);
-   chanmap[dpfeed].locked = TRUE;
 
    for (zone = 1; zone < REALZONES; zone++)
    {
+      if ((chanmap[zone].type & ISPUMP) != 0)
+      {
+         wellz = zone;
+         if (chanmap[wellz].state == ACTIVE)
+            well_off(wellz);
+         while (delete (wellz));                          // remove the queued up unlock command
+      }
+      else if ((chanmap[zone].type & ISDPFEED) != 0)
+      {
+         dpz = zone;
+         while (delete (dpz));                          // remove the queued up commands
+         if (chanmap[dpz].state == ACTIVE)
+            insert (start, dpz, TURNOFF);
+         chanmap[dpz].locked = TRUE;
+      }
       // valid zone, not a pump or group, has a flow associated with it (i.e. not a spare)
+      else if (((chanmap[zone].type & (ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
          chanmap[zone].duration = chanmap[testzone].duration;
@@ -196,8 +209,18 @@ test_load (uint8_t testzone, uint8_t action)
    }
    chanmap[testzone].state = ACTIVE;       // say we're active
    chanmap[testzone].period = start - chanmap[testzone].starttime;
-   insert (basictime + chanmap[testzone].period, testzone, TURNOFF);  // switch off display at the end
-   insert (basictime + chanmap[testzone].period, dpfeed, UNLOCK);     // then allow domestic feed to start again
+   insert (start, testzone, TURNOFF);      // switch off display at the end
+   if (wellz > 0)
+   {
+      insert (start, wellz, UNLOCK);       // then allow well to start again
+      chanmap[wellz].period = chanmap[testzone].period;
+   }
+   if (dpz > 0)
+   {
+      insert (start, dpz, UNLOCK);         // then allow domestic feed to start again
+      chanmap[dpz].period = chanmap[testzone].period;
+   }
+
 }
 
 /* check for any zones having a test on/off command queued and any found then reset everything */
@@ -215,8 +238,6 @@ test_cancel (uint8_t testzone)
    insert (basictime - 1, dpfeed, UNLOCK);
 
 }
-
-
 
 
 
