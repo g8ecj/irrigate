@@ -394,8 +394,8 @@ main (int argc, char **argv)
          extern uint16_t testcurrent;
          testcurrent = 0;
 //#else
-         dump_log_msgs();
-//         print_chanmap ();
+//         dump_log_msgs();
+         print_chanmap ();
          print_queue ();
          update_statistics ();
          check_schedule (FALSE);
