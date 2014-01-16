@@ -44,7 +44,6 @@ char accesslog[MAXFILELEN] = "";
 char errorlog[MAXFILELEN] = "";
 double Tthreshold = -0.5;
 uint16_t frostlimit = 60;
-uint8_t testmode = 0;
 
 /**
  parseArguments
@@ -88,7 +87,6 @@ parseArguments (int argc, char **argv)
          log_printf (LOG_INFO, "Using %s for access log file", accesslog);
          break;
       case 'b':
-         testmode = 0;        // lock out background test mode
          background = TRUE;
          break;
       case 'c':
@@ -161,11 +159,6 @@ parseArguments (int argc, char **argv)
          break;
       case 'x':
          debug++;
-         break;
-      case 'z':
-         testmode = atoi (optarg);
-         printf ("Test mode activated interval %d\n", testmode);
-         printf ("Press ^C to stop\n");
          break;
       case '?':
          printf ("Unknown option \"%s\". Use -h for help\n", argv[optind - 1]);

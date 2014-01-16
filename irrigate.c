@@ -286,21 +286,6 @@ main (int argc, char **argv)
             emergency_off(ERROR);
          }
 
-         // see if we are running a test on the valves
-         if (testmode > 0)
-         {
-            static uint8_t testzone = 1;
-
-            chanmap[testzone].starttime = basictime;
-            chanmap[testzone].period = testmode;
-            chanmap[testzone].frequency = 0;
-            insert (chanmap[testzone].starttime, testzone, TESTON);
-            while  (!(chanmap[++testzone].valid & HARDWARE))
-            {
-               if (testzone >= REALZONES)
-                  testzone = 0;
-            }
-         }
       }
 
       /* only read and check the temperature every minute */

@@ -189,7 +189,6 @@ extern char accesslog[];
 extern char errorlog[];
 extern double Tthreshold;
 extern uint16_t frostlimit;
-extern uint8_t testmode;
 
 // prototypes
 void insert (time_t starttime, uint8_t zone, uint8_t action);
