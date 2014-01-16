@@ -156,7 +156,7 @@ test_load (uint8_t testzone, uint8_t action)
 {
 
    uint8_t zone, dpz = 0, wellz = 0;
-
+   uint16_t period;
    time_t start = basictime + 2;    // start after the reset has occured
 
    if (action == TURNOFF)       // use this to toggle the display status
@@ -176,7 +176,7 @@ test_load (uint8_t testzone, uint8_t action)
 
    // the starttime has already passed so set it to NOW
    chanmap[testzone].starttime = basictime;
-   chanmap[testzone].duration = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
+   period = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
 
 
    for (zone = 1; zone < REALZONES; zone++)
@@ -187,6 +187,7 @@ test_load (uint8_t testzone, uint8_t action)
          if (chanmap[wellz].state == ACTIVE)
             well_off(wellz);
          while (delete (wellz));                          // remove the queued up unlock command
+         chanmap[wellz].locked = TRUE;
       }
       else if ((chanmap[zone].type & ISDPFEED) != 0)
       {
@@ -200,11 +201,11 @@ test_load (uint8_t testzone, uint8_t action)
       else if (((chanmap[zone].type & (ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
-         chanmap[zone].duration = chanmap[testzone].duration;
-         chanmap[zone].period = chanmap[testzone].duration;
+         chanmap[zone].duration = period;
+         chanmap[zone].period = period;
          insert (start, zone, TESTON);
          chanmap[zone].starttime = start;
-         start += chanmap[zone].duration;
+         start += period;
       }
    }
    chanmap[testzone].state = ACTIVE;       // say we're active
@@ -212,11 +213,13 @@ test_load (uint8_t testzone, uint8_t action)
    insert (start, testzone, TURNOFF);      // switch off display at the end
    if (wellz > 0)
    {
-      insert (start, wellz, UNLOCK);       // then allow well to start again
+      chanmap[wellz].starttime = basictime;  // have a base time to know when unlock occurs
+      insert (start, wellz, UNLOCK);         // then allow well to start again
       chanmap[wellz].period = chanmap[testzone].period;
    }
    if (dpz > 0)
    {
+      chanmap[dpz].starttime = basictime;  // have a base time to know when unlock occurs
       insert (start, dpz, UNLOCK);         // then allow domestic feed to start again
       chanmap[dpz].period = chanmap[testzone].period;
    }
