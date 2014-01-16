@@ -47,6 +47,7 @@ write_schedule (void)
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
+         json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
          json_object_object_add (jobj, "starttime", json_object_new_int (chanmap[zone].starttime));
          json_object_object_add (jobj, "duration", json_object_new_int (chanmap[zone].duration));
          json_object_object_add (jobj, "frequency", json_object_new_int (chanmap[zone].frequency));
