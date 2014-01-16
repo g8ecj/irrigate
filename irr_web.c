@@ -41,7 +41,10 @@ check_authorised(struct mg_connection *conn)
 {
    FILE *fp;
    int authorized = 0;
-   char pass_file[50] = "www/passfile";
+   char pass_file[MAXFILELEN];
+
+   strcpy (pass_file, datapath);
+   strncat (pass_file, "/passfile", 10);
 
    if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
       authorized = mg_authorize_digest(conn, fp);
