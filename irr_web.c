@@ -503,7 +503,7 @@ set_state (struct mg_connection *conn)
       // start time will required extra decoding
       starttime = json_object_get_int (json_object_object_get (jobj, "start"));
       // duration for the whole of this zone or group members
-      chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration")) * 60;    // we get it in minutes
+      chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
       // use frequency as a repeat
       chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency")) * 60 * 60;     // convert hours to seconds
       // find the start time

@@ -156,7 +156,6 @@ test_load (uint8_t testzone, uint8_t action)
 {
 
    uint8_t zone, dpz = 0, wellz = 0;
-   uint16_t period;
    time_t start = basictime + 2;    // start after the reset has occured
 
    if (action == TURNOFF)       // use this to toggle the display status
@@ -176,7 +175,6 @@ test_load (uint8_t testzone, uint8_t action)
 
    // the starttime has already passed so set it to NOW
    chanmap[testzone].starttime = basictime;
-   period = chanmap[testzone].duration / 60;    // interpret value as seconds, not minutes
 
 
    for (zone = 1; zone < REALZONES; zone++)
@@ -201,11 +199,11 @@ test_load (uint8_t testzone, uint8_t action)
       else if (((chanmap[zone].type & (ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
-         chanmap[zone].duration = period;
-         chanmap[zone].period = period;
+         chanmap[zone].duration = chanmap[testzone].period;
+         chanmap[zone].period = chanmap[testzone].period;
          insert (start, zone, TESTON);
          chanmap[zone].starttime = start;
-         start += period;
+         start += chanmap[testzone].period;
       }
    }
    chanmap[testzone].state = ACTIVE;       // say we're active
