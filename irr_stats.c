@@ -300,6 +300,7 @@ read_history (struct mapstruct *cmap, FILE * fd)
             cmap->frequency = 0;
          }
       }
+      json_object_put (jobj);
    }
    else
    {
