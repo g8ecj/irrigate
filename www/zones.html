@@ -114,48 +114,9 @@ function status_reply(obj,id)
    {
       var z = zone_id_search[obj.zones[i].zone]
       z.state = obj.zones[i].status
-      var day = ""
-      if (z.state == "queued")
-      {
-         if (obj.zones[i].day.length)
-            day = "on " + obj.zones[i].day
-         z.div.title   = z.name + " scheduled to start at " + zeroPad(obj.zones[i].starttime, 4) + " for " + (obj.zones[i].duration / 60).toFixed(0) + " mins " + obj.zones[i].frequency + day
+         z.div.title   = obj.zones[i].description
          z.o_div.title = z.div.title
          z.h_div.title = z.div.title
-      }
-      else if (z.state == "repeating")
-      {
-         if (obj.zones[i].day.length)
-            day = "from " + obj.zones[i].day
-         z.div.title   = z.name + " repeating at " + zeroPad(obj.zones[i].starttime, 4)  + " for " + (obj.zones[i].duration / 60).toFixed(0) + " mins " + obj.zones[i].frequency + day
-         z.o_div.title = z.div.title
-         z.h_div.title = z.div.title
-      }
-      else if (z.state == "active")
-      {
-         if (obj.zones[i].starttime == obj.zones[i].endtime)
-         {
-            z.div.title   = z.name + " started at " + zeroPad(obj.zones[i].starttime, 4)
-         }
-         else
-         {
-            z.div.title   = z.name + " started at " + zeroPad(obj.zones[i].starttime, 4) + " ending at " + zeroPad(obj.zones[i].endtime, 4) + " " + obj.zones[i].frequency
-         }
-         z.o_div.title = z.div.title
-         z.h_div.title = z.div.title
-      }
-      else if (z.state == "locked")
-      {
-         z.div.title   = z.name + " locked until " + zeroPad(obj.zones[i].endtime, 4)
-         z.o_div.title = z.div.title
-         z.h_div.title = z.div.title
-      }
-      else
-      {
-         z.div.title   = z.name + " - nothing scheduled"
-         z.o_div.title = z.div.title
-         z.h_div.title = z.div.title
-      }
       redraw_zone(z)
    }
 }

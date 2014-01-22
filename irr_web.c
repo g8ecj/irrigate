@@ -142,9 +142,10 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    time_t t;
    int startval, endval;
 
-   char descstr[120];
+   char descstr[140];
    char startstr[64];
    char endstr[64];
+   char fromday[64];
    char colour[10];
    char ing_ed[10];
    char is_was[10];
@@ -233,11 +234,8 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       break;
    }
 
-   jobj = json_object_new_object ();
-//   ctime_r (&starttime, startstr);
    strftime(startstr, sizeof(startstr), fmt, localtime(&starttime));
    t = starttime + cmap->period;
-//   ctime_r (&t, endstr);
    strftime(endstr, sizeof(endstr), fmt, localtime(&t));
 
    localtime_r (&t, &tm);
@@ -246,11 +244,33 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    localtime_r (&starttime, &tm);
    startval = tm.tm_hour * 100 + tm.tm_min;
 
+   if (((starttime > basictime) 
+         && (starttime < (basictime + 60 * 60 * 24))) 
+            || ((starttime + cmap->frequency > basictime) 
+               && (starttime + cmap->frequency < (basictime + 60 * 60 * 24))))        // start OR repeat is today
+   {
+      fromday[0] = '\0';
+   }
+   else if (starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
+   {
+      sprintf(fromday, "from %s", daystr[tm.tm_wday]);     // use starttime to find day
+   }
+   else if (starttime + cmap->frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead
+   {
+      t = starttime + cmap->frequency;
+      localtime_r (&t, &tm);
+      sprintf(fromday, "from %s", daystr[tm.tm_wday]);     // use starttime to find day
+   }
+   else
+   {
+      fromday[0] = '\0';
+   }
    // description is 
-   // start{ing/ed}(1) at <time> for a duration of <period> and {is/was}(2) <state>  {and is repeating/""}(3) <rptstr>
+   // start{ing/ed}(1) at <time> for a duration of <period> and {is/was}(2) <state>  {and is repeating/""}(3) <rptstr> {from <daystr>}(4)
    // (1) start time < basictime
    // (2) start time + period < basictime
    // (3) frequency > 0
+   // (4) infuture, not today
    localtime_r (&starttime, &tm);
    if (starttime < basictime)
       strncpy (ing_ed, "ed", 3);
@@ -262,16 +282,20 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else
       strncpy (is_was, "is", 3);
 
-   if (cmap->frequency == 0)
-      sprintf (descstr, "Start%s at %02d:%02d:%02d for a duration of %3d minutes and %s %s", 
-         ing_ed, tm.tm_hour, tm.tm_min, tm.tm_sec, cmap->duration / 60, is_was, tmpstr);
+   if (strncmp(tmpstr, "idle", 5) == 0)
+      sprintf (descstr, "%s - nothing scheduled", cmap->name);
+   else if (cmap->frequency == 0)
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3d minutes and %s %s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, cmap->duration / 60, is_was, tmpstr, fromday);
    else
-      sprintf (descstr, "Start%s at %02d:%02d:%02d for a duration of %3d minutes and %s %s %s", 
-         ing_ed, tm.tm_hour, tm.tm_min, tm.tm_sec, cmap->duration / 60, is_was, tmpstr, rptstr);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3d minutes and %s %s %s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, cmap->duration / 60, is_was, tmpstr, rptstr, fromday);
 
-   json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
+   jobj = json_object_new_object ();
+
+   json_object_object_add (jobj, "zone", json_object_new_int (zone));
    json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
-   json_object_object_add (jobj, "duration", json_object_new_int (chanmap[zone].duration));
+   json_object_object_add (jobj, "duration", json_object_new_int (cmap->duration));
    json_object_object_add (jobj, "starttime", json_object_new_int (startval));
    json_object_object_add (jobj, "endtime", json_object_new_int (endval));
    json_object_object_add (jobj, "frequency", json_object_new_string (rptstr));
@@ -279,7 +303,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    json_object_object_add (jobj, "end", json_object_new_string (endstr));
    json_object_object_add (jobj, "durationEvent", json_object_new_boolean (TRUE));
    json_object_object_add (jobj, "color", json_object_new_string (colour));
-   json_object_object_add (jobj, "title", json_object_new_string (chanmap[zone].name));
+   json_object_object_add (jobj, "title", json_object_new_string (cmap->name));
    json_object_object_add (jobj, "description", json_object_new_string (descstr));
 
    return jobj;
@@ -299,7 +323,6 @@ show_status (struct mg_connection *conn)
    char tmpstr[80];
 
    struct tm tm;
-   time_t t;
 
    send_headers(conn);
 
@@ -311,33 +334,6 @@ show_status (struct mg_connection *conn)
       {
 
          jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
-
-         localtime_r (&chanmap[zone].starttime, &tm);
-
-         /* *INDENT-OFF* */
-         if (((chanmap[zone].starttime > basictime) 
-               && (chanmap[zone].starttime < (basictime + 60 * 60 * 24))) 
-            || ((chanmap[zone].starttime + chanmap[zone].frequency > basictime) 
-               && (chanmap[zone].starttime + chanmap[zone].frequency < (basictime + 60 * 60 * 24))))        // start OR repeat is today
-         {
-            json_object_object_add (jobj, "day", json_object_new_string (""));
-         }
-         else if (chanmap[zone].starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
-         {
-            json_object_object_add (jobj, "day", json_object_new_string (daystr[tm.tm_wday]));     // use starttime to find day
-         }
-         else if (chanmap[zone].starttime + chanmap[zone].frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead
-         {
-            t = chanmap[zone].starttime + chanmap[zone].frequency;
-            localtime_r (&t, &tm);
-            json_object_object_add (jobj, "day", json_object_new_string (daystr[tm.tm_wday]));     // use starttime + freq to find day
-         }
-         else
-         {
-            json_object_object_add (jobj, "day", json_object_new_string (""));                     // some other condition - like ages in the past
-         }
-         /* *INDENT-ON* */
-
          json_object_array_add (jzones, jobj);
       }
    }

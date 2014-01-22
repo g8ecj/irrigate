@@ -32,7 +32,7 @@
 #include <time.h>
 #include <string.h>
 #include <syslog.h>
-#include <json/json.h>
+#include <json-c/json.h>
 
 #include "mongoose.h"
 
