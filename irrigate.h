@@ -186,7 +186,6 @@ extern char datestring[];
 extern char httpport[];
 extern char httproot[];
 extern char accesslog[];
-extern char errorlog[];
 extern double Tthreshold;
 extern uint16_t frostlimit;
 

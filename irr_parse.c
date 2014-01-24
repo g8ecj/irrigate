@@ -41,7 +41,6 @@ char datestring[50];            //used to hold the date stamp for the log file
 char httpport[10] = "8080";
 char httproot[MAXFILELEN] = "/www";
 char accesslog[MAXFILELEN] = "";
-char errorlog[MAXFILELEN] = "";
 double Tthreshold = -0.5;
 uint16_t frostlimit = 60;
 
@@ -59,7 +58,6 @@ parseArguments (int argc, char **argv)
       {"background", 0, NULL, 'b'},
       {"config", 0, NULL, 'c'},
       {"datapath", 1, NULL, 'd'},
-      {"errorlog", 1, NULL, 'e'},
       {"file", 1, NULL, 'f'},
       {"help", 0, NULL, 'h'},
       {"limit", 1, NULL, 'l'},
@@ -70,7 +68,6 @@ parseArguments (int argc, char **argv)
       {"threshold", 1, NULL, 't'},
       {"version", 0, NULL, 'v'},
       {"debug", 0, NULL, 'x'},
-      {"xtra", 1, NULL, 'z'},
       {NULL, 0, NULL, 0}
    };
 
@@ -96,10 +93,6 @@ parseArguments (int argc, char **argv)
          strncpy (datapath, optarg, MAXFILELEN);
          log_printf (LOG_INFO, "Using %s for persistent schedule and statistics data", datapath);
          break;
-      case 'e':
-         strncpy (errorlog, optarg, MAXFILELEN);
-         log_printf (LOG_INFO, "Using %s for error log file", errorlog);
-         break;
       case 'f':
          strncpy (configfile, optarg, MAXFILELEN);
          log_printf (LOG_INFO, "Getting config from %s", configfile);
@@ -111,7 +104,6 @@ parseArguments (int argc, char **argv)
                  "-b,        --background run in daemon mode\n"
                  "-c,        --config    configure zone mapping\n"
                  "-d <dir>,  --datapath  data file directory\n"
-                 "-e <file>, --file      error log file name\n"
                  "-f <file>, --file      config file name\n"
                  "-l <int>,  --limit     degree-minutes before frost program runs\n"
                  "-m,        --monitor   check current drawn by solenoid valves\n"
@@ -121,7 +113,6 @@ parseArguments (int argc, char **argv)
                  "-t <int>,  --threshold temperature below which frost protect operates\n"
                  "-v,        --version   useful version information\n"
                  "-x         --debug     debug mode\n"
-                 "-z <int>,  --xtra      test mode chaser\n"
                  "-h,        --help      this help screen\n", argv[0]);
          exit (0);
       case 'l':
