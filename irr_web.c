@@ -167,7 +167,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->state == WASOK)
    {
       strncpy (colour, "green", 6);
-      strncpy (tmpstr, "doneok", 7);
+      strncpy (tmpstr, "completed", 10);
    }
    else if (cmap->state == WASCANCEL)
    {
