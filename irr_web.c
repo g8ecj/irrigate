@@ -140,7 +140,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    struct json_object *jobj;
    struct tm tm;
    time_t t;
-   int startval, endval;
 
    char descstr[140];
    char startstr[64];
@@ -163,12 +162,12 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->state == ERROR)
    {
       strncpy (colour, "fuchsia", 8);
-      strncpy (tmpstr, "in error", 9);
+      strncpy (tmpstr, "error", 6);
    }
    else if (cmap->state == WASOK)
    {
       strncpy (colour, "green", 6);
-      strncpy (tmpstr, "completed OK", 13);
+      strncpy (tmpstr, "doneok", 7);
    }
    else if (cmap->state == WASCANCEL)
    {
@@ -238,12 +237,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    t = starttime + cmap->period;
    strftime(endstr, sizeof(endstr), fmt, localtime(&t));
 
-   localtime_r (&t, &tm);
-   endval = tm.tm_hour * 100 + tm.tm_min;
-
-   localtime_r (&starttime, &tm);
-   startval = tm.tm_hour * 100 + tm.tm_min;
-
    if (((starttime > basictime) 
          && (starttime < (basictime + 60 * 60 * 24))) 
             || ((starttime + cmap->frequency > basictime) 
@@ -295,14 +288,8 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    json_object_object_add (jobj, "zone", json_object_new_int (zone));
    json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
-   json_object_object_add (jobj, "duration", json_object_new_int (cmap->duration));
-   json_object_object_add (jobj, "starttime", json_object_new_int (startval));
-   json_object_object_add (jobj, "endtime", json_object_new_int (endval));
-   json_object_object_add (jobj, "frequency", json_object_new_string (rptstr));
    json_object_object_add (jobj, "start", json_object_new_string (startstr));
    json_object_object_add (jobj, "end", json_object_new_string (endstr));
-   json_object_object_add (jobj, "durationEvent", json_object_new_boolean (TRUE));
-   json_object_object_add (jobj, "color", json_object_new_string (colour));
    json_object_object_add (jobj, "title", json_object_new_string (cmap->name));
    json_object_object_add (jobj, "description", json_object_new_string (descstr));
 
@@ -393,6 +380,7 @@ show_timedata (struct mg_connection *conn)
    FILE *fd;
    time_t starttime;
    struct mapstruct cmap;
+   char tmpstr[80];
 
    send_headers(conn);
 
@@ -435,6 +423,13 @@ show_timedata (struct mg_connection *conn)
 
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("timedata"));
+
+   starttime = basictime - (7*24*60*60);
+   strftime(tmpstr, sizeof(tmpstr), fmt, localtime(&starttime));
+   json_object_object_add (jobj, "mindate", json_object_new_string (tmpstr));
+   starttime = basictime + (7*24*60*60);
+   strftime(tmpstr, sizeof(tmpstr), fmt, localtime(&starttime));
+   json_object_object_add (jobj, "maxdate", json_object_new_string (tmpstr));
    json_object_object_add (jobj, "events", jzones);
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
