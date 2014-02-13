@@ -288,6 +288,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    json_object_object_add (jobj, "zone", json_object_new_int (zone));
    json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
+   json_object_object_add (jobj, "duration", json_object_new_int (cmap->duration));
    json_object_object_add (jobj, "start", json_object_new_string (startstr));
    json_object_object_add (jobj, "end", json_object_new_string (endstr));
    json_object_object_add (jobj, "title", json_object_new_string (cmap->name));

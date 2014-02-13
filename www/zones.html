@@ -25,9 +25,13 @@
   div.frostarm  { color: black; background-color: green;   }
   div.frostrun  { color: black; background-color: fuchsia;   }
 
-  div.completed { border:2px solid black;  color: black; background-color: green; }
-  div.cancelled { border:2px solid black;  color: black; background-color: cyan; }
-  div.failed    { border:2px solid black;  color: black; background-color: red; }
+  div.tlcompleted { border:2px solid black;  color: black; background-color: blue; }
+  div.tlcancelled { border:2px solid black;  color: black; background-color: cyan; }
+  div.tlfailed    { border:2px solid black;  color: black; background-color: red; }
+  div.tlerror     { border:2px solid black;  color: black; background-color: fuchsia; }
+  div.tlqueued    { border:2px solid black;  color: black; background-color: green; }
+  div.tlactive    { border:2px solid black;  color: black; background-color: red; }
+  div.tlrepeating { border:2px solid black;  color: black; background-color: cyan; }
 
 
    body      { font-family: sans-serif; font-size: 16px; }
@@ -111,11 +115,16 @@ function drawVisualization(obj,id)
        var data = [];
        for (i in obj.events)
        {
+            if (obj.events[i].duration <= 600)
+               type = 'box'
+            else
+               type = 'range'
             data.push ({
             'start' : new Date(obj.events[i].start),
             'end' : new Date(obj.events[i].end),
             'content' : obj.events[i].description,
-            'className' : obj.events[i].status
+            'className' : 'tl' + obj.events[i].status,
+            'type' : type
             });
         }
 
@@ -521,8 +530,8 @@ function end_popup()
 
 function display_all()
 {
+   get("map").innerHTML = "<img src='zones.jpg' alt=''/>";
    display_map()
-   get("map").src = "./zones.jpg";
    get("timeline").value = "Timeline"
    get("timeline").onclick = function() {get_timeline();}
 }
