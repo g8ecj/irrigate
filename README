@@ -70,8 +70,8 @@ They are released under the GNU Public License version 2.
 
 External libraries to parse and generate JavaScript Object Notation (JSON) data for the AJAX 
 methods used in the web interface. The javascript widgets for timeline support are from 
-Simile and are available under the BSD license. Other javascript code has been released to 
-the public domain.
+the CHAPS links library and are available under the Apache license. Other javascript code has
+been released to the public domain.
 
 The makefile will do a native build under Linux, I've no Windows development machine but changing
 linuxlnk.c to the equivalent file for your Operating System should be all that is required
@@ -86,7 +86,7 @@ for native packaging and installation.
 
 $ ./irrigate --help
 irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
-usage: ./irrigate [bcdefhlprstv]
+usage: ./irrigate [bcdfhlprstvx]
 
 -a <file>, --file      access log file name
 -b,        --background run in daemon mode

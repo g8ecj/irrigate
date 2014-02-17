@@ -98,7 +98,7 @@ parseArguments (int argc, char **argv)
          log_printf (LOG_INFO, "Getting config from %s", configfile);
          break;
       case 'h':
-         printf ("usage: %s [bcdefhlprstv]\n"
+         printf ("usage: %s [bcdfhlprstv]\n"
                  "\n"
                  "-a <file>, --file      access log file name\n"
                  "-b,        --background run in daemon mode\n"
