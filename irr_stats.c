@@ -380,7 +380,7 @@ clean_history (void)
          else
          {
             starttime = json_object_get_int (json_object_object_get (jobj, "time"));
-            if (starttime > basictime - (60 * 60 * 24 * 7))     // less than a week old
+            if (starttime > basictime - (60 * 60 * 24 * 8))     // less than a week old
             {
                json_object_array_add (jarray, jobj);    // add to array to save it
             }

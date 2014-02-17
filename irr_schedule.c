@@ -152,7 +152,7 @@ check_schedule (bool changes)
       {
          future = chanmap[zone].starttime;
          updatestart = 0;
-         while (future < (basictime + (60 * 60 * 24 * 7)))      // within the next week
+         while (future < (basictime + (60 * 60 * 24 * 8)))      // within the next week
          {
             if ((future + chanmap[zone].duration) >= basictime) // see if this instance is now or in the future
             {
