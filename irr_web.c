@@ -246,6 +246,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    }
    else if (starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
    {
+      localtime_r (&starttime, &tm);
       sprintf(fromday, "from %s", daystr[tm.tm_wday]);     // use starttime to find day
    }
    else if (starttime + cmap->frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead
@@ -425,10 +426,11 @@ show_timedata (struct mg_connection *conn)
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("timedata"));
 
-   starttime = basictime - (7*24*60*60);
+   // define start and end dates 8 days either way from today
+   starttime = basictime - (8*24*60*60);
    strftime(tmpstr, sizeof(tmpstr), fmt, localtime(&starttime));
    json_object_object_add (jobj, "mindate", json_object_new_string (tmpstr));
-   starttime = basictime + (7*24*60*60);
+   starttime = basictime + (8*24*60*60);
    strftime(tmpstr, sizeof(tmpstr), fmt, localtime(&starttime));
    json_object_object_add (jobj, "maxdate", json_object_new_string (tmpstr));
    json_object_object_add (jobj, "events", jzones);
