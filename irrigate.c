@@ -32,14 +32,8 @@
 
 // Include files
 #include <signal.h>
-#include <pthread.h>
-//#include "ownet.h"
-//#include "swt3A.h"
-//#include "findtype.h"
-
 #include "irrigate.h"
 
-#include "atod26.h"
 
 // globals that all in this module can see
 struct mapstruct chanmap[MAXZONES];

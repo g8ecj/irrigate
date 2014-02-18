@@ -23,17 +23,6 @@ MAKEFLAGS += --silent
 
 
 SOURCES += \
-./atod26.c \
-./crcutil.c \
-./findtype.c \
-./linuxlnk.c \
-./owerr.c \
-./ds2480ut.c \
-./owllu.c \
-./owsesu.c \
-./owtrnu.c \
-./ownetu.c \
-./swt3A.c \
 ./mongoose.c \
 ./irr_actions.c \
 ./irr_chanmap.c \

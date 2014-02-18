@@ -22,7 +22,6 @@
 
 
 #include "irrigate.h"
-#include "swt3A.h"
 
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data

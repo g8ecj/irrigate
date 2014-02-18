@@ -24,10 +24,6 @@
 
 #include "irrigate.h"
 
-#include "ownet.h"
-#include "atod26.h"
-#include "swt3A.h"
-#include "findtype.h"
 
 int8_t VI = -1;
 uint8_t iocache[MAXDEVICES];
