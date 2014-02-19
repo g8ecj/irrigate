@@ -218,6 +218,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
 void general_reset(uint16_t numgpio)
 {
    int16_t i;
+   char path[32];
 
    for (i = 0; i < numgpio; i++)
    {
@@ -262,10 +263,13 @@ uint16_t
 GetCurrent (void)
 {
    double i;
+   char path[32];
 
    if (VI < 0)
       return 0;
-   i = ReadVad (portnum, famvolt[VI]) * VoltToMilliAmp;
+   sprintf(path, "/%s/VAD", famvolt[VI]);
+   OW_get(path,&tokenstring,&s) ;
+   Vad = atof(tokenstring) * VoltToMilliAmp;
 // can't read reliably below 1.5 volts (but need down to ~0.1V)
    if (i < 50)
       i = 0;
@@ -277,8 +281,11 @@ double
 GetTemp(uint16_t index)
 {
    double temp;
+   char path[32];
 
-   temp = ReadTemp (portnum, famvolt[index]);
+   sprintf(path, "/%s/temperature", famvolt[index]);
+   OW_get(path,&tokenstring,&s) ;
+   temp = atof(tokenstring);
    return temp;
 }
 
@@ -286,13 +293,19 @@ GetTemp(uint16_t index)
 void
 setGPIOraw(uint8_t index, uint8_t value)
 {
-   owAccessWrite (portnum, famsw[index], TRUE, value);
+   char path[32];
+   char val[10];
+
+   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+   sprintf(val, "%02d", value);
+   OW_put(path, val, 2) ;
+
 }
 
 char *
 getGPIOAddr (uint8_t index)
 {
-   return getAddr (famsw[index]);
+   return getAddr (famgpio[index]);
 }
    
 //--------------------------------------------------------------------------
