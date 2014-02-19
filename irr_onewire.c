@@ -27,9 +27,9 @@
 
 int8_t VI = -1;
 uint8_t iocache[MAXDEVICES];
-uint8_t famsw[MAXDEVICES][8];
-uint8_t famvolt[MAXDEVICES][8];
-int8_t portnum = 0;
+uint8_t famgpio[MAXDEVICES][16], numgpio = 0;
+uint8_t famvolt[MAXDEVICES][16], numvolt = 0;
+uint8_t famtemp[MAXDEVICES][16], numtemp = 0;
 
 
 
@@ -125,69 +125,61 @@ getGPIOAddr (uint8_t UNUSED (index))
 uint16_t
 irr_onewire_init (int16_t * T1, int16_t * T2)
 {
-   int16_t i;
-   double Vad;
-   uint16_t cnt = 0, numgpio = 0, numbm = 0;
+   uint8_t i;
+   int16_t family;
+   char * tokenstring;
+   size_t s ;
+   char seps[] = ",";
+   char* tokens[MAXDEVICES];
+   char path[32];
 
-   if ((portnum = owAcquireEx (device)) < 0)
+   OW_init(device);
+   OW_set_error_print("2");
+   OW_set_error_level("6");
+// get a list of the top of the 1-wire tree to see what devices there are
+   OW_get("/",&tokenstring,&s) ;
+
+   tokens[i] = strtok (tokenstring, seps);
+   while (tokens[i] != NULL)
    {
-      log_printf (LOG_ERR, "Error: failed to acquire port");
-      exit (EXIT_FAILURE);
-   }
-
-   // find all the GPIO chips and clear them down
-   cnt = 0;
-   while (1)
-   {
-      numgpio = FindDevices (portnum, &famsw[0], SSWITCH_FAM, MAXDEVICES);
-
-      if (numgpio == 0)
+// keep a copy of the addresses of the devices we find and catagorise them
+      if (tokens[i][2] == '.')
       {
-         if (cnt > 10)
+         tokens[i][15] = '\0';
+         family = strtol(tokens[i], NULL, 16)
+         select (family)
          {
-            log_printf (LOG_ERR, "Error: no Switch (GPIO) devices found");
-            exit (EXIT_FAILURE);
-         }
-         else
-         {
-            cnt++;
+         case SWITCH_FAM:
+            strncpy(famgpio[numgpio++], tokens[i], 16);
+            break;
+         case VOLTS_FAM:
+            strncpy(famvolt[numvolt++], tokens[i], 16);
+            break;
+         case TEMP_FAM:
+            strncpy(famtemp[numtemp++], tokens[i], 16);
+            break;
          }
       }
-      else
-         break;
+      i++;
+      tokens[i] = strtok (NULL, seps);
    }
+   free(tokenstring);
+
 
    general_reset (numgpio);
 
    log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
 
-   // try and find at least one battery monitor chip
-   while (1)
-   {
-      numbm = FindDevices (portnum, &famvolt[0], SBATTERY_FAM, MAXDEVICES);
 
-      if (numbm == 0)
-      {
-         if (cnt > 10)
-         {
-            log_printf (LOG_WARNING, "No Temperature Monitor devices found");
-            break;
-         }
-         else
-         {
-            cnt++;
-         }
-      }
-      else
-         break;
-   }
-
-   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numbm);
+   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numvolt);
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
-   for (i = 0; i < numbm; i++)
+   for (i = 0; i < numvolt; i++)
    {
-      Vad = ReadVad (portnum, famvolt[i]);
+
+      sprintf(path, "/%s/VAD", famvolt[i]);
+      OW_get(path,&tokenstring,&s) ;
+      Vad = atoi(tokenstring);
       if (debug)
          printf ("Read %2.2f volts on Vad pin\n", Vad);
       if (Vad < 1.0)
@@ -229,7 +221,8 @@ void general_reset(uint16_t numgpio)
 
    for (i = 0; i < numgpio; i++)
    {
-      owAccessWrite (portnum, famsw[i], TRUE, 0xff);    // both high = off
+      sprintf(path, "/%s/PIO.ALL", famgpio[i]);
+      OW_put(path, "1,1", 3) ;
       iocache[i] = 0xff;        // both outputs high (inactive)
    }
 
@@ -262,7 +255,7 @@ irr_match (uint16_t numgpio)
 void
 irr_onewire_stop (void)
 {
-   owRelease (portnum);
+   OW_finish() ;
 }
 
 uint16_t
@@ -439,4 +432,52 @@ SetOutput (uint8_t zone, uint8_t state)
    }
    return ret;
 }
+
+/* Simple directory listing -- no error checking */
+#include <owcapi.h>
+#include <stdio.h>
+
+
+int main(void)
+{
+
+char * tokenstring;
+size_t s ;
+char seps[] = ",";
+char* tokens[20];
+char gaddr[20][20];
+int var;
+int i = 0;
+
+
+
+OW_init("/dev/ttyUSB0");
+OW_set_error_print("2");
+OW_set_error_level("6");
+OW_get("/",&tokenstring,&s) ;
+
+tokens[i] = strtok (tokenstring, seps);
+while (tokens[i] != NULL)
+{
+    strncpy(gaddr[i], tokens[i], 16);
+    i++;
+    tokens[i] = strtok (NULL, seps);
+}
+
+var = i;
+
+for (i = 0; i < var; i++)
+{
+
+  if (gaddr[i][2] == '.')
+  {
+    gaddr[i][15] = '\0';
+    printf("%s\n", gaddr[i]);
+  }
+}
+free(tokenstring);
+OW_finish() ;
+return 1;
+}
+
 

@@ -42,8 +42,10 @@
 
 
 // Constant definitions
-#define SWITCH_FAMILY      0x3A
-#define MAXDEVICES         18
+#define SWITCH_FAM         0x3A
+#define VOLTS_FAM          0x26
+#define TEMP_FAM           0x28
+#define MAXDEVICES         20
 
 #define MAXDEVLEN 80
 #define MAXFILELEN 80
