@@ -125,13 +125,14 @@ getGPIOAddr (uint8_t UNUSED (index))
 uint16_t
 irr_onewire_init (int16_t * T1, int16_t * T2)
 {
-   uint8_t i;
+   uint8_t i = 0;
    int16_t family;
    char * tokenstring;
    size_t s ;
    char seps[] = ",";
    char* tokens[MAXDEVICES];
    char path[32];
+   double Vad;
 
    OW_init(device);
    OW_set_error_print("2");
@@ -146,17 +147,17 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       if (tokens[i][2] == '.')
       {
          tokens[i][15] = '\0';
-         family = strtol(tokens[i], NULL, 16)
-         select (family)
+         family = strtol(tokens[i], NULL, 16);
+         switch (family)
          {
          case SWITCH_FAM:
-            strncpy(famgpio[numgpio++], tokens[i], 16);
+            strncpy((char *)famgpio[numgpio++], tokens[i], 16);
             break;
          case VOLTS_FAM:
-            strncpy(famvolt[numvolt++], tokens[i], 16);
+            strncpy((char *)famvolt[numvolt++], tokens[i], 16);
             break;
          case TEMP_FAM:
-            strncpy(famtemp[numtemp++], tokens[i], 16);
+            strncpy((char *)famtemp[numtemp++], tokens[i], 16);
             break;
          }
       }
@@ -200,6 +201,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
          if (debug)
             printf ("Temp sensor 2 on address %s\n", getAddr (famvolt[i]));
       }
+      free(tokenstring);
    }
 
    if (VI < 0)
@@ -241,7 +243,7 @@ irr_match (uint16_t numgpio)
    {
       for (dev = 0; dev < numgpio; dev++)
       {
-         if (strncmp (chanmap[zone].address, getAddr (famsw[dev]), 16) == 0)
+         if (strncmp (chanmap[zone].address, getAddr (famgpio[dev]), 16) == 0)
          {
             if (debug)
                printf ("Match at zone %d device %d port %C 1-wire address %s\n", zone, dev,
@@ -262,19 +264,22 @@ irr_onewire_stop (void)
 uint16_t
 GetCurrent (void)
 {
-   double i;
    char path[32];
+   char * tokenstring;
+   double Vad;
+   size_t s ;
 
    if (VI < 0)
       return 0;
    sprintf(path, "/%s/VAD", famvolt[VI]);
    OW_get(path,&tokenstring,&s) ;
    Vad = atof(tokenstring) * VoltToMilliAmp;
+   free(tokenstring);
 // can't read reliably below 1.5 volts (but need down to ~0.1V)
-   if (i < 50)
-      i = 0;
+   if (Vad < 50)
+      Vad = 0;
 
-   return (uint16_t) i;
+   return (uint16_t) Vad;
 }
 
 double
@@ -282,6 +287,8 @@ GetTemp(uint16_t index)
 {
    double temp;
    char path[32];
+   char * tokenstring;
+   size_t s ;
 
    sprintf(path, "/%s/temperature", famvolt[index]);
    OW_get(path,&tokenstring,&s) ;
@@ -354,12 +361,12 @@ DoOutput (uint8_t zone, uint8_t state)
    if (debug)
    {
       printf ("Device %s port %c state %02x ioval %02x cache %02x\n",
-              getAddr (famsw[chanmap[zone].dev]),
+              getAddr (famgpio[chanmap[zone].dev]),
               chanmap[zone].AorB ? 'A' : 'B', state, ioval, iocache[chanmap[zone].dev]);
    }
 
-   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
-   sprintf(val, "%02d", value);
+   sprintf(path, "/%s/PIO.BYTE", famgpio[chanmap[zone].dev]);
+   sprintf(val, "%02d", ioval);
    ret = OW_put(path, val, 2) ;
 
    if (ret)                     // update cache and output state if write OK
