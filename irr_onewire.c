@@ -27,9 +27,12 @@
 
 int8_t VI = -1;
 uint8_t iocache[MAXDEVICES];
-uint8_t famgpio[MAXDEVICES][16], numgpio = 0;
-uint8_t famvolt[MAXDEVICES][16], numvolt = 0;
-uint8_t famtemp[MAXDEVICES][16], numtemp = 0;
+char famgpio[MAXDEVICES][16];
+uint8_t numgpio = 0;
+char famvolt[MAXDEVICES][16];
+uint8_t numvolt = 0;
+char famtemp[MAXDEVICES][16];
+uint8_t numtemp = 0;
 
 
 
@@ -151,13 +154,13 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
          switch (family)
          {
          case SWITCH_FAM:
-            strncpy((char *)famgpio[numgpio++], tokens[i], 16);
+            strncpy(famgpio[numgpio++], tokens[i], 16);
             break;
          case VOLTS_FAM:
-            strncpy((char *)famvolt[numvolt++], tokens[i], 16);
+            strncpy(famvolt[numvolt++], tokens[i], 16);
             break;
          case TEMP_FAM:
-            strncpy((char *)famtemp[numtemp++], tokens[i], 16);
+            strncpy(famtemp[numtemp++], tokens[i], 16);
             break;
          }
       }
@@ -170,9 +173,8 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    general_reset (numgpio);
 
    log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
-
-
-   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numvolt);
+   log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
+   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
    for (i = 0; i < numvolt; i++)
@@ -187,19 +189,19 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       {
          VI = i;                // tap volts == ground, using voltage (current) sensors
          if (debug)
-            printf ("Current sensor on address  %s\n", getAddr (famvolt[i]));
+            printf ("Current sensor on address  %s\n", famvolt[i]);
       }
       else if (Vad < 3.0)
       {
          *T1 = i;               // tap volts == half supply, just using temp sensor
          if (debug)
-            printf ("Temp sensor 1 on address  %s\n", getAddr (famvolt[i]));
+            printf ("Temp sensor 1 on address  %s\n", famvolt[i]);
       }
       else if (Vad > 4.5)
       {
          *T2 = i;               // tap volts ~= supply, must be the 3rd temp sensor
          if (debug)
-            printf ("Temp sensor 2 on address %s\n", getAddr (famvolt[i]));
+            printf ("Temp sensor 2 on address %s\n", famvolt[i]);
       }
       free(tokenstring);
    }
@@ -243,7 +245,7 @@ irr_match (uint16_t numgpio)
    {
       for (dev = 0; dev < numgpio; dev++)
       {
-         if (strncmp (chanmap[zone].address, getAddr (famgpio[dev]), 16) == 0)
+         if (strncmp (chanmap[zone].address, famgpio[dev], 15) == 0)
          {
             if (debug)
                printf ("Match at zone %d device %d port %C 1-wire address %s\n", zone, dev,
@@ -312,7 +314,7 @@ setGPIOraw(uint8_t index, uint8_t value)
 char *
 getGPIOAddr (uint8_t index)
 {
-   return getAddr (famgpio[index]);
+   return famgpio[index];
 }
    
 //--------------------------------------------------------------------------
@@ -360,8 +362,7 @@ DoOutput (uint8_t zone, uint8_t state)
 
    if (debug)
    {
-      printf ("Device %s port %c state %02x ioval %02x cache %02x\n",
-              getAddr (famgpio[chanmap[zone].dev]),
+      printf ("Device %s port %c state %02x ioval %02x cache %02x\n",famgpio[chanmap[zone].dev],
               chanmap[zone].AorB ? 'A' : 'B', state, ioval, iocache[chanmap[zone].dev]);
    }
 
