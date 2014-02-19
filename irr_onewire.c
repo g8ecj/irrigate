@@ -20,7 +20,7 @@
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-#include <pthread.h>
+#include <owcapi.h>
 
 #include "irrigate.h"
 
@@ -326,6 +326,8 @@ DoOutput (uint8_t zone, uint8_t state)
 {
    bool ret = TRUE;
    uint8_t ioval;
+   char path[32];
+   char val[10];
 
    if (((chanmap[zone].valid & HARDWARE) == 0) && (state != OFF))    // if no hardware and trying to switch on then fail
    {
@@ -356,7 +358,10 @@ DoOutput (uint8_t zone, uint8_t state)
               chanmap[zone].AorB ? 'A' : 'B', state, ioval, iocache[chanmap[zone].dev]);
    }
 
-   ret = owAccessWrite (portnum, famsw[chanmap[zone].dev], TRUE, ioval);
+   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+   sprintf(val, "%02d", value);
+   ret = OW_put(path, val, 2) ;
+
    if (ret)                     // update cache and output state if write OK
    {
       iocache[chanmap[zone].dev] = ioval;
@@ -445,52 +450,4 @@ SetOutput (uint8_t zone, uint8_t state)
    }
    return ret;
 }
-
-/* Simple directory listing -- no error checking */
-#include <owcapi.h>
-#include <stdio.h>
-
-
-int main(void)
-{
-
-char * tokenstring;
-size_t s ;
-char seps[] = ",";
-char* tokens[20];
-char gaddr[20][20];
-int var;
-int i = 0;
-
-
-
-OW_init("/dev/ttyUSB0");
-OW_set_error_print("2");
-OW_set_error_level("6");
-OW_get("/",&tokenstring,&s) ;
-
-tokens[i] = strtok (tokenstring, seps);
-while (tokens[i] != NULL)
-{
-    strncpy(gaddr[i], tokens[i], 16);
-    i++;
-    tokens[i] = strtok (NULL, seps);
-}
-
-var = i;
-
-for (i = 0; i < var; i++)
-{
-
-  if (gaddr[i][2] == '.')
-  {
-    gaddr[i][15] = '\0';
-    printf("%s\n", gaddr[i]);
-  }
-}
-free(tokenstring);
-OW_finish() ;
-return 1;
-}
-
 
