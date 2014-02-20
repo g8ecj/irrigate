@@ -27,7 +27,7 @@
 
 
 // config items
-bool debug = FALSE;
+int16_t debug = 0;
 bool timestamp = FALSE;
 bool fileflag = FALSE;
 bool background = FALSE;
@@ -67,13 +67,13 @@ parseArguments (int argc, char **argv)
       {"serialport", required_argument, NULL, 's'},
       {"threshold",  required_argument, NULL, 't'},
       {"version",    no_argument, NULL,       'v'},
-      {"debug",      no_argument, NULL,       'x'},
+      {"debug",      required_argument, NULL,       'x'},
       {NULL, 0, NULL, 0}
    };
 
    while (TRUE)
    {
-      c = getopt_long (argc, argv, "a:bcd:f:hl:mp:r:s:t:vx", long_options, NULL);
+      c = getopt_long (argc, argv, "a:bcd:f:hl:mp:r:s:t:vx:", long_options, NULL);
       if (c == -1)
          break;
 
@@ -149,7 +149,12 @@ parseArguments (int argc, char **argv)
          printf ("Released under GPL Version 2\n");
          break;
       case 'x':
-         debug++;
+         debug = atoi (optarg);
+         if ((debug < 0) || (debug > 6))
+         {
+            printf ("Invalid debug level set - resetting\n");
+            debug = 0;
+         }
          break;
       case '?':
          printf ("Unknown option \"%s\". Use -h for help\n", argv[optind - 1]);
