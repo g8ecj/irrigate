@@ -26,7 +26,6 @@
 
 
 int8_t VI = -1;
-uint8_t iocache[MAXDEVICES];
 char famgpio[MAXDEVICES][16];
 uint8_t numgpio = 0;
 char famvolt[MAXDEVICES][16];
@@ -135,7 +134,6 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    char seps[] = ",";
    char* tokens[MAXDEVICES];
    char path[32];
-   char val[10];
    double Vad;
 
    if (OW_init(device))
@@ -145,8 +143,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    }
 
    OW_set_error_print("2");
-   sprintf(val, "%1d", debug);
-   OW_set_error_level(val);
+   OW_set_error_level("0");
 // get a list of the top of the 1-wire tree to see what devices there are
    OW_get("/",&tokenstring,&s) ;
 
@@ -177,18 +174,11 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    free(tokenstring);
 
 
-   if (numgpio + numvolt + numtemp == 0)
-   {
-      log_printf (LOG_ERR, "Error: nothing found on 1-wire bus - check cables...");
-      exit (EXIT_FAILURE);
-   }
+   general_reset (numgpio);
 
    log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
    log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
    log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
-
-   general_reset (numgpio);
-
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
    for (i = 0; i < numvolt; i++)
@@ -240,9 +230,8 @@ void general_reset(uint16_t numgpio)
 
    for (i = 0; i < numgpio; i++)
    {
-      sprintf(path, "/%s/PIO.BYTE", famgpio[i]);
-      OW_put(path, "3", 1) ;
-      iocache[i] = 0x00;        // both outputs high (inactive)
+      sprintf(path, "/%s/PIO.ALL", famgpio[i]);
+      OW_put(path, "1,1", 3) ;
    }
 
 }
@@ -347,7 +336,6 @@ bool
 DoOutput (uint8_t zone, uint8_t state)
 {
    bool ret = TRUE;
-   uint8_t ioval;
    char path[32];
    char val[10];
 
@@ -358,46 +346,29 @@ DoOutput (uint8_t zone, uint8_t state)
 
    if (chanmap[zone].AorB)
    {
-      // operating on PIOA - need current state of B with A bit set to activate it
-      if (state == ON)
-         ioval = iocache[chanmap[zone].dev] | 0x01;
-      else
-         ioval = iocache[chanmap[zone].dev] & 0xfe;
+      // operating on PIOA
+      sprintf(path, "/%s/PIO.A", famgpio[chanmap[zone].dev]);
    }
    else
    {
       // operating on PIOB
-      if (state == ON)
-         ioval = iocache[chanmap[zone].dev] | 0x02;
-      else
-         ioval = iocache[chanmap[zone].dev] & 0xfd;
+      sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
    }
+
+   sprintf(val, "%d", state == ON ? 1 : 0);
+   ret = OW_put(path, val, strlen(val));
 
    if (debug)
    {
-      printf ("Device %s port %c state %02x ioval %02x cache %02x\n", famgpio[chanmap[zone].dev],
-              chanmap[zone].AorB ? 'A' : 'B', state, ioval, iocache[chanmap[zone].dev]);
+      printf ("Device %s port %c state %02x\n",famgpio[chanmap[zone].dev],
+              chanmap[zone].AorB ? 'A' : 'B', state);
    }
 
-   sprintf(path, "/%s/PIO.BYTE", famgpio[chanmap[zone].dev]);
-   sprintf(val, "%1d", ioval);
-   ret = OW_put(path, val, 1) ;
-//   ret = owAccessWrite (portnum, famsw[chanmap[zone].dev], TRUE, ioval);
-   if (ret > 0)                     // update cache and output state if write OK
-   {
-      iocache[chanmap[zone].dev] = ioval;
-   }
-   else
-   {
+   if (ret < 0)
       log_printf (LOG_ERR, "Failed to switch zone %d %s", zone, state ? "ON" : "OFF");
-   }
-   return ret;
+
+   return (ret < 0 ? FALSE : TRUE);
 }
-
-
-
-
-
 
 #endif       /* PC */
 
