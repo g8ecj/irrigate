@@ -1,8 +1,8 @@
-This is the irrigation controller
+This is the irrigation controller.
 
 It uses a number of DS2413 1-wire dual channel GPIO chips to drive triacs to operate
 valves and pumps. It also optionally monitors 2 temperature sensors to implement 
-a preset frost protection program and monitors the current drawn by the vavles to 
+a preset frost protection program and monitors the current drawn by the valves to 
 ensure they are connected correctly.
 
 The 1-wire bus with these devices on it is driven from a DS2480B UART to 1-wire Master 
