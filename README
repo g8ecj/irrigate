@@ -7,41 +7,16 @@ ensure they are connected correctly.
 
 The 1-wire bus with these devices on it is driven from a DS2480B UART to 1-wire Master 
 Controller chip which is connected to one of the serial ports available on a modified
-Linksys WRT54GL wireless router.
+Linksys WRT54GL wireless router. It has also been used with a TPLINK WR1043ND router
+and a USB9097 USB 1-wire master dongle.
 
-The Linksys router has Open Source software available for it that not only frees the 
+The router has Open Source software available for it that not only frees the 
 user from the limits of the manufacturers code but also provides the cross compile 
 environment to allow addition functions to be added by anyone.
 See http://openwrt.org
 
-The following files are from the owpd310r2 package from the public domain
-software release from Dallas/Maxim - the manufacturers of the 1-wire devices.
-See http://www.maxim-ic.com/products/ibutton/software/1wire/wirekit.cfm
-
-These files form a set of reusable modules that address the various parts of the
-one wire system - for example talking to the DS2480B UART to 1-wire master chip
-or providing the hooks for either windows, linux etc.
-
-   crcutil.c
-   ds2480ut.c
-   findtype.c
-   ioutil.c
-   linuxlnk.c
-   owerr.c
-   owllu.c
-   ownetu.c
-   owsesu.c
-   owtrnu.c
-   swt3A.c
-
-
-
-This file, which provides the interface to the DS2438 Battery Monitor chip has been
-substantially hacked about (pretty much a total rewrite) to access ALL of the registers 
-of the chip, not just those used by the humidity gauge it was originally written for.
-
-   atod26.c
-
+It uses the owfs system that makes 1-wire devices appear as a part of the file system.
+The interface to the owlib software is via the owcapi 'C' API library.
 
 These files implement an embedded http server with simple callbacks to the main code. It
 is licensed under the MIT License which basically says do what you like so long as the 
