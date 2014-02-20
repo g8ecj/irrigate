@@ -173,12 +173,17 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    }
    free(tokenstring);
 
-
-   general_reset (numgpio);
+   if (numgpio + numvolt + numtemp == 0)
+   {
+      log_printf (LOG_ERR, "Error: nothing found on 1-wire bus - check cables?");
+      exit (EXIT_FAILURE);
+   }
 
    log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
    log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
    log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
+
+   general_reset (numgpio);
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
    for (i = 0; i < numvolt; i++)
