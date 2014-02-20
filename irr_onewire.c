@@ -143,7 +143,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    }
 
    OW_set_error_print("2");
-   OW_set_error_level("6");
+   OW_set_error_level("0");
 // get a list of the top of the 1-wire tree to see what devices there are
    OW_get("/",&tokenstring,&s) ;
 
