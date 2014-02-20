@@ -231,7 +231,7 @@ void general_reset(uint16_t numgpio)
    for (i = 0; i < numgpio; i++)
    {
       sprintf(path, "/%s/PIO.ALL", famgpio[i]);
-      OW_put(path, "1,1", 3) ;
+      OW_put(path, "0,0", 3) ;
    }
 
 }
@@ -309,8 +309,8 @@ setGPIOraw(uint8_t index, uint8_t value)
    char val[10];
 
    sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
-   sprintf(val, "%02d", value);
-   OW_put(path, val, 2) ;
+   sprintf(val, "%d", value);
+   OW_put(path, val, strlen(val)) ;
 
 }
 
