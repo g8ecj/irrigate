@@ -237,7 +237,8 @@ test_cancel (uint8_t testzone)
    chanmap[testzone].frequency = 0;
    chanmap[testzone].useful = FALSE;
    insert (basictime - 1, dpfeed, UNLOCK);
-   insert (basictime + (3600 / wellmaxstarts), wellzone, UNLOCK);
+   // Its already off but this will unlock it!!
+   well_off(wellzone);
 
 }
 

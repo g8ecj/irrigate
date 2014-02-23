@@ -264,7 +264,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    // (2) start time + period < basictime
    // (3) frequency > 0
    // (4) infuture, not today
-   localtime_r (&starttime, &tm);
    if (starttime < basictime)
       strncpy (ing_ed, "ed", 3);
    else
@@ -277,12 +276,24 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (strncmp(tmpstr, "idle", 5) == 0)
       sprintf (descstr, "%s - nothing scheduled", cmap->name);
+   else if (cmap->locked)
+   {
+      t = starttime + cmap->period;
+      localtime_r (&t, &tm);
+      sprintf (descstr, "%s - locked until %02d%02d", cmap->name, tm.tm_hour, tm.tm_min);
+   }
    else if (cmap->frequency == 0)
+   {
+      localtime_r (&starttime, &tm);
       sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3d minutes and %s %s %s", 
          cmap->name, ing_ed, tm.tm_hour, tm.tm_min, cmap->duration / 60, is_was, tmpstr, fromday);
+   }
    else
+   {
+      localtime_r (&starttime, &tm);
       sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3d minutes and %s %s %s %s", 
          cmap->name, ing_ed, tm.tm_hour, tm.tm_min, cmap->duration / 60, is_was, tmpstr, rptstr, fromday);
+   }
 
    jobj = json_object_new_object ();
 
