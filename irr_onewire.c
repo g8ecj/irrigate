@@ -275,7 +275,6 @@ void general_reset(uint16_t numgpio)
       sprintf(path, "/%s/PIO.ALL", famgpio[i]);
       OW_put(path, val, strlen(val)) ;
    }
-
 }
 
 
@@ -318,7 +317,7 @@ GetCurrent (void)
 
    if (VI < 0)
       return 0;
-   sprintf(path, "/%s/VAD", famvolt[VI]);
+   sprintf(path, "/uncached/%s/VAD", famvolt[VI]);
    OW_get(path,&tokenstring,&s) ;
    Vad = atof(tokenstring) * VoltToMilliAmp;
    free(tokenstring);
@@ -397,15 +396,9 @@ DoOutput (uint8_t zone, uint8_t state)
       sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
    }
 
-<<<<<<< HEAD
    sprintf(val, "%d", state == OFF ? 0 : 1);
 //   ret = my_OW_put(path, val, strlen(val));
    ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
-=======
-   // state could be off, on or test
-   sprintf(val, "%d", state == OFF ? 0 : 1);
-   ret = OW_put(path, val, strlen(val));
->>>>>>> 18ec8f68dc8e34fbcf6f038a83bffa833d9bdf35
 
    if (debug)
    {
@@ -479,7 +472,7 @@ SetOutput (uint8_t zone, uint8_t state)
    {
       // keep track of the actual I/O state so we know what current to expect
       chanmap[zone].output = state;
-      usleep (300000);          // wait 300mS settling time
+      usleep (100000);          // wait 100mS settling time
       ret = check_current ();
    }
    if (ret)
