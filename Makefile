@@ -2,7 +2,7 @@
 
 ifeq ($(TARGET_CC),)
    STRIP := strip
-   CFLAGS := -DPC
+#   CFLAGS := -DPC
    COMPILER = CC
 else
    COMPILER = XCC

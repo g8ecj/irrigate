@@ -27,13 +27,13 @@
 
 
 // config items
-int debug = 0;
+int16_t debug = 0;
 bool timestamp = FALSE;
 bool fileflag = FALSE;
 bool background = FALSE;
 bool config = FALSE;
 bool monitor = FALSE;
-char device[MAXDEVLEN] = "/dev/tts/1";
+char device[MAXDEVLEN] = "/dev/ttyUSB0";
 char configfile[MAXFILELEN] = "/www/zones.conf";
 char datapath[MAXFILELEN] = "/www";
 char logbuf[120];
@@ -54,26 +54,26 @@ parseArguments (int argc, char **argv)
    int c;
 
    static struct option long_options[] = {
-      {"accesslog", 1, NULL, 'a'},
-      {"background", 0, NULL, 'b'},
-      {"config", 0, NULL, 'c'},
-      {"datapath", 1, NULL, 'd'},
-      {"file", 1, NULL, 'f'},
-      {"help", 0, NULL, 'h'},
-      {"limit", 1, NULL, 'l'},
-      {"monitor", 0, NULL, 'm'},
-      {"port", 1, NULL, 'p'},
-      {"root", 1, NULL, 'r'},
-      {"serialport", 1, NULL, 's'},
-      {"threshold", 1, NULL, 't'},
-      {"version", 0, NULL, 'v'},
-      {"debug", 0, NULL, 'x'},
+      {"accesslog",  required_argument, NULL, 'a'},
+      {"background", no_argument, NULL,       'b'},
+      {"config",     no_argument, NULL,       'c'},
+      {"datapath",   required_argument, NULL, 'd'},
+      {"file",       required_argument, NULL, 'f'},
+      {"help",       no_argument, NULL,       'h'},
+      {"limit",      required_argument, NULL, 'l'},
+      {"monitor",    no_argument, NULL,       'm'},
+      {"port",       required_argument, NULL, 'p'},
+      {"root",       required_argument, NULL, 'r'},
+      {"serialport", required_argument, NULL, 's'},
+      {"threshold",  required_argument, NULL, 't'},
+      {"version",    no_argument, NULL,       'v'},
+      {"debug",      required_argument, NULL,       'x'},
       {NULL, 0, NULL, 0}
    };
 
    while (TRUE)
    {
-      c = getopt_long (argc, argv, "a:bcd:e:f:hl:mp:r:s:t:vxz:", long_options, NULL);
+      c = getopt_long (argc, argv, "a:bcd:f:hl:mp:r:s:t:vx:", long_options, NULL);
       if (c == -1)
          break;
 
@@ -149,7 +149,12 @@ parseArguments (int argc, char **argv)
          printf ("Released under GPL Version 2\n");
          break;
       case 'x':
-         debug++;
+         debug = atoi (optarg);
+         if ((debug < 0) || (debug > 6))
+         {
+            printf ("Invalid debug level set - resetting\n");
+            debug = 0;
+         }
          break;
       case '?':
          printf ("Unknown option \"%s\". Use -h for help\n", argv[optind - 1]);
@@ -158,4 +163,5 @@ parseArguments (int argc, char **argv)
          break;
       }
    }
+   optind = 1;
 }

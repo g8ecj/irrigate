@@ -34,7 +34,7 @@
 #include "ownet.h"
 #include "atod26.h"
 
-extern int debug;
+extern int16_t debug;
 
 int ReadPage(int portnum, int page_num, uint8_t *rec_buf);
 int WritePage(int portnum, int page_num, uint8_t *tx_buf, int tx_len);

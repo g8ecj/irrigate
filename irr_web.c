@@ -21,7 +21,6 @@
 
 
 #include "irrigate.h"
-#include <pthread.h>
 
 #define MAX_OPTIONS 40
 
