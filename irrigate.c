@@ -378,12 +378,12 @@ main (int argc, char **argv)
 #ifdef PC
          extern uint16_t testcurrent;
          testcurrent = 0;
-//#else
+#else
 //         dump_log_msgs();
          print_chanmap ();
          print_queue ();
-         update_statistics ();
-         check_schedule (FALSE);
+//         update_statistics ();
+//         check_schedule (FALSE);
 #endif
 
          interrupt = 0;

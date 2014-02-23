@@ -281,9 +281,9 @@ int ReadCOM(int portnum, int inlen, uint8_t *inbuf)
       // set a descriptor to wait for a character available
       FD_ZERO(&filedescr);
       FD_SET(fd[portnum],&filedescr);
-      // set timeout to 10ms
+      // set timeout to 50ms
       tval.tv_sec = 0;
-      tval.tv_usec = 10000;
+      tval.tv_usec = 50000;
 
       // if byte available read or return bytes read
       if (select(fd[portnum] + 1, &filedescr, NULL,NULL,&tval) != 0)

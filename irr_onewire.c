@@ -251,7 +251,7 @@ irr_match (uint16_t numgpio)
    {
       for (dev = 0; dev < numgpio; dev++)
       {
-         if (strncmp (chanmap[zone].address, getAddr (famsw[dev]), 16) == 0)
+         if (strncasecmp (chanmap[zone].address, getAddr (famsw[dev]), 16) == 0)
          {
             if (debug)
                printf ("Match at zone %d device %d port %C 1-wire address %s\n", zone, dev,

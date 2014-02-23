@@ -27,7 +27,7 @@
 
 
 // config items
-bool debug = FALSE;
+int debug = 0;
 bool timestamp = FALSE;
 bool fileflag = FALSE;
 bool background = FALSE;

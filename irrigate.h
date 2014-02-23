@@ -173,7 +173,7 @@ extern double Tintegral;
 extern char daystr[][10];
 
 // config items
-extern bool debug;
+extern int debug;
 extern bool timestamp;
 extern bool fileflag;
 extern bool background;
