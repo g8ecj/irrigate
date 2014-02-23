@@ -276,7 +276,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (strncmp(tmpstr, "idle", 5) == 0)
       sprintf (descstr, "%s - nothing scheduled", cmap->name);
-   else if (cmap->locked)
+   else if ((cmap->locked) && (cmap->state != ACTIVE))
    {
       t = starttime + cmap->period;
       localtime_r (&t, &tm);
