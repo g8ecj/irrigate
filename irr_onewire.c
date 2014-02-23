@@ -133,17 +133,20 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    size_t s ;
    char seps[] = ",";
    char* tokens[MAXDEVICES];
-   char path[32];
+   char path[64];
    double Vad;
+   char val[10];
 
-   if (OW_init(device))
+   sprintf(path, "%s --timeout_volatile = 0", device);
+   if (OW_init(path))
    {
       log_printf (LOG_ERR, "Error: failed to acquire port");
       exit (EXIT_FAILURE);
    }
 
    OW_set_error_print("2");
-   OW_set_error_level("0");
+   sprintf(val, "%d", debug);
+   OW_set_error_level(val);
 // get a list of the top of the 1-wire tree to see what devices there are
    OW_get("/",&tokenstring,&s) ;
 
@@ -227,16 +230,50 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    return numgpio;
 }
 
+ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
+{
+   static uint8_t iocache[MAXDEVICES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+   char path[32];
+   char val[10];
+   uint8_t ioval;
+
+   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+
+   if (AorB)
+   {
+      // operating on PIOA - need current state of B with A bit cleared to activate it
+      if (state == OFF)
+         ioval = iocache[index] & 0xfe;
+      else
+         ioval = iocache[index] | 0x01;
+   }
+   else
+   {
+      // operating on PIOB
+      if (state == OFF)
+         ioval = iocache[index] & 0xfd;
+      else
+         ioval = iocache[index] | 0x02;
+   }
+
+   sprintf(val, "%d", ioval);
+
+   return (OW_put(path, val, strlen(val)));
+
+
+}
+
 
 void general_reset(uint16_t numgpio)
 {
    int16_t i;
    char path[32];
+   char val[10] = "0,0";
 
    for (i = 0; i < numgpio; i++)
    {
       sprintf(path, "/%s/PIO.ALL", famgpio[i]);
-      OW_put(path, "0,0", 3) ;
+      OW_put(path, val, strlen(val)) ;
    }
 
 }
@@ -360,8 +397,9 @@ DoOutput (uint8_t zone, uint8_t state)
       sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
    }
 
-   sprintf(val, "%d", state == ON ? 1 : 0);
-   ret = OW_put(path, val, strlen(val));
+   sprintf(val, "%d", state == OFF ? 0 : 1);
+//   ret = my_OW_put(path, val, strlen(val));
+   ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
 
    if (debug)
    {
@@ -435,7 +473,7 @@ SetOutput (uint8_t zone, uint8_t state)
    {
       // keep track of the actual I/O state so we know what current to expect
       chanmap[zone].output = state;
-      usleep (100000);          // wait 100mS settling time
+      usleep (300000);          // wait 300mS settling time
       ret = check_current ();
    }
    if (ret)
