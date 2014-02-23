@@ -397,9 +397,15 @@ DoOutput (uint8_t zone, uint8_t state)
       sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
    }
 
+<<<<<<< HEAD
    sprintf(val, "%d", state == OFF ? 0 : 1);
 //   ret = my_OW_put(path, val, strlen(val));
    ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
+=======
+   // state could be off, on or test
+   sprintf(val, "%d", state == OFF ? 0 : 1);
+   ret = OW_put(path, val, strlen(val));
+>>>>>>> 18ec8f68dc8e34fbcf6f038a83bffa833d9bdf35
 
    if (debug)
    {
