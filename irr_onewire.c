@@ -333,7 +333,7 @@ DoOutput (uint8_t zone, uint8_t state)
    if (chanmap[zone].AorB)
    {
       // operating on PIOA - need current state of B with A bit cleared to activate it
-      if (state == ON)
+      if (state != OFF)
          ioval = iocache[chanmap[zone].dev] & 0xfe;
       else
          ioval = iocache[chanmap[zone].dev] | 0x01;
@@ -341,7 +341,7 @@ DoOutput (uint8_t zone, uint8_t state)
    else
    {
       // operating on PIOB
-      if (state == ON)
+      if (state != OFF)
          ioval = iocache[chanmap[zone].dev] & 0xfd;
       else
          ioval = iocache[chanmap[zone].dev] | 0x02;
