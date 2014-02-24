@@ -235,6 +235,7 @@ ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
    char path[32];
    char val[10];
    uint8_t ioval;
+   ssize_t ret;
 
    sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
 
@@ -257,8 +258,12 @@ ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
 
    sprintf(val, "%d", ioval);
 
-   return (OW_put(path, val, strlen(val)));
+   ret = OW_put(path, val, strlen(val));
+   // if the write worked then update the cache
+   if (ret >=0)
+      iocache[index] = ioval;
 
+   return ret;
 
 }
 
