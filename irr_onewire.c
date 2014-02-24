@@ -137,8 +137,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    double Vad;
    char val[10];
 
-   sprintf(path, "%s --timeout_volatile = 0", device);
-   if (OW_init(path))
+   if (OW_init(device))
    {
       log_printf (LOG_ERR, "Error: failed to acquire port");
       exit (EXIT_FAILURE);
@@ -339,6 +338,7 @@ GetTemp(uint16_t index)
    sprintf(path, "/%s/temperature", famvolt[index]);
    OW_get(path,&tokenstring,&s) ;
    temp = atof(tokenstring);
+   free(tokenstring);
    return temp;
 }
 
