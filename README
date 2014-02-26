@@ -20,7 +20,7 @@ The interface to the owlib software is via the owcapi 'C' API library.
 
 These files implement an embedded http server with simple callbacks to the main code. It
 is licensed under the MIT License which basically says do what you like so long as the 
-license conditions remain in the files! I'm using version 5.1 at present.
+license conditions remain in the files! I'm using version 5.2 at present.
 
    mongoose.c
    mongoose.h
@@ -51,10 +51,13 @@ to be built.
 
 Compiling under OpenWrt simple. Unpack the compressed file 'openwrt-package' that provides the 
 package makefile and control files for native packaging and installation into the 'package'
-directory. Configure the system to build the package by running 'make menuconfig', enter 
-the 'Utils' section and enable 'irrigate', then enter the 'Filesystem' section and enable 'owfs'. 
-Moving back to the top level, enter 'Libraries' and enable 'libjson', enter 'Filesystems' and 
-enable 'libow' and 'libow-capi'. These can all be built as modules or built into the main image.
+directory. Configure the system to build the package by running 'make menuconfig' and select
+    'Utils' -> 'irrigate'
+            -> 'Filesystem' -> 'owfs'
+    'Libraries' -> 'libjson'
+                -> 'Filesystems' -> 'libow'
+                                 -> 'libow-capi'
+These can all be built as modules or built into the main image.
 
 Kernel modules to consider depend on the 1-wire interface in use. The USB9097 requires the 
 'kmod-usb-serial-ch341' module USB/UART driver for example.
