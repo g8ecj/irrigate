@@ -117,7 +117,7 @@ function drawVisualization(obj,id)
        var data = [];
        for (i in obj.events)
        {
-            if (obj.events[i].duration <= 600)
+            if (obj.events[i].duration < 600)
                type = 'box'
             else
                type = 'range'

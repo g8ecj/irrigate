@@ -1,56 +1,29 @@
-This is the irrigation controller
+This is the irrigation controller.
 
 It uses a number of DS2413 1-wire dual channel GPIO chips to drive triacs to operate
 valves and pumps. It also optionally monitors 2 temperature sensors to implement 
-a preset frost protection program and monitors the current drawn by the vavles to 
+a preset frost protection program and monitors the current drawn by the valves to 
 ensure they are connected correctly.
 
 The 1-wire bus with these devices on it is driven from a DS2480B UART to 1-wire Master 
 Controller chip which is connected to one of the serial ports available on a modified
-Linksys WRT54GL wireless router.
+Linksys WRT54GL wireless router. It has also been used with a TPLINK WR1043ND router
+and a USB9097 USB 1-wire master dongle.
 
-The Linksys router has Open Source software available for it that not only frees the 
+The router has Open Source software available for it that not only frees the 
 user from the limits of the manufacturers code but also provides the cross compile 
 environment to allow addition functions to be added by anyone.
 See http://openwrt.org
 
-The following files are from the owpd310r2 package from the public domain
-software release from Dallas/Maxim - the manufacturers of the 1-wire devices.
-See http://www.maxim-ic.com/products/ibutton/software/1wire/wirekit.cfm
-
-These files form a set of reusable modules that address the various parts of the
-one wire system - for example talking to the DS2480B UART to 1-wire master chip
-or providing the hooks for either windows, linux etc.
-
-   crcutil.c
-   ds2480ut.c
-   findtype.c
-   ioutil.c
-   linuxlnk.c
-   owerr.c
-   owllu.c
-   ownetu.c
-   owsesu.c
-   owtrnu.c
-   swt3A.c
-
-
-
-This file, which provides the interface to the DS2438 Battery Monitor chip has been
-substantially hacked about (pretty much a total rewrite) to access ALL of the registers 
-of the chip, not just those used by the humidity gauge it was originally written for.
-
-   atod26.c
-
+It uses the owfs system that makes 1-wire devices appear as a part of the file system.
+The interface to the owlib software is via the owcapi 'C' API library.
 
 These files implement an embedded http server with simple callbacks to the main code. It
 is licensed under the MIT License which basically says do what you like so long as the 
-license conditions remain in the files! I'm using version 5.1 at present.
+license conditions remain in the files! I'm using version 5.2 at present.
 
    mongoose.c
    mongoose.h
-
-All the above files contains their own license conditions.
 
 
 These files are totally new and provide all of the AJAX web interface, the onewire interface,
@@ -73,16 +46,24 @@ methods used in the web interface. The javascript widgets for timeline support a
 the CHAPS links library and are available under the Apache license. Other javascript code has
 been released to the public domain.
 
-The makefile will do a native build under Linux, I've no Windows development machine but changing
-linuxlnk.c to the equivalent file for your Operating System should be all that is required
-to use this software in another environment.
+The makefile will do a native build under Linux by defining a 'PC' target that causes a 1-wire simulator
+to be built.
 
-Compiling for the Linksys router is simple. Tell the 'make' system where the openwrt compiler 
-is and what its' prefix is - something like:
-   export CROSS_COMPILE="/home/g8ecj/storage/src/kamikaze_7.09/staging_dir_mipsel/bin/mipsel-linux-uclibc"
-and then type 'make'
-Alternatively, a compressed file called openwrt provides the package makefile and control files 
-for native packaging and installation.
+Compiling under OpenWrt simple. Unpack the compressed file 'openwrt-package' that provides the 
+package makefile and control files for native packaging and installation into the 'package'
+directory. Configure the system to build the package by running 'make menuconfig' and select
+    'Utils' -> 'irrigate'
+            -> 'Filesystem' -> 'owfs'
+    'Libraries' -> 'libjson'
+                -> 'Filesystems' -> 'libow'
+                                 -> 'libow-capi'
+These can all be built as modules or built into the main image.
+
+Kernel modules to consider depend on the 1-wire interface in use. The USB9097 requires the 
+'kmod-usb-serial-ch341' module USB/UART driver for example.
+
+Save the new config and then build the whole system using 'make'. Install to the target as a
+complete image or using 'opkg' package manager if using modules.
 
 $ ./irrigate --help
 irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
@@ -100,6 +81,6 @@ usage: ./irrigate [bcdfhlprstvx]
 -s <dev>,  --serialport serial port device
 -t <int>,  --threshold temperature below which frost protect operates
 -v,        --version   useful version information
--x         --debug     debug mode
+-x <int>   --debug     debug mode
 -h,        --help      this help screen
 

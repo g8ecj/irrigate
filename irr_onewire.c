@@ -20,20 +20,18 @@
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-#include <pthread.h>
+#include <owcapi.h>
 
 #include "irrigate.h"
 
-#include "ownet.h"
-#include "atod26.h"
-#include "swt3A.h"
-#include "findtype.h"
 
 int8_t VI = -1;
-uint8_t iocache[MAXDEVICES];
-uint8_t famsw[MAXDEVICES][8];
-uint8_t famvolt[MAXDEVICES][8];
-int8_t portnum = 0;
+char famgpio[MAXDEVICES][16];
+uint8_t numgpio = 0;
+char famvolt[MAXDEVICES][16];
+uint8_t numvolt = 0;
+char famtemp[MAXDEVICES][16];
+uint8_t numtemp = 0;
 
 
 
@@ -129,89 +127,94 @@ getGPIOAddr (uint8_t UNUSED (index))
 uint16_t
 irr_onewire_init (int16_t * T1, int16_t * T2)
 {
-   int16_t i;
+   uint8_t i = 0;
+   int16_t family;
+   char * tokenstring;
+   size_t s ;
+   char seps[] = ",";
+   char* tokens[MAXDEVICES];
+   char path[64];
    double Vad;
-   uint16_t cnt = 0, numgpio = 0, numbm = 0;
+   char val[10];
 
-   if ((portnum = owAcquireEx (device)) < 0)
+   if (OW_init(device))
    {
       log_printf (LOG_ERR, "Error: failed to acquire port");
       exit (EXIT_FAILURE);
    }
 
-   // find all the GPIO chips and clear them down
-   cnt = 0;
-   while (1)
-   {
-      numgpio = FindDevices (portnum, &famsw[0], SSWITCH_FAM, MAXDEVICES);
+   OW_set_error_print("2");
+   sprintf(val, "%d", debug);
+   OW_set_error_level(val);
+// get a list of the top of the 1-wire tree to see what devices there are
+   OW_get("/",&tokenstring,&s) ;
 
-      if (numgpio == 0)
+   tokens[i] = strtok (tokenstring, seps);
+   while (tokens[i] != NULL)
+   {
+// keep a copy of the addresses of the devices we find and catagorise them
+      if (tokens[i][2] == '.')
       {
-         if (cnt > 10)
+         tokens[i][15] = '\0';
+         family = strtol(tokens[i], NULL, 16);
+         switch (family)
          {
-            log_printf (LOG_ERR, "Error: no Switch (GPIO) devices found");
-            exit (EXIT_FAILURE);
-         }
-         else
-         {
-            cnt++;
+         case SWITCH_FAM:
+            strncpy(famgpio[numgpio++], tokens[i], 16);
+            break;
+         case VOLTS_FAM:
+            strncpy(famvolt[numvolt++], tokens[i], 16);
+            break;
+         case TEMP_FAM:
+            strncpy(famtemp[numtemp++], tokens[i], 16);
+            break;
          }
       }
-      else
-         break;
+      i++;
+      tokens[i] = strtok (NULL, seps);
    }
+   free(tokenstring);
+
+   if (numgpio + numvolt + numtemp == 0)
+   {
+      log_printf (LOG_ERR, "Error: nothing found on 1-wire bus - check cables?");
+      exit (EXIT_FAILURE);
+   }
+
+   log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
+   log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
+   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
 
    general_reset (numgpio);
 
-   log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
-
-   // try and find at least one battery monitor chip
-   while (1)
-   {
-      numbm = FindDevices (portnum, &famvolt[0], SBATTERY_FAM, MAXDEVICES);
-
-      if (numbm == 0)
-      {
-         if (cnt > 10)
-         {
-            log_printf (LOG_WARNING, "No Temperature Monitor devices found");
-            break;
-         }
-         else
-         {
-            cnt++;
-         }
-      }
-      else
-         break;
-   }
-
-   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numbm);
-
    // search all DS2438 chips, categorise according to the volts on the Vad pin
-   for (i = 0; i < numbm; i++)
+   for (i = 0; i < numvolt; i++)
    {
-      Vad = ReadVad (portnum, famvolt[i]);
+
+      sprintf(path, "/%s/VAD", famvolt[i]);
+      OW_get(path,&tokenstring,&s) ;
+      Vad = atoi(tokenstring);
       if (debug)
          printf ("Read %2.2f volts on Vad pin\n", Vad);
       if (Vad < 1.0)
       {
          VI = i;                // tap volts == ground, using voltage (current) sensors
          if (debug)
-            printf ("Current sensor on address  %s\n", getAddr (famvolt[i]));
+            printf ("Current sensor on address  %s\n", famvolt[i]);
       }
       else if (Vad < 3.0)
       {
          *T1 = i;               // tap volts == half supply, just using temp sensor
          if (debug)
-            printf ("Temp sensor 1 on address  %s\n", getAddr (famvolt[i]));
+            printf ("Temp sensor 1 on address  %s\n", famvolt[i]);
       }
       else if (Vad > 4.5)
       {
          *T2 = i;               // tap volts ~= supply, must be the 3rd temp sensor
          if (debug)
-            printf ("Temp sensor 2 on address %s\n", getAddr (famvolt[i]));
+            printf ("Temp sensor 2 on address %s\n", famvolt[i]);
       }
+      free(tokenstring);
    }
 
    if (VI < 0)
@@ -226,17 +229,56 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    return numgpio;
 }
 
+ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
+{
+   static uint8_t iocache[MAXDEVICES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+   char path[32];
+   char val[10];
+   uint8_t ioval;
+   ssize_t ret;
+
+   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+
+   if (AorB)
+   {
+      // operating on PIOA - need current state of B with A bit cleared to activate it
+      if (state == OFF)
+         ioval = iocache[index] & 0xfe;
+      else
+         ioval = iocache[index] | 0x01;
+   }
+   else
+   {
+      // operating on PIOB
+      if (state == OFF)
+         ioval = iocache[index] & 0xfd;
+      else
+         ioval = iocache[index] | 0x02;
+   }
+
+   sprintf(val, "%d", ioval);
+
+   ret = OW_put(path, val, strlen(val));
+   // if the write worked then update the cache
+   if (ret >=0)
+      iocache[index] = ioval;
+
+   return ret;
+
+}
+
 
 void general_reset(uint16_t numgpio)
 {
    int16_t i;
+   char path[32];
+   char val[10] = "0,0";
 
    for (i = 0; i < numgpio; i++)
    {
-      owAccessWrite (portnum, famsw[i], TRUE, 0xff);    // both high = off
-      iocache[i] = 0xff;        // both outputs high (inactive)
+      sprintf(path, "/%s/PIO.ALL", famgpio[i]);
+      OW_put(path, val, strlen(val)) ;
    }
-
 }
 
 
@@ -251,7 +293,7 @@ irr_match (uint16_t numgpio)
    {
       for (dev = 0; dev < numgpio; dev++)
       {
-         if (strncasecmp (chanmap[zone].address, getAddr (famsw[dev]), 16) == 0)
+         if (strncasecmp (chanmap[zone].address, famgpio[dev], 15) == 0)
          {
             if (debug)
                printf ("Match at zone %d device %d port %C 1-wire address %s\n", zone, dev,
@@ -266,30 +308,42 @@ irr_match (uint16_t numgpio)
 void
 irr_onewire_stop (void)
 {
-   owRelease (portnum);
+   OW_finish() ;
 }
 
 uint16_t
 GetCurrent (void)
 {
-   double i;
+   char path[32];
+   char * tokenstring;
+   double Vad;
+   size_t s ;
 
    if (VI < 0)
       return 0;
-   i = ReadVad (portnum, famvolt[VI]) * VoltToMilliAmp;
+   sprintf(path, "/uncached/%s/VAD", famvolt[VI]);
+   OW_get(path,&tokenstring,&s) ;
+   Vad = atof(tokenstring) * VoltToMilliAmp;
+   free(tokenstring);
 // can't read reliably below 1.5 volts (but need down to ~0.1V)
-   if (i < 50)
-      i = 0;
+   if (Vad < 50)
+      Vad = 0;
 
-   return (uint16_t) i;
+   return (uint16_t) Vad;
 }
 
 double
 GetTemp(uint16_t index)
 {
    double temp;
+   char path[32];
+   char * tokenstring;
+   size_t s ;
 
-   temp = ReadTemp (portnum, famvolt[index]);
+   sprintf(path, "/%s/temperature", famvolt[index]);
+   OW_get(path,&tokenstring,&s) ;
+   temp = atof(tokenstring);
+   free(tokenstring);
    return temp;
 }
 
@@ -297,20 +351,25 @@ GetTemp(uint16_t index)
 void
 setGPIOraw(uint8_t index, uint8_t value)
 {
-   owAccessWrite (portnum, famsw[index], TRUE, value);
+   char path[32];
+   char val[10];
+
+   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+   sprintf(val, "%d", value);
+   OW_put(path, val, strlen(val)) ;
+
 }
 
 char *
 getGPIOAddr (uint8_t index)
 {
-   return getAddr (famsw[index]);
+   return famgpio[index];
 }
    
 //--------------------------------------------------------------------------
 // function - DoOutput
 // This routine sets either PIOA or PIOB according to the zone mapping
-// in the chanmap array. It references and updates the iocache array to get
-// the state of the other port on a device
+// in the chanmap array. 
 //
 // 'zone'  - Number from 1...max zone
 // 'state'    - TRUE if trying to activate a port (set low)
@@ -323,7 +382,8 @@ bool
 DoOutput (uint8_t zone, uint8_t state)
 {
    bool ret = TRUE;
-   uint8_t ioval;
+   char path[32];
+   char val[10];
 
    if (((chanmap[zone].valid & HARDWARE) == 0) && (state != OFF))    // if no hardware and trying to switch on then fail
    {
@@ -332,38 +392,29 @@ DoOutput (uint8_t zone, uint8_t state)
 
    if (chanmap[zone].AorB)
    {
-      // operating on PIOA - need current state of B with A bit cleared to activate it
-      if (state != OFF)
-         ioval = iocache[chanmap[zone].dev] & 0xfe;
-      else
-         ioval = iocache[chanmap[zone].dev] | 0x01;
+      // operating on PIOA
+      sprintf(path, "/%s/PIO.A", famgpio[chanmap[zone].dev]);
    }
    else
    {
       // operating on PIOB
-      if (state != OFF)
-         ioval = iocache[chanmap[zone].dev] & 0xfd;
-      else
-         ioval = iocache[chanmap[zone].dev] | 0x02;
+      sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
    }
+
+   sprintf(val, "%d", state == OFF ? 0 : 1);
+//   ret = my_OW_put(path, val, strlen(val));
+   ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
 
    if (debug)
    {
-      printf ("Device %s port %c state %02x ioval %02x cache %02x\n",
-              getAddr (famsw[chanmap[zone].dev]),
-              chanmap[zone].AorB ? 'A' : 'B', state, ioval, iocache[chanmap[zone].dev]);
+      printf ("Device %s port %c state %02x\n",famgpio[chanmap[zone].dev],
+              chanmap[zone].AorB ? 'A' : 'B', state);
    }
 
-   ret = owAccessWrite (portnum, famsw[chanmap[zone].dev], TRUE, ioval);
-   if (ret)                     // update cache and output state if write OK
-   {
-      iocache[chanmap[zone].dev] = ioval;
-   }
-   else
-   {
+   if (ret < 0)
       log_printf (LOG_ERR, "Failed to switch zone %d %s", zone, state ? "ON" : "OFF");
-   }
-   return ret;
+
+   return (ret < 0 ? FALSE : TRUE);
 }
 
 #endif       /* PC */
