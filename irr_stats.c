@@ -298,7 +298,9 @@ read_history (struct mapstruct *cmap, FILE * fd)
             cmap->period = json_object_get_int (json_object_object_get (jobj, "period"));
             cmap->duration = cmap->period;
             strcpy(cmap->name, chanmap[cmap->zone].name);
+            // can't repeat or be locked in the past
             cmap->frequency = 0;
+            cmap->locked = 0;
          }
       }
       json_object_put (jobj);

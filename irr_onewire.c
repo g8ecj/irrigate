@@ -402,7 +402,7 @@ DoOutput (uint8_t zone, uint8_t state)
    }
 
    sprintf(val, "%d", state == OFF ? 0 : 1);
-//   ret = my_OW_put(path, val, strlen(val));
+//   ret = OW_put(path, val, strlen(val));
    ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
 
    if (debug)
