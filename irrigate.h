@@ -125,6 +125,7 @@ struct mapstruct
 #define ISTEST   16
 #define ISSPARE  64
 
+// what state the frost protect can be in
 #define FROST_OFF    1
 #define FROST_MANUAL 2
 #define FROST_ACTIVE 3
@@ -192,6 +193,8 @@ extern double Tthreshold;
 extern uint16_t frostlimit;
 
 // prototypes
+
+// queuing functions
 void insert (time_t starttime, uint8_t zone, uint8_t action);
 bool delete (uint8_t zone);
 time_t findonqueue (uint8_t zone);
@@ -200,9 +203,8 @@ uint8_t walk_queue(uint8_t index, uint8_t * zone, time_t * starttime, uint8_t *a
 
 
 
-/* 
-* action routines
-*/
+// action routines
+
 void doaction (uint8_t zone, uint8_t action);
 
 /* load all zones with an action to test the solenoid continuity (except the well pump) */
@@ -211,44 +213,35 @@ void test_cancel (uint8_t zone);
 
 /* load up 'ISFROST' zones to run in a 'round-robin' with 1 minute duration with 1 second overlap */
 void frost_load (void);
-
 /* cancel the frost protect program by removing the virtual zone that keeps it going and remove any currently active */
 void frost_cancel (void);
 
 /* load up all the zones in a group to run required duration starting at defined time but load up pump to max flow */
 void dogroup (uint8_t group, uint8_t action);
+// cancel all the zones in a group and the virtual channel controlling them
+void group_cancel (uint8_t group, uint8_t state);
 
 // clear all aspects of a zone - its timer queue entries, frequency etc
 // always try and set output off, if it was active then adjust flow and log it
 void zone_cancel (uint8_t zone, uint8_t state);
 
-// cancel all the zones in a group and the virtual channel controlling them
-void group_cancel (uint8_t group, uint8_t state);
-
 // switch on the pump, update the state
 void well_on (uint8_t zone);
-
 // switch off the pump, update the state and say the zone is locked (busy)
 // queue an unlock for later
 void well_off (uint8_t zone);
-
 // just mark the well zone as no longer locked
 void well_unlock (uint8_t zone);
 
+// look after well & domestic pumps
 void manage_pumps(void);
-
-// find a domestic feed valve and return the zone its in (0 if not found)
-uint8_t find_dpfeed(void);
 
 // switch off all active zones and put into error state
 void emergency_off(uint8_t newstate);
-
 void doreset (uint16_t numgpio);
 
-/**
- parseArguments
- * Parse command line arguments.
- */
+
+// Parse command line arguments.
 void parseArguments (int argc, char **argv);
 
 
@@ -256,30 +249,28 @@ void parseArguments (int argc, char **argv);
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
 bool readchanmap (void);
-
 // create a load of mapstruct entries from interactive user input
 // this function only gets the 1-wire relevant data (address and port)
 void createchanmap (int numdev);
-
 // save the chanmap mapstruct array to a file
 // this will require editing by hand to create the display map and other parameters
 bool savechanmap (void);
 
+
 void irr_web_init (struct mg_server *server);
 
 
+// scheduling
 /*
   Each time the schedule is updated, dump the current state to a file in case
   we get a restart and we need to pick up where we left off
   */
 bool write_schedule (void);
-
 /*
   Read the current scheduling data from a file and populate the channel map
   Used at program startup to recover data
   */
 bool read_schedule (void);
-
 /*
   Iterate the chanmap and insert items into the time queue that haven't yet expired
   This function will only schedule items up to 24 hours ahead so it should be called 
@@ -288,76 +279,39 @@ bool read_schedule (void);
 void check_schedule (bool changes);
 
 
-/*
-* one wire interface
-*/
 
+// one wire interface
 uint16_t irr_onewire_init(int16_t *T1, int16_t *T2);
-
 void general_reset(uint16_t numgpio);
-
 void irr_onewire_stop(void);
-
 void irr_match(uint16_t numgpio);
-
 uint16_t GetCurrent (void);
-
 double GetTemp(uint16_t index);
-
 void setGPIOraw(uint8_t index, uint8_t value);
-
 char * getGPIOAddr (uint8_t index);
+// get expected solenoid current by adding up all the active valves
+uint16_t get_expected_current(void);
+// get expected flow rate by adding up all the active zones
+uint16_t get_expected_flow(void);
 
-//--------------------------------------------------------------------------
-// function - SetOutput
+
 // This routine uses 'DoOutput' and 'check_current' to do the heavy lifting
-//
-// 'zone'  - Number from 1...max zone
-// 'state'    - TRUE if trying to activate a port (set low)
-//
-// Returns: TRUE(1):    If set is successful
-//          FALSE(0):   If set is not successful
-//
 bool SetOutput (uint8_t zone, uint8_t state);
-
-//--------------------------------------------------------------------------
-// function - check_current
 // This routine checks the current drawn by all the valves active
 // Only active if 'monitor' is set
-//
-// Returns: TRUE(1):    If set is successful
-//          FALSE(0):   If set is not successful
-//
 bool check_current(void);
 
-/*
-* diagnostic and user I/O functions
-*/
-
+// diagnostic and user I/O functions
 void print_chanmap (void);
-
 void print_queue (void);
 
-
-/**
- * Retrieve user input from the console.
- *
- * min  minimum number to accept
- * max  maximum number to accept
- *
- * @return numeric value entered from the console.
- */
+// utility functions
 int getNumber (int min, int max);
-
 char * getAddr (uint8_t * SNum);
-
 // convert clock hours to time based on current seconds count
 time_t hours2time(uint16_t decahours);
 
-/*
- * every hour update the time spent with the well pump on (assuming it has been on at all)
- * and count how much water has been put on each zone (based on config file values)
- */
+// statistics amd history
 void update_statistics (void);
 void clean_history (void);
 FILE * open_history(void);
@@ -365,17 +319,10 @@ int read_history(struct mapstruct * cmap,  FILE *fd);
 void write_history (uint8_t zone, time_t endtime, time_t starttime, uint8_t result);
 void close_history (FILE *fd);
 
+// logging
 void log_printf(int severity, const char *format, ...);
-
 void dump_log_msgs(void);
-
 typedef void (*msgfunc_t)(struct mg_connection *conn, time_t time, int priority, char * desc, char * msg);
-
 void send_log_msgs(struct mg_connection *conn, msgfunc_t sendmsg);
-
-// get expected solenoid current by adding up all the active valves
-uint16_t get_expected_current(void);
-// get expected flow rate by adding up all the active zones
-uint16_t get_expected_flow(void);
 
 
