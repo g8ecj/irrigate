@@ -33,7 +33,7 @@ uint8_t numvolt = 0;
 char famtemp[MAXDEVICES][16];
 uint8_t numtemp = 0;
 
-
+#define OW_ENDIAN_BUG 1
 
 #ifdef PC
 uint16_t testcurrent = 0;
@@ -118,10 +118,10 @@ getGPIOAddr (uint8_t UNUSED (index))
 }
 
 #else
+
 /*
  * The real code follows now!!
  */
- 
 
 
 uint16_t
@@ -229,7 +229,8 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    return numgpio;
 }
 
-ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
+#if OW_ENDIAN_BUG
+ssize_t OW_pio_workaround(uint8_t index, bool AorB, uint8_t state)
 {
    static uint8_t iocache[MAXDEVICES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
    char path[32];
@@ -264,8 +265,8 @@ ssize_t my_OW_put(uint8_t index, bool AorB, uint8_t state)
       iocache[index] = ioval;
 
    return ret;
-
 }
+#endif
 
 
 void general_reset(uint16_t numgpio)
@@ -402,8 +403,11 @@ DoOutput (uint8_t zone, uint8_t state)
    }
 
    sprintf(val, "%d", state == OFF ? 0 : 1);
-//   ret = OW_put(path, val, strlen(val));
-   ret = my_OW_put(chanmap[zone].dev, chanmap[zone].AorB, state);
+#if OW_ENDIAN_BUG
+   ret = OW_pio_workaround(chanmap[zone].dev, chanmap[zone].AorB, state);
+#else
+   ret = OW_put(path, val, strlen(val));
+#endif
 
    if (debug)
    {
