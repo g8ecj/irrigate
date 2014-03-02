@@ -68,21 +68,22 @@ Save the new config and then build the whole system using 'make'. Install to the
 complete image or using 'opkg' package manager if using modules.
 
 Files to be created/customised are:
-'''
+```
 www/passfile
 www/zones.html
 www/zones.jpg
 www/zones.conf
-'''
+```
 
 The first is created using htpasswd, the next 2 describe the layout of the general webpage and 
 the final file describes the 1-wire addesses (where appropriate), the characteristics of each zone 
 and where it appears on the browser image map.
 
+```
 $ ./irrigate --help
 irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
 usage: ./irrigate [bcdfhlprstvx]
-```
+
 -a <file>, --file      access log file name
 -b,        --background run in daemon mode
 -c,        --config    configure zone mapping
@@ -97,9 +98,9 @@ usage: ./irrigate [bcdfhlprstvx]
 -v,        --version   useful version information
 -x <int>   --debug     debug mode
 -h,        --help      this help screen
-'''
+```
 Example command line:
-'''
+```
 irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
    * monitor valve current usage
    * run in background as a service
