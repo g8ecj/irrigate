@@ -84,3 +84,14 @@ usage: ./irrigate [bcdfhlprstvx]
 -x <int>   --debug     debug mode
 -h,        --help      this help screen
 
+Example command line:
+irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
+   * monitor valve current usage
+   * run in background as a service
+   * threshold temperature for frost protection -0.1C
+   * run frost protect after 15 degree-minutes (eg -3C for 5 minutes)
+   * root directory /www
+   * data directory (hold history, schedule and statistics data)
+   * configuration file path and name defined
+   * serial port used by modified WRT54GL (second serial port)
+
