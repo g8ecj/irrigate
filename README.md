@@ -21,15 +21,15 @@ The interface to the owlib software is via the owcapi 'C' API library.
 These files implement an embedded http server with simple callbacks to the main code. It
 is licensed under the MIT License which basically says do what you like so long as the 
 license conditions remain in the files! I'm using version 5.2 at present.
-
+```
    mongoose.c
    mongoose.h
-
+```
 
 These files are totally new and provide all of the AJAX web interface, the onewire interface,
 statistics, time event queueing, scheduling, command line parsing and error handling.
 They are released under the GNU Public License version 2.
-
+```
    irr_actions.c
    irr_chanmap.c
    irr_onewire.c
@@ -40,7 +40,7 @@ They are released under the GNU Public License version 2.
    irr_utils.c
    irr_web.c
    irrigate.c
-
+```
 External libraries to parse and generate JavaScript Object Notation (JSON) data for the AJAX 
 methods used in the web interface. The javascript widgets for timeline support are from 
 the CHAPS links library and are available under the Apache license. Other javascript code has
@@ -52,11 +52,13 @@ to be built.
 Compiling under OpenWrt simple. Unpack the compressed file 'openwrt-package' that provides the 
 package makefile and control files for native packaging and installation into the 'package'
 directory. Configure the system to build the package by running 'make menuconfig' and select
+```
     'Utils' -> 'irrigate'
             -> 'Filesystem' -> 'owfs'
     'Libraries' -> 'libjson'
                 -> 'Filesystems' -> 'libow'
                                  -> 'libow-capi'
+```
 These can all be built as modules or built into the main image.
 
 Kernel modules to consider depend on the 1-wire interface in use. The USB9097 requires the 
@@ -68,7 +70,7 @@ complete image or using 'opkg' package manager if using modules.
 $ ./irrigate --help
 irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
 usage: ./irrigate [bcdfhlprstvx]
-
+```
 -a <file>, --file      access log file name
 -b,        --background run in daemon mode
 -c,        --config    configure zone mapping
@@ -94,4 +96,5 @@ irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
    * data directory (hold history, schedule and statistics data)
    * configuration file path and name defined
    * serial port used by modified WRT54GL (second serial port)
+```
 
