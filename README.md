@@ -47,9 +47,9 @@ the CHAPS links library and are available under the Apache license. Other javasc
 been released to the public domain.
 
 The makefile will do a native build under Linux by defining a 'PC' target that causes a 1-wire simulator
-to be built.
+to be built, allowing the web interface to be tested.
 
-Compiling under OpenWrt simple. Unpack the compressed file 'openwrt-package' that provides the 
+Compiling under OpenWrt is simple. Unpack the compressed file 'openwrt-package' that provides the 
 package makefile and control files for native packaging and installation into the 'package'
 directory. Configure the system to build the package by running 'make menuconfig' and select
 ```
@@ -66,6 +66,18 @@ Kernel modules to consider depend on the 1-wire interface in use. The USB9097 re
 
 Save the new config and then build the whole system using 'make'. Install to the target as a
 complete image or using 'opkg' package manager if using modules.
+
+Files to be created/customised are:
+'''
+www/passfile
+www/zones.html
+www/zones.jpg
+www/zones.conf
+'''
+
+The first is created using htpasswd, the next 2 describe the layout of the general webpage and 
+the final file describes the 1-wire addesses (where appropriate), the characteristics of each zone 
+and where it appears on the browser image map.
 
 $ ./irrigate --help
 irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
@@ -85,8 +97,9 @@ usage: ./irrigate [bcdfhlprstvx]
 -v,        --version   useful version information
 -x <int>   --debug     debug mode
 -h,        --help      this help screen
-
+'''
 Example command line:
+'''
 irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
    * monitor valve current usage
    * run in background as a service
