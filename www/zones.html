@@ -539,6 +539,26 @@ function display_all()
 }
 
 
+var zoom_level = 10
+function zoom_in()
+{
+   zoom_level++
+   redraw_map(zoom_level*10)
+}
+function zoom_zero()
+{
+   zoom_level = 10
+   redraw_map(zoom_level*10)
+}
+function zoom_out()
+{
+   if(zoom_level>2)
+   zoom_level--
+   redraw_map(zoom_level*10)
+}
+
+
+
 addLoadEvent(next_timer_tick)
 addLoadEvent(end_popup)
 addLoadEvent(display_map)
@@ -654,6 +674,12 @@ addLoadEvent(display_map)
    </div>
    <input type="button" name="frost" value="Frost Protect"  id="frost" onclick="display_popup()"> 
 
+<!--
+Zoom: 
+<input type=button value="-" onclick="zoom_out()">
+<input type=button value="." onclick="zoom_zero()">
+<input type=button value="+" onclick="zoom_in()">
+-->
 
 </div>
 

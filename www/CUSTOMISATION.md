@@ -12,26 +12,37 @@ json items used by UI in html file
 "name":             alphanum   plain text displayable name
 
 
-"zone":  8
-"id": "tunnel"
-"aorb": true
-"address": "3a.2d3201000000"
-"flow": 8
-"current": 160
+json items used for normal programable zones
 
-"isdpfeed":
-"ispump":
-"isfrost":
-"isdpfeed":
-"istest":
-"isspare":
+"zone":             int        index to a specific item
+"id":               alphanum   used for diagnostics, etc
+"aorb":             bool       indicates channel A or B on the DS2413 driver
+"address":          hexstring  <family>.<serialnumber> 1-wire address
+"flow":             int        flow rate in litres/minute
+"current":          int        current draw of valve ni milliamps
 
-"maxflow":
-"maxstarts":
-"start": 0700
-"end": 2100
-"group"
 
+json boolean items that modify a zone
+
+"isdpfeed":         bool       domestic feed
+"ispump":           bool       seperate pump
+"isfrost":          bool       frost protection applies
+"istest":           bool       is a virtual zone that trigger test mode
+"isspare":          bool       not used
+
+
+json items that pass useful information about a zone
+
+"maxflow":          int        maximum flow of a pump in litres/minute
+"maxstarts":        int        maximum number of starts of a pump allowed per hour
+"start":            int        time in hhmm format of when to start domestic feed for stock
+"end":              int        time in hhmm format of when to stop domestic feed
+"group"             int        identifier for a group
+"zones"             array      list of zones in a group
+
+
+
+Examples
 
 "zone":  8
 "id": "tunnel"
