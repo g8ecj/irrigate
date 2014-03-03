@@ -1,6 +1,6 @@
 
 json items used by UI in html file
-
+```
 "zone":             int        index to a specific item
 "id":               alphanum   used for diagnostics, etc
 "x":                int        % (0-(100-w)) of distance from left of image map
@@ -9,41 +9,41 @@ json items used by UI in html file
 "h":                int        % (0-100) height of box drawn on image map
 "selectable":       bool       if the user can select it for programming
 "name":             alphanum   plain text displayable name
-
+```
 
 json items used for normal programable zones
-
+```
 "zone":             int        index to a specific item
 "id":               alphanum   used for diagnostics, etc
 "aorb":             bool       indicates channel A or B on the DS2413 driver
 "address":          hexstring  <family>.<serialnumber> 1-wire address
 "flow":             int        flow rate in litres/minute
 "current":          int        current draw of valve ni milliamps
-
+```
 
 json boolean items that modify a zone
-
+```
 "isdpfeed":         bool       domestic feed
 "ispump":           bool       seperate pump
 "isfrost":          bool       frost protection applies
 "istest":           bool       is a virtual zone that trigger test mode
 "isspare":          bool       not used
-
+```
 
 json items that pass useful information about a zone
-
+```
 "maxflow":          int        maximum flow of a pump in litres/minute
 "maxstarts":        int        maximum number of starts of a pump allowed per hour
 "start":            int        time in hhmm format of when to start domestic feed for stock
 "end":              int        time in hhmm format of when to stop domestic feed
 "group"             int        identifier for a group from 1-15
 "zones"             array      list of zones in a group
-
+```
 experimental items
-
+```
 "zoom":             int        optional zoom factor. Determines whether to try and show name of the zone
                                doessn't work with image maps very well!!
-
+```
 
 
 Examples
