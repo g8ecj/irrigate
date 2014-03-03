@@ -127,7 +127,7 @@ A (virtual) zone that has no direct valves but instead holds a group of zones. I
 "zones": [1, 2, 3, 4, 5]         // list of zones in the group
 ```
 
-Another virtual zone that has no valves but in this case operates o na specific internal function (test mode)
+Another virtual zone that has no valves but in this case operates on a specific internal function (test mode)
 ```
 "zone": 43
 "id": "test"
