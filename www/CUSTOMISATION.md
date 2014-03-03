@@ -1,3 +1,5 @@
+The configuration file is shared by the UI and the server. It contains a list of json objects, some
+keys for which are used by both UI and server, others are exclusive for one or the other.
 
 json items used by UI in html file
 ```
@@ -20,6 +22,7 @@ json items used for normal programable zones
 "flow":             int        flow rate in litres/minute
 "current":          int        current draw of valve ni milliamps
 ```
+
 
 json boolean items that modify a zone
 ```
@@ -86,6 +89,26 @@ stock troughs and taps about the place. It also handles low volume irrigation up
 "start": 0700                    // even if no demand then turn on at 7:00am anyway
 "end": 2100                      // if no demand the turn off at night
 "current": 160
+```
+
+json items used to describe a pump
+```
+"zone": 16
+"id": "well"
+"x": 62                          // it appears on the image map 
+"y": 68
+"w":  2
+"h":  3
+"zoom": 13
+"selectable": false              // but the user can't select it from the UI - operation is automatic
+"name": "Well Pump"
+"aorb": true
+"address": "3a.824b01000000"     // not as valve but the contactor that runs it is driven the same way
+"flow": 100                      // flow rate blow which it switches off
+"ispump": true                   // descibes what it is
+"maxstarts": 20                  // locks for 3 mins when stopped to prevent abuse
+"maxflow": 230                   // when calculating a group, how much should be done at once
+"current": 120
 ```
 
 
