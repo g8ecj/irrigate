@@ -184,8 +184,6 @@ extern bool config;
 extern char device[];
 extern char configfile[];
 extern char datapath[];
-extern char logbuf[];
-extern char datestring[];
 extern char httpport[];
 extern char httproot[];
 extern char accesslog[];

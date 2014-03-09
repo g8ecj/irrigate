@@ -33,6 +33,8 @@ uint8_t numvolt = 0;
 char famtemp[MAXDEVICES][16];
 uint8_t numtemp = 0;
 
+// define the following if using a version of OWFS prior to 2.9p3
+// which has a problem with big endian handling of aggregate PIO devices (e.g. DS2408, DS2413)
 #define OW_ENDIAN_BUG 1
 
 #ifdef PC

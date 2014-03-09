@@ -475,8 +475,7 @@ set_state (struct mg_connection *conn)
    jobj = json_tokener_parse (conn->content);
    if (is_error (jobj))
    {
-      sprintf (logbuf, "error parsing json object %s\n", conn->content);
-      syslog (LOG_NOTICE, "%s", logbuf);
+      log_printf (LOG_NOTICE, "error parsing json object %s\n", conn->content);
       json_object_put (jobj);
       return 0;
    }
@@ -582,8 +581,7 @@ set_frost (struct mg_connection *conn)
    jobj = json_tokener_parse (conn->content);
    if (is_error (jobj))
    {
-      sprintf (logbuf, "error parsing json object %s\n", conn->content);
-      syslog (LOG_NOTICE, "%s", logbuf);
+      log_printf (LOG_NOTICE, "error parsing json object %s\n", conn->content);
       json_object_put (jobj);
       return 0;
    }

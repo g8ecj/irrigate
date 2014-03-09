@@ -36,8 +36,6 @@ bool monitor = FALSE;
 char device[MAXDEVLEN] = "/dev/ttyUSB0";
 char configfile[MAXFILELEN] = "/www/zones.conf";
 char datapath[MAXFILELEN] = "/www";
-char logbuf[120];
-char datestring[50];            //used to hold the date stamp for the log file
 char httpport[10] = "8080";
 char httproot[MAXFILELEN] = "/www";
 char accesslog[MAXFILELEN] = "";
