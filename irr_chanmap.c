@@ -102,7 +102,7 @@ readchanmap (void)
                for (i = 1; i < REALZONES; i++)
                {
                   // see if we have already used this group
-                  if (chanmap[i].group == 1 << (group -1))
+                  if ((chanmap[i].type & ISGROUP) && (chanmap[i].group == (1 << (group -1)))
                   {
                      log_printf(LOG_ERR, "Duplicate group %d", group);
                      return FALSE;

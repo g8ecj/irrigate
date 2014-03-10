@@ -195,9 +195,8 @@ test_load (uint8_t testzone, uint8_t action)
             insert (start, dpz, TURNOFF);
          chanmap[dpz].locked = TRUE;
       }
-      // valid zone, not a pump or group, has a flow associated with it (i.e. not a spare)
+      // already know its not a pump, check for group, is valid and has a flow associated with it (i.e. not a spare)
       else if (((chanmap[zone].type & (ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
-      if (((chanmap[zone].type & (ISPUMP | ISDPFEED | ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
       {
          chanmap[zone].duration = chanmap[testzone].period;
          chanmap[zone].period = chanmap[testzone].period;
