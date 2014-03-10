@@ -1,4 +1,6 @@
-This is the irrigation controller.
+This is the irrigation controller. It has evolved over a period of some 5 years, the
+requirements have changed (and been expanded) and the hardware changed such that a router
+no longer requires the warranty invalidated by modifying it with a soldering iron!!
 
 It uses a number of DS2413 1-wire dual channel GPIO chips to drive triacs to operate
 valves and pumps. It also optionally monitors 2 temperature sensors to implement 

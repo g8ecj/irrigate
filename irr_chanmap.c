@@ -99,6 +99,16 @@ readchanmap (void)
             if (group > 0)
             {
                int i;
+               for (i = 1; i < REALZONES; i++)
+               {
+                  // see if we have already used this group
+                  if (chanmap[i].group == 1 << (group -1))
+                  {
+                     log_printf(LOG_ERR, "Duplicate group %d", group);
+                     return FALSE;
+                  }
+               }
+
                jlist = json_object_object_get (jobj, "zones");
                for (i = 0; i < json_object_array_length (jlist); i++)
                {
@@ -108,6 +118,11 @@ readchanmap (void)
                chanmap[zone].type |= ISGROUP;
             }
             chanmap[zone].valid |= CONFIGURED;
+         }
+         else
+         {
+            log_printf(LOG_ERR, "Invalid zone number %d", zone);
+            return FALSE;
          }
          ret = TRUE;            // got something useful
       }
@@ -123,6 +138,7 @@ readchanmap (void)
 
 // create a load of mapstruct entries from interactive user input
 // this function only gets the 1-wire relevant data (address and port)
+// its up to the user to define how the zones get displayed on the UI
 void
 createchanmap (int numdev)
 {
