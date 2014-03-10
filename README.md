@@ -114,3 +114,7 @@ irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
    * serial port used by modified WRT54GL (second serial port)
 ```
 
+TODO
+
+allow use of either well pump on its own or domestic feed on its own
+
