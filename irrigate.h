@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// Copyright (C) 2009-2010 Robin Gilks
+// Copyright (C) 2009-2014 Robin Gilks
 //
 //
 //  irrigate.h   -   Function prototypes, global variables and #defines!!
@@ -36,7 +36,7 @@
 
 #include "mongoose.h"
 
-#define VERSION "3.00"
+#define VERSION "3.10"
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// Copyright (C) 2009-2010 Robin Gilks
+// Copyright (C) 2009-2014 Robin Gilks
 //
 //
 //  irr_chanmap.c   -   This section looks after reading, creating and writing the channel map

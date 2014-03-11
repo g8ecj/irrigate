@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// Copyright (C) 2009-2010 Robin Gilks
+// Copyright (C) 2009-2014 Robin Gilks
 //
 //
 //  irr_web.c   -   This section looks after the interface to the mongoose threaded web server
@@ -22,7 +22,6 @@
 
 #include "irrigate.h"
 
-#define MAX_OPTIONS 40
 
 struct mg_server *server;
 

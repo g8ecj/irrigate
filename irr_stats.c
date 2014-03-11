@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// Copyright (C) 2009-2010 Robin Gilks
+// Copyright (C) 2009-2014 Robin Gilks
 //
 //
 //  irr_stats.c   -   This section looks after the statistics of water delivered, pump run time

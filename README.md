@@ -21,8 +21,7 @@ It uses the owfs system that makes 1-wire devices appear as a part of the file s
 The interface to the owlib software is via the owcapi 'C' API library.
 
 These files implement an embedded http server with simple callbacks to the main code. It
-is licensed under the MIT License which basically says do what you like so long as the 
-license conditions remain in the files! I'm using version 5.2 at present.
+is licensed under the GPL V2 License. I'm using version 5.3 at present.
 ```
    mongoose.c
    mongoose.h
@@ -43,7 +42,7 @@ They are released under the GNU Public License version 2.
    irr_web.c
    irrigate.c
 ```
-External libraries to parse and generate JavaScript Object Notation (JSON) data for the AJAX 
+External libraries are used to parse and generate JavaScript Object Notation (JSON) data for the AJAX 
 methods used in the web interface. The javascript widgets for timeline support are from 
 the CHAPS links library and are available under the Apache license. Other javascript code has
 been released to the public domain.
@@ -77,13 +76,13 @@ www/zones.jpg
 www/zones.conf
 ```
 
-The first is created using htpasswd, the next 2 describe the layout of the general webpage and 
-the final file describes the 1-wire addesses (where appropriate), the characteristics of each zone 
-and where it appears on the browser image map.
+The first is created using mongoose in stand-alone mode, the next 2 describe the layout of the general 
+webpage and the final file describes the 1-wire addesses (where appropriate), the characteristics of 
+each zone and where it appears on the browser image map.
 
 ```
 $ ./irrigate --help
-irrigate: Irrigation Controller Version 2.00 Copyright (c) 2009-2011 Robin Gilks
+irrigate: Irrigation Controller Version 3.10 Copyright (c) 2009-2014 Robin Gilks
 usage: ./irrigate [bcdfhlprstvx]
 
 -a <file>, --file      access log file name

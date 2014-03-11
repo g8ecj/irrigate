@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// Copyright (C) 2009-2010 Robin Gilks
+// Copyright (C) 2009-2014 Robin Gilks
 //
 //
 //  irrigate.c   -   This program controls a number of valves and pumps that constitutes
@@ -27,8 +27,6 @@
 //    along with this program; if not, write to the Free Software
 //    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-// TODO - requires state machine to handle requests for zones to go active that fail due to open/short circuit solenoid valves
-//      - this needs to reflect into the demand for the well pump, the GUI and the syslog data
 
 // Include files
 #include <signal.h>
