@@ -24,6 +24,7 @@
 
 #define MAX_OPTIONS 40
 
+struct mg_server *server;
 
 const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
 
@@ -38,25 +39,22 @@ send_headers (struct mg_connection *conn)
 static int
 check_authorised(struct mg_connection *conn)
 {
+   int result = MG_FALSE; // Not authorized
    FILE *fp;
-   int authorized = 0;
    char pass_file[MAXFILELEN];
 
    strcpy (pass_file, datapath);
    strncat (pass_file, "/passfile", 10);
-
-   if (pass_file != NULL && (fp = fopen(pass_file, "r")) != NULL) {
-      authorized = mg_authorize_digest(conn, fp);
+    // To populate passwords file, do
+    // mongoose -A my_passwords.txt mydomain.com admin admin
+   if ((fp = fopen(pass_file, "r")) != NULL) {
+      result = mg_authorize_digest(conn, fp);
       fclose(fp);
    }
 
-   if (!authorized) 
-   {
-      mg_send_digest_auth_request(conn);
-      return 1;
-   }
-  return 0;
+    return result;
 }
+
 
 
 /*
@@ -93,7 +91,7 @@ show_jsonlogs (struct mg_connection *conn)
    send_log_msgs (conn, sendjsonmsg);
 
    mg_printf_data (conn, "%s", " ] }");
-   return 1;
+   return MG_TRUE;
 }
 
 void
@@ -113,7 +111,7 @@ show_logs (struct mg_connection *conn)
    mg_send_header (conn, "Content-Type", "text/html");
 
    send_log_msgs (conn, sendmsg);
-   return 1;
+   return MG_TRUE;
 
 }
 
@@ -376,7 +374,7 @@ show_status (struct mg_connection *conn)
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
-   return 1;
+   return MG_TRUE;
 }
 
 
@@ -447,7 +445,7 @@ show_timedata (struct mg_connection *conn)
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
-   return 1;
+   return MG_TRUE;
 }
 
 /*
@@ -467,7 +465,7 @@ set_state (struct mg_connection *conn)
    struct tm tm;
 
    if (check_authorised(conn))
-      return 1;
+      return MG_TRUE;
 
    conn->content[conn->content_len] = 0;
    if (debug)
@@ -477,7 +475,7 @@ set_state (struct mg_connection *conn)
    {
       log_printf (LOG_NOTICE, "error parsing json object %s\n", conn->content);
       json_object_put (jobj);
-      return 0;
+      return MG_FALSE;
    }
 
    zone = json_object_get_int (json_object_object_get (jobj, "zone"));
@@ -557,7 +555,7 @@ set_state (struct mg_connection *conn)
    json_object_put (jobj);
    check_schedule (TRUE);       // assume major changes to the schedule
    show_status (conn);
-   return 1;
+   return MG_TRUE;
 }
 
 /*
@@ -573,7 +571,7 @@ set_frost (struct mg_connection *conn)
    char cmd[12];
 
    if (check_authorised(conn))
-      return 1;
+      return MG_TRUE;
 
    conn->content[conn->content_len] = 0;
    if (debug)
@@ -583,7 +581,7 @@ set_frost (struct mg_connection *conn)
    {
       log_printf (LOG_NOTICE, "error parsing json object %s\n", conn->content);
       json_object_put (jobj);
-      return 0;
+      return MG_FALSE;
    }
 
 
@@ -629,7 +627,58 @@ set_frost (struct mg_connection *conn)
       check_schedule (TRUE);
    }
    show_status (conn);
-   return 1;
+   return MG_TRUE;
+}
+
+int
+set_true(struct mg_connection *conn)
+{
+   printf("Do auth on %s\n", conn->uri);
+   return MG_TRUE;
+}
+
+
+static const struct web_config
+{
+   enum mg_event event;
+   const char *uri;
+   int (*func) (struct mg_connection *);
+} web_config[] =
+{
+   { MG_REQUEST, "/status", &show_status},
+   { MG_REQUEST, "/timedata", &show_timedata},
+   { MG_AUTH,    "/set_state", &check_authorised},
+   { MG_REQUEST, "/set_state", &set_state},
+   { MG_AUTH,    "/set_frost", &check_authorised},
+   { MG_REQUEST, "/set_frost", &set_frost},
+   { MG_REQUEST, "/jlogs", &show_jsonlogs},
+   { MG_REQUEST, "/logs", &show_logs},
+   { 0, NULL, NULL}
+};
+
+
+static int
+ev_handler(struct mg_connection *conn, enum mg_event event)
+{
+   int i;
+
+   printf("Event %d uri %s\n", event, conn->uri);
+   if (event == MG_POLL)
+      return MG_TRUE;
+   for (i = 0; web_config[i].uri != NULL; i++)
+   {
+      if ((event == web_config[i].event) && (!strcmp (conn->uri, web_config[i].uri)))
+      {
+         return web_config[i].func (conn);
+      }
+   }
+   return MG_TRUE;
+}
+
+void
+irr_web_poll(void)
+{
+   mg_poll_server(server, 0);
 }
 
 
@@ -641,8 +690,10 @@ set_frost (struct mg_connection *conn)
     * Start listening on port as defined by command line
     */
 void
-irr_web_init (struct mg_server *server)
+irr_web_init (void)
 {
+
+   server = mg_create_server(NULL, ev_handler);
 
    mg_set_option (server, "listening_port", httpport);
    mg_set_option (server, "document_root", httproot);
@@ -650,13 +701,6 @@ irr_web_init (struct mg_server *server)
    mg_set_option (server, "index_files", "zones.html");
    if (accesslog[0] != '\0')
       mg_set_option (server, "access_log_file", accesslog);
-
-   mg_add_uri_handler(server, "/status", show_status);
-   mg_add_uri_handler(server, "/timedata", show_timedata);
-   mg_add_uri_handler(server, "/set_state", set_state);
-   mg_add_uri_handler(server, "/set_frost", set_frost);
-   mg_add_uri_handler(server, "/jlogs", show_jsonlogs);
-   mg_add_uri_handler(server, "/logs", show_logs);
 
 }
 

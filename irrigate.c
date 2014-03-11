@@ -211,9 +211,7 @@ main (int argc, char **argv)
       close (STDERR_FILENO);
    }
 
-   server = mg_create_server(NULL);
-   irr_web_init (server);
-
+   irr_web_init ();
 
    // read scheduling info from file (persistent data)
    read_schedule ();
@@ -223,7 +221,7 @@ main (int argc, char **argv)
    do
    {
       // poll the web server
-      mg_poll_server(server, 0);
+      irr_web_poll();
 
       // all actions are synchronised by the seconds count of the timer
       basictime = time (NULL);

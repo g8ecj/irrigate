@@ -255,7 +255,8 @@ void createchanmap (int numdev);
 bool savechanmap (void);
 
 
-void irr_web_init (struct mg_server *server);
+void irr_web_init (void);
+void irr_web_poll (void);
 
 
 // scheduling
