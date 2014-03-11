@@ -647,18 +647,19 @@ static const struct web_config
 static int
 ev_handler(struct mg_connection *conn, enum mg_event event)
 {
-   int i, ret;
+   int i;
 
-//   printf("Event %d uri %s\n", event, conn->uri);
+   if (event == MG_POLL)
+      return MG_FALSE;
+
    for (i = 0; web_config[i].uri != NULL; i++)
    {
       if ((event == web_config[i].event) && (!strcmp (conn->uri, web_config[i].uri)))
       {
-         ret = web_config[i].func (conn);
-//         printf("Returning %d\n", ret);
-         return ret;
+         return web_config[i].func (conn);
       }
    }
+
    // unhandled uri is allowed to be handled by mongoose
    if (event == MG_AUTH)
       return MG_TRUE;
