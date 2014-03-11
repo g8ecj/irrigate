@@ -464,9 +464,6 @@ set_state (struct mg_connection *conn)
    time_t starttime;
    struct tm tm;
 
-   if (check_authorised(conn))
-      return MG_TRUE;
-
    conn->content[conn->content_len] = 0;
    if (debug)
       printf ("Received data: %s\n", conn->content);
@@ -570,9 +567,6 @@ set_frost (struct mg_connection *conn)
    struct json_object *jobj;
    char cmd[12];
 
-   if (check_authorised(conn))
-      return MG_TRUE;
-
    conn->content[conn->content_len] = 0;
    if (debug)
       printf ("Received data: %s\n", conn->content);
@@ -653,14 +647,16 @@ static const struct web_config
 static int
 ev_handler(struct mg_connection *conn, enum mg_event event)
 {
-   int i;
+   int i, ret;
 
-   printf("Event %d uri %s\n", event, conn->uri);
+//   printf("Event %d uri %s\n", event, conn->uri);
    for (i = 0; web_config[i].uri != NULL; i++)
    {
       if ((event == web_config[i].event) && (!strcmp (conn->uri, web_config[i].uri)))
       {
-         return web_config[i].func (conn);
+         ret = web_config[i].func (conn);
+//         printf("Returning %d\n", ret);
+         return ret;
       }
    }
    // unhandled uri is allowed to be handled by mongoose
