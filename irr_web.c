@@ -630,13 +630,6 @@ set_frost (struct mg_connection *conn)
    return MG_TRUE;
 }
 
-int
-set_true(struct mg_connection *conn)
-{
-   printf("Do auth on %s\n", conn->uri);
-   return MG_TRUE;
-}
-
 
 static const struct web_config
 {
@@ -663,8 +656,6 @@ ev_handler(struct mg_connection *conn, enum mg_event event)
    int i;
 
    printf("Event %d uri %s\n", event, conn->uri);
-   if (event == MG_POLL)
-      return MG_TRUE;
    for (i = 0; web_config[i].uri != NULL; i++)
    {
       if ((event == web_config[i].event) && (!strcmp (conn->uri, web_config[i].uri)))
@@ -672,7 +663,11 @@ ev_handler(struct mg_connection *conn, enum mg_event event)
          return web_config[i].func (conn);
       }
    }
-   return MG_TRUE;
+   // unhandled uri is allowed to be handled by mongoose
+   if (event == MG_AUTH)
+      return MG_TRUE;
+   else
+      return MG_FALSE;
 }
 
 void
