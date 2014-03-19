@@ -23,6 +23,33 @@
 
 #include "irrigate.h"
 
+void
+add_pump(int8_t zone, uint16_t minflow, uint16_t maxflow, uint16_t maxstarts, uint16_t start, uint16_t end)
+{
+   int8_t pump;
+// find a few pump slot
+   for (pump = 0; pump < MAXPUMPS; pump++)
+   {
+      if (pumpmap[pump].zone == 0)
+      {
+         // found a free one!!
+         pumpmap[pump].zone = zone;
+         pumpmap[pump].minflow = minflow;
+         pumpmap[pump].maxflow = maxflow;
+         pumpmap[pump].maxstarts = maxstarts;
+         pumpmap[pump].start = start;
+         pumpmap[pump].end = end;
+         break;
+      }
+   }
+}
+
+
+
+
+
+
+
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
@@ -67,17 +94,15 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isdpfeed")) ? ISDPFEED : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "istest")) ? ISTEST : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
-            if ((chanmap[zone].type & ISPUMP) && (wellzone == -1))
+            if (chanmap[zone].type & ISPUMP)
             {
-               wellzone = zone; // dynamically assign the well zone
-               wellmaxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
-               wellmaxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
-            }
-            if ((chanmap[zone].type & ISDPFEED) && (dpfeed == -1))
-            {
-               dpfeed = zone; // dynamically assign the domestic feed control
-               dpstart = json_object_get_int (json_object_object_get (jobj, "start"));
-               dpend = json_object_get_int (json_object_object_get (jobj, "end"));
+               uint16_t maxflow, maxstarts, start, end;
+
+               maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
+               maxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
+               start = json_object_get_int (json_object_object_get (jobj, "start"));
+               end = json_object_get_int (json_object_object_get (jobj, "end"));
+               add_pump(zone, chanmap[zone].flow, maxflow, maxstarts, start, end);
             }
 
             chanmap[zone].AorB = json_object_get_boolean (json_object_object_get (jobj, "aorb"));
@@ -233,4 +258,5 @@ print_chanmap (void)
       }
    }
 }
+
 

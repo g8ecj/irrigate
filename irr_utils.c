@@ -116,4 +116,23 @@ uint16_t get_expected_flow(void)
    return flow;
 }
 
+// get maximum flow rate of the pumping system by finding the highest capacity pump value
+uint16_t get_maximum_flow(void)
+{
+
+   static uint16_t maxflow = 0;
+   uint8_t pump;
+
+   if (maxflow == 0)
+   {
+      for (pump = 1; pump < MAXPUMPS; pump++)
+      {
+         // we're only interested in pumps
+         if (pumpmap[pump].maxflow > maxflow)
+            maxflow = pumpmap[pump].maxflow;
+      }
+   }
+   return maxflow;
+}
+
 

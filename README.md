@@ -115,5 +115,6 @@ irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
 
 TODO
 
-allow use of either well pump on its own or domestic feed on its own
-
+ * allow use of either well pump on its own or domestic feed on its own
+ * include password generation command sa per standalone mongoose server
+ 

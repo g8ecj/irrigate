@@ -59,6 +59,8 @@
 #define RESCHEDULE   (REALZONES + 2)
 #define RESET        (REALZONES + 3)
 
+// arbitrary number of pumps
+#define MAXPUMPS 10
 
 #define FROST_TIME 60
 #define VALVE_OVERLAP 1
@@ -100,6 +102,19 @@ struct mapstruct
    uint16_t group;              // what groups the zone is in
    uint16_t current;            // expected current draw in mA
 };
+
+
+struct pumpstruct
+{
+   uint8_t zone;               // links back to chanmap
+   uint16_t minflow;              // minimum flow
+   uint16_t maxflow;           // maximum flow
+   uint16_t maxstarts;         // how often pump can be started
+   uint16_t start;             // start time when pump is allowed to run
+   uint16_t end;               // end time for running pump
+};
+
+
 
 // what 'state' we are in
 #define IDLE      0
@@ -159,6 +174,7 @@ typedef struct tqueue
 extern time_t basictime;
 extern time_t ampstime;
 extern struct mapstruct chanmap[];
+extern struct pumpstruct pumpmap[];
 extern int8_t wellzone;
 extern int16_t wellmaxflow;
 extern int16_t wellmaxstarts;
@@ -309,6 +325,8 @@ int getNumber (int min, int max);
 char * getAddr (uint8_t * SNum);
 // convert clock hours to time based on current seconds count
 time_t hours2time(uint16_t decahours);
+// get maximum flow rate of the pumping system by finding the highest capacity pump value
+uint16_t get_maximum_flow(void);
 
 // statistics amd history
 void update_statistics (void);

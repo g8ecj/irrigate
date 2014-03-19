@@ -35,17 +35,12 @@
 
 // globals that all in this module can see
 struct mapstruct chanmap[MAXZONES];
+struct pumpstruct pumpmap[MAXPUMPS];
 
 time_t basictime;
 
 struct mg_server *server;
 
-int8_t wellzone = -1;
-int16_t wellmaxflow = 0;
-int16_t wellmaxstarts = 0;
-int8_t dpfeed = -1;
-int16_t dpstart = 0700;
-int16_t dpend = 2100;
 uint32_t welltime = 0;
 uint8_t frost_mode = FROST_OFF;
 bool frost_armed = FALSE;

@@ -183,7 +183,7 @@ test_load (uint8_t testzone, uint8_t action)
       {
          wellz = zone;
          if (chanmap[wellz].state == ACTIVE)
-            well_off(wellz);
+            pump_off(wellz);
          while (delete (wellz));                          // remove the queued up unlock command
          chanmap[wellz].locked = TRUE;
       }
@@ -237,7 +237,7 @@ test_cancel (uint8_t testzone)
    chanmap[testzone].useful = FALSE;
    insert (basictime - 1, dpfeed, UNLOCK);
    // Its already off but this will unlock it!!
-   well_off(wellzone);
+   pump_off(wellzone);
 
 }
 
@@ -302,7 +302,7 @@ void
 dogroup (uint8_t group, uint8_t action)
 {
    uint8_t zone, pass, numpass, z = 0;
-   uint16_t newflow = 0, flow = 0;
+   uint16_t newflow = 0, flow = 0, pumpmaxflow;
    time_t start;
 
    if (action == TURNOFF)       // use this to toggle the display status
@@ -320,6 +320,8 @@ dogroup (uint8_t group, uint8_t action)
       group_cancel (group, ERROR);
       return;
    }
+
+   pumpmaxflow = get_maximum_flow();
 
    // the starttime has already passed so set it to NOW
    chanmap[group].starttime = basictime;
@@ -339,13 +341,13 @@ dogroup (uint8_t group, uint8_t action)
 
    // if the total flow rate is less than the pump output then no need for multiple passes
    // we assume that all zones in a group have the same flow rate
-   if (newflow < wellmaxflow)
+   if (newflow < pumpmaxflow)
    {
       numpass = 1;
    }
    else
    {
-      numpass = wellmaxflow / chanmap[z].flow;    // how many zones can run simultaneously
+      numpass = pumpmaxflow / chanmap[z].flow;    // how many zones can run simultaneously
    }
 
    for (pass = 0; pass < numpass; pass++)
@@ -356,7 +358,7 @@ dogroup (uint8_t group, uint8_t action)
          if ((chanmap[zone].group & chanmap[group].group) && ((chanmap[zone].type & ISGROUP) == 0))
          {
             // if this zone will tip us over the max flow of the pump then schedule ahead
-            if ((flow + chanmap[zone].flow) > wellmaxflow)
+            if ((flow + chanmap[zone].flow) > pumpmaxflow)
             {
                start += (chanmap[group].duration / numpass);
                flow = 0;
@@ -414,12 +416,12 @@ manage_pumps (void)
    if ((totalflow > chanmap[wellzone].flow) && (chanmap[wellzone].locked == FALSE))
    {
       if (chanmap[wellzone].state == IDLE)      // if not switched on already, then switch on
-         well_on (wellzone);
+         pump_on (wellzone);
    }
    else
    {
       if (chanmap[wellzone].state == ACTIVE)    // if switched on already, then switch off and lock
-         well_off (wellzone);
+         pump_off (wellzone);
    }
 
    // if there is no domestic feed then no more to do...
@@ -475,8 +477,10 @@ manage_pumps (void)
 
 // switch on the pump, update the state
 void
-well_on (uint8_t zone)
+pump_on (uint8_t pump)
 {
+   uint8_t zone = pumpmap[pump].zone;
+
    if (chanmap[zone].locked)
       return;                   // belt and braces
    if (SetOutput (zone, ON))
@@ -498,11 +502,12 @@ well_on (uint8_t zone)
 // switch off the pump, update the state and say the zone is locked (busy)
 // queue an unlock for later
 void
-well_off (uint8_t zone)
+pump_off (uint8_t pump)
 {
    uint16_t locktime;
+   uint8_t zone = pumpmap[pump].zone;
 
-   locktime = 3600 / wellmaxstarts;   // convert starts per hour to lockout time
+   locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
    if (SetOutput (zone, OFF))
    {
       welltime += (basictime - chanmap[zone].starttime);
@@ -543,7 +548,7 @@ emergency_off (uint8_t newstate)
       {
          if (zone == wellzone)
          {
-            well_off (zone);    // lock it if its the well pump
+            pump_off (zone);    // lock it if its the well pump
          }
          else if (chanmap[zone].type & ISGROUP)
          {
