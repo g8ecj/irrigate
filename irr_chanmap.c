@@ -46,10 +46,6 @@ add_pump(int8_t zone, uint16_t minflow, uint16_t maxflow, uint16_t maxstarts, ui
 
 
 
-
-
-
-
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
@@ -96,13 +92,14 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
             if (chanmap[zone].type & ISPUMP)
             {
-               uint16_t maxflow, maxstarts, start, end;
+               uint16_t minflow = 0, maxflow = 9999, maxstarts = 3600, start = 0, end = 2400;
 
+               minflow = json_object_get_int (json_object_object_get (jobj, "minflow"));
                maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
                maxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
                start = json_object_get_int (json_object_object_get (jobj, "start"));
                end = json_object_get_int (json_object_object_get (jobj, "end"));
-               add_pump(zone, chanmap[zone].flow, maxflow, maxstarts, start, end);
+               add_pump(zone, minflow, maxflow, maxstarts, start, end);
             }
 
             chanmap[zone].AorB = json_object_get_boolean (json_object_object_get (jobj, "aorb"));

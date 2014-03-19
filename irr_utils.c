@@ -125,14 +125,33 @@ uint16_t get_maximum_flow(void)
 
    if (maxflow == 0)
    {
-      for (pump = 1; pump < MAXPUMPS; pump++)
+      for (pump = 0; pump < MAXPUMPS; pump++)
       {
          // we're only interested in pumps
          if (pumpmap[pump].maxflow > maxflow)
+         {
             maxflow = pumpmap[pump].maxflow;
+            printf ("Flow %d\n", maxflow);
+         }
       }
    }
    return maxflow;
+}
+
+
+// get the pump number fro mthe zone number
+uint8_t get_pump_by_zone(uint8_t zone)
+{
+
+   uint8_t pump;
+
+   for (pump = 1; pump < MAXPUMPS; pump++)
+   {
+      // we're only interested in pumps
+      if (pumpmap[pump].zone == zone)
+         return pump;
+   }
+   return 0;
 }
 
 

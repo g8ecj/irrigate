@@ -155,7 +155,7 @@ void
 test_load (uint8_t testzone, uint8_t action)
 {
 
-   uint8_t zone, dpz = 0, wellz = 0;
+   uint8_t zone;
    time_t start = basictime + 2;    // start after the reset has occured
 
    if (action == TURNOFF)       // use this to toggle the display status
@@ -181,19 +181,10 @@ test_load (uint8_t testzone, uint8_t action)
    {
       if ((chanmap[zone].type & ISPUMP) != 0)
       {
-         wellz = zone;
-         if (chanmap[wellz].state == ACTIVE)
-            pump_off(wellz);
-         while (delete (wellz));                          // remove the queued up unlock command
-         chanmap[wellz].locked = TRUE;
-      }
-      else if ((chanmap[zone].type & ISDPFEED) != 0)
-      {
-         dpz = zone;
-         while (delete (dpz));                          // remove the queued up commands
-         if (chanmap[dpz].state == ACTIVE)
-            insert (start, dpz, TURNOFF);
-         chanmap[dpz].locked = TRUE;
+         if (chanmap[zone].state == ACTIVE)
+            pump_off(get_pump_by_zone(zone));
+         while (delete (zone));                          // remove the queued up unlock command
+         chanmap[zone].locked = TRUE;
       }
       // already know its not a pump, check for group, is valid and has a flow associated with it (i.e. not a spare)
       else if (((chanmap[zone].type & (ISGROUP | ISTEST)) == 0) && (chanmap[zone].valid) && (chanmap[zone].flow > 0))
@@ -208,17 +199,15 @@ test_load (uint8_t testzone, uint8_t action)
    chanmap[testzone].state = ACTIVE;       // say we're active
    chanmap[testzone].period = start - chanmap[testzone].starttime;
    insert (start, testzone, TURNOFF);      // switch off display at the end
-   if (wellz > 0)
+
+   for (zone = 1; zone < REALZONES; zone++)
    {
-      chanmap[wellz].starttime = basictime;  // have a base time to know when unlock occurs
-      insert (start, wellz, UNLOCK);         // then allow well to start again
-      chanmap[wellz].period = chanmap[testzone].period;
-   }
-   if (dpz > 0)
-   {
-      chanmap[dpz].starttime = basictime;  // have a base time to know when unlock occurs
-      insert (start, dpz, UNLOCK);         // then allow domestic feed to start again
-      chanmap[dpz].period = chanmap[testzone].period;
+      if ((chanmap[zone].type & ISPUMP) != 0)
+      {
+         chanmap[zone].starttime = basictime;  // have a base time to know when unlock occurs
+         insert (start, zone, UNLOCK);         // then allow well to start again
+         chanmap[zone].period = chanmap[testzone].period;
+      }
    }
 
 }
@@ -227,6 +216,7 @@ test_load (uint8_t testzone, uint8_t action)
 void
 test_cancel (uint8_t testzone)
 {
+   uint8_t zone;
 
    // TODO - scan for existing test commands
    while (delete (testzone));
@@ -235,9 +225,12 @@ test_cancel (uint8_t testzone)
    chanmap[testzone].starttime = 0;
    chanmap[testzone].frequency = 0;
    chanmap[testzone].useful = FALSE;
-   insert (basictime - 1, dpfeed, UNLOCK);
-   // Its already off but this will unlock it!!
-   pump_off(wellzone);
+   // handle unlocking of the pumps
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      if ((chanmap[zone].type & ISPUMP) != 0)
+         pump_off(zone);
+   }
 
 }
 
@@ -402,6 +395,10 @@ group_cancel (uint8_t group, uint8_t state)
 void
 manage_pumps (void)
 {
+// scan through the list of pumps looking for one that suits the current flow rate
+// having found it, make sure its allowed to run at the current time
+// if not allowed by time then treat the special case of a pump that allows zero
+
 // First of all check the total flow - if high enough and the well pump is not locked then
 // start up the well pump (if it not running already!!)
 // If there is no domestic feed then we are done.
@@ -411,85 +408,45 @@ manage_pumps (void)
 // domestic feed then start it else stop it if the totalflow is zero
 
    uint16_t totalflow = get_expected_flow();
+   uint8_t pump;
 
-   // if the load is high enough for the well pump and its not locked
-   if ((totalflow > chanmap[wellzone].flow) && (chanmap[wellzone].locked == FALSE))
+   for (pump = 0; pump < MAXPUMPS; pump++)
    {
-      if (chanmap[wellzone].state == IDLE)      // if not switched on already, then switch on
-         pump_on (wellzone);
-   }
-   else
-   {
-      if (chanmap[wellzone].state == ACTIVE)    // if switched on already, then switch off and lock
-         pump_off (wellzone);
-   }
-
-   // if there is no domestic feed then no more to do...
-   if (dpfeed < 0)
-      return;
-
-// we set the lock bit when we turn on the domestic feed and only unlock it a few seconds after its turned off.
-// This ensures the valve has a chance to unstick
-   // well pump running - stop domestic feed
-   if (chanmap[wellzone].state == ACTIVE)
-   {
-      // only turn off domestic feed if its actually running
-      if ((chanmap[dpfeed].state == ACTIVE))
+      // see if within the range of operation of this pump
+      if ((totalflow >= pumpmap[pump].minflow) && (totalflow <= pumpmap[pump].maxflow) && (chanmap[pumpmap[pump].zone].locked == FALSE))
       {
-         while (delete (dpfeed));                          // remove the queued up turn off & unlock commands
-         chanmap[dpfeed].duration = SLACK_TIME;
-         insert (basictime, dpfeed, TURNOFF);
-         insert (basictime + SLACK_TIME, dpfeed, UNLOCK);
-      }
-   }
-
-   // if below well pump threshold, see if timeframe OK for domestic feed or total flow is non-zero
-   if (totalflow < chanmap[wellzone].flow)
-   {
-      if (((basictime > hours2time (dpstart)) && (basictime < hours2time (dpend))) || (totalflow > 0))
-      {
-         if ((chanmap[dpfeed].locked != TRUE))
-         {
-            int32_t tmp;
-            tmp = hours2time (dpend) - basictime;
-            if ((tmp > ONTIME) || tmp < 0)
-               tmp = ONTIME;
-            chanmap[dpfeed].duration = tmp;
-            chanmap[dpfeed].period = tmp;
-            chanmap[dpfeed].locked = TRUE;
-            insert (basictime, dpfeed, TURNON);
-            insert (basictime + tmp + SLACK_TIME, dpfeed, UNLOCK);
-         }
+         // see if we are allowed to run it at this time of day
+         if ((basictime > hours2time (pumpmap[pump].start)) && (basictime < hours2time (pumpmap[pump].end)))
+            pump_on(pumpmap[pump].zone);
+         // special case of any flow switches on a pump that includes zero flow
+         else if (totalflow > 0)
+            pump_on(pumpmap[pump].zone);
+         // zero flow, if not at the correct time, gets switched off
+         else
+            pump_off(pumpmap[pump].zone);
       }
       else
-      {
-         if ((chanmap[dpfeed].state == ACTIVE))
-         {
-            while (delete (dpfeed));                             // remove any queued turn off & unlock commands
-            chanmap[dpfeed].duration = SLACK_TIME;
-            insert (basictime, dpfeed, TURNOFF);         // turn off now
-            insert (basictime + SLACK_TIME, dpfeed, UNLOCK);
-         }
-      }
+         pump_off(pumpmap[pump].zone);
    }
+
 }
 
 
 // switch on the pump, update the state
 void
-pump_on (uint8_t pump)
+pump_on (uint8_t zone)
 {
-   uint8_t zone = pumpmap[pump].zone;
 
-   if (chanmap[zone].locked)
+   if ((chanmap[zone].locked) || (chanmap[zone].state == ACTIVE))
       return;                   // belt and braces
+
    if (SetOutput (zone, ON))
    {
       chanmap[zone].state = ACTIVE;
       chanmap[zone].duration = 0;
       chanmap[zone].period = 0; // we don't really know the end time
       chanmap[zone].starttime = basictime;      // say it starts now!!
-      log_printf (LOG_NOTICE, "switch ON well pump");
+      log_printf (LOG_NOTICE, "switch ON %s", chanmap[zone].name);
       chanmap[zone].actualstart = basictime;
    }
    else
@@ -502,30 +459,33 @@ pump_on (uint8_t pump)
 // switch off the pump, update the state and say the zone is locked (busy)
 // queue an unlock for later
 void
-pump_off (uint8_t pump)
+pump_off (uint8_t zone)
 {
    uint16_t locktime;
-   uint8_t zone = pumpmap[pump].zone;
+   uint8_t pump = get_pump_by_zone(zone);
 
-   locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
-   if (SetOutput (zone, OFF))
+   if (chanmap[zone].state == ACTIVE)
    {
-      welltime += (basictime - chanmap[zone].starttime);
-      chanmap[zone].totalflow = 0;      // don't record well flow, its the time that is important
-      log_printf (LOG_NOTICE, "switch OFF well pump and LOCK");
-      write_history (zone, basictime, chanmap[zone].actualstart, WASOK);
+      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
+      if (SetOutput (zone, OFF))
+      {
+         welltime += (basictime - chanmap[zone].starttime);
+         chanmap[zone].totalflow = 0;      // don't record well flow, its the time that is important
+         log_printf (LOG_NOTICE, "switch OFF %s and LOCK", chanmap[zone].name);
+         write_history (zone, basictime, chanmap[zone].actualstart, WASOK);
+      }
+      else
+      {
+         chanmap[zone].state = ERROR;
+         write_history (zone, basictime, chanmap[zone].actualstart, WASFAIL);
+      }
+      chanmap[zone].state = IDLE;
+      chanmap[zone].locked = TRUE;
+      chanmap[zone].period = locktime;
+      chanmap[zone].duration = locktime;
+      chanmap[zone].starttime = basictime;
+      insert (basictime + locktime, zone, UNLOCK);
    }
-   else
-   {
-      chanmap[zone].state = ERROR;
-      write_history (zone, basictime, chanmap[zone].actualstart, WASFAIL);
-   }
-   chanmap[zone].state = IDLE;
-   chanmap[zone].locked = TRUE;
-   chanmap[zone].period = locktime;
-   chanmap[zone].duration = locktime;
-   chanmap[zone].starttime = basictime;
-   insert (basictime + locktime, zone, UNLOCK);
 }
 
 
@@ -543,14 +503,14 @@ emergency_off (uint8_t newstate)
       if (findonqueue (zone) > 0)
          delete (zone);
 
+      // if a pump then do the unlock timing etc
+      if ((chanmap[zone].type & ISPUMP) != 0)
+         pump_off(zone);
+
       // if switched on and got real hardware here then switch off 
-      if (chanmap[zone].state == ACTIVE)
+      else if (chanmap[zone].state == ACTIVE)
       {
-         if (zone == wellzone)
-         {
-            pump_off (zone);    // lock it if its the well pump
-         }
-         else if (chanmap[zone].type & ISGROUP)
+         if (chanmap[zone].type & ISGROUP)
          {
             group_cancel (zone, newstate);
          }
@@ -558,11 +518,6 @@ emergency_off (uint8_t newstate)
          {
             zone_cancel (zone, newstate);  // all those switched due to error condition mark as such
          }
-      }
-      if (zone == dpfeed)
-      {
-         chanmap[dpfeed].locked = TRUE;         // prevent the domestic feed starting up too soon
-         insert (basictime + SLACK_TIME, dpfeed, UNLOCK);
       }
    }
    // schedule a general reset AFTER we have tried to clean things up

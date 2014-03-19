@@ -240,12 +240,12 @@ void group_cancel (uint8_t group, uint8_t state);
 void zone_cancel (uint8_t zone, uint8_t state);
 
 // switch on the pump, update the state
-void well_on (uint8_t zone);
+void pump_on (uint8_t zone);
 // switch off the pump, update the state and say the zone is locked (busy)
 // queue an unlock for later
-void well_off (uint8_t zone);
+void pump_off (uint8_t zone);
 // just mark the well zone as no longer locked
-void well_unlock (uint8_t zone);
+//void pump_unlock (uint8_t zone);
 
 // look after well & domestic pumps
 void manage_pumps(void);
@@ -308,6 +308,8 @@ char * getGPIOAddr (uint8_t index);
 uint16_t get_expected_current(void);
 // get expected flow rate by adding up all the active zones
 uint16_t get_expected_flow(void);
+// get the pump number fro mthe zone number
+uint8_t get_pump_by_zone(uint8_t zone);
 
 
 // This routine uses 'DoOutput' and 'check_current' to do the heavy lifting
