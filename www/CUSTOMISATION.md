@@ -39,19 +39,24 @@ json keys used for normal programable zones
 
 json boolean keys that modify a zone
 ```
-"isdpfeed":         bool       domestic feed
-"ispump":           bool       seperate pump
+"ispump":           bool       zone controls a pump
 "isfrost":          bool       frost protection applies
 "istest":           bool       is a virtual zone that trigger test mode
 "isspare":          bool       not used
 ```
 
-json keys that pass useful information about a zone
+json keys that pass useful information about a zonpumpe
 ```
+"minflow":          int        minimum flow of a pump in litres/minute
+"nomflow":          int        nominal flow of a pump in litres/minute
 "maxflow":          int        maximum flow of a pump in litres/minute
 "maxstarts":        int        maximum number of starts of a pump allowed per hour
-"start":            int        time in hhmm format of when to start domestic feed for stock
-"end":              int        time in hhmm format of when to stop domestic feed
+"isstock":          bool       pump/feed that supplies taps and stock troughs
+"start":            int        time in hhmm format of when to start a pump with the isstock attribute
+"end":              int        time in hhmm format of when to stop a pump with the isstock attribute
+```
+
+json keys that identify virtual zones
 "group"             int        identifier for a group from 1-15
 "zones"             array      list of zones in a group
 ```

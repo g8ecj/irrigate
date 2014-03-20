@@ -117,7 +117,7 @@ function drawVisualization(obj,id)
        var data = [];
        for (i in obj.events)
        {
-            if ((obj.events[i].status == 'failed') || (obj.events[i].status == 'error'))
+            if ((obj.events[i].status == 'failed') || (obj.events[i].status == 'error') || (obj.events[i].duration == 0))
                type = 'box'
             else
                type = 'range'
