@@ -87,12 +87,12 @@ readchanmap (void)
             chanmap[zone].current = json_object_get_int (json_object_object_get (jobj, "current"));
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "ispump")) ? ISPUMP : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isfrost")) ? ISFROST : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isdpfeed")) ? ISDPFEED : 0;
+            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isstock")) ? ISSTOCK : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "istest")) ? ISTEST : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
             if (chanmap[zone].type & ISPUMP)
             {
-               uint16_t minflow = 0, maxflow = 9999, maxstarts = 3600, start = 0, end = 2400;
+               uint16_t minflow = 1, maxflow = 9999, maxstarts = 3600, start = 0, end = 2400;
 
                minflow = json_object_get_int (json_object_object_get (jobj, "minflow"));
                maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));

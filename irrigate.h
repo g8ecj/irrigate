@@ -136,7 +136,7 @@ struct pumpstruct
 #define ISPUMP   1
 #define ISFROST  2
 #define ISGROUP  4              // first bit of several groups possible
-#define ISDPFEED 8
+#define ISSTOCK  8
 #define ISTEST   16
 #define ISSPARE  64
 
@@ -178,9 +178,6 @@ extern struct pumpstruct pumpmap[];
 extern int8_t wellzone;
 extern int16_t wellmaxflow;
 extern int16_t wellmaxstarts;
-extern int8_t dpfeed;
-extern int16_t dpstart;
-extern int16_t dpend;
 extern uint8_t frost_mode;
 extern bool frost_armed;
 extern bool monitor;

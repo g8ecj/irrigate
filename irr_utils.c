@@ -109,7 +109,7 @@ uint16_t get_expected_flow(void)
    for (zone = 1; zone < REALZONES; zone++)
    {
       // we're only interested in zones that are active but not the well pump or any other feed
-      if ((chanmap[zone].output == ON) && ((chanmap[zone].type & (ISPUMP | ISDPFEED)) == 0))
+      if ((chanmap[zone].output == ON) && ((chanmap[zone].type & ISPUMP) == 0))
          flow += chanmap[zone].flow;
    }
 

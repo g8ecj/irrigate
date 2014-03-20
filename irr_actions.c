@@ -397,36 +397,36 @@ manage_pumps (void)
 {
 // scan through the list of pumps looking for one that suits the current flow rate
 // having found it, make sure its allowed to run at the current time
-// if not allowed by time then treat the special case of a pump that allows zero
-
-// First of all check the total flow - if high enough and the well pump is not locked then
-// start up the well pump (if it not running already!!)
-// If there is no domestic feed then we are done.
-// If the well pump is running then shut off the domestic feed
-// If the well pump is running and the total flow drops below the threshold then stop the pump and lock it.
-// If the total flow is below the well pump threshold then see if the timeframe is suitable for starting the
-// domestic feed then start it else stop it if the totalflow is zero
+// if not allowed by time then ignore it
+// if no pumps running by the end of the scan look for a pump that has the ISSTOCK attribute
+//   and turn it on if the time limits allow it
 
    uint16_t totalflow = get_expected_flow();
    uint8_t pump;
 
-   for (pump = 0; pump < MAXPUMPS; pump++)
+   for (pump = 0; pumpmap[pump].zone; pump++)
    {
       // see if within the range of operation of this pump
       if ((totalflow >= pumpmap[pump].minflow) && (totalflow <= pumpmap[pump].maxflow) && (chanmap[pumpmap[pump].zone].locked == FALSE))
       {
+         pump_on(pumpmap[pump].zone);
+      }
+      else if (chanmap[pumpmap[pump].zone].type & ISSTOCK)
+      {
          // see if we are allowed to run it at this time of day
          if ((basictime > hours2time (pumpmap[pump].start)) && (basictime < hours2time (pumpmap[pump].end)))
+         {
             pump_on(pumpmap[pump].zone);
-         // special case of any flow switches on a pump that includes zero flow
-         else if (totalflow > 0)
-            pump_on(pumpmap[pump].zone);
-         // zero flow, if not at the correct time, gets switched off
+         }
          else
+         {
             pump_off(pumpmap[pump].zone);
+         }
       }
       else
+      {
          pump_off(pumpmap[pump].zone);
+      }
    }
 
 }
