@@ -295,7 +295,7 @@ void
 dogroup (uint8_t group, uint8_t action)
 {
    uint8_t zone, pass, numpass, z = 0;
-   uint16_t newflow = 0, flow = 0, pumpmaxflow;
+   uint16_t newflow = 0, flow = 0, pumpnomflow;
    time_t start;
 
    if (action == TURNOFF)       // use this to toggle the display status
@@ -314,7 +314,7 @@ dogroup (uint8_t group, uint8_t action)
       return;
    }
 
-   pumpmaxflow = get_maximum_flow();
+   pumpnomflow = get_nominal_flow();
 
    // the starttime has already passed so set it to NOW
    chanmap[group].starttime = basictime;
@@ -334,13 +334,13 @@ dogroup (uint8_t group, uint8_t action)
 
    // if the total flow rate is less than the pump output then no need for multiple passes
    // we assume that all zones in a group have the same flow rate
-   if (newflow < pumpmaxflow)
+   if (newflow < pumpnomflow)
    {
       numpass = 1;
    }
    else
    {
-      numpass = pumpmaxflow / chanmap[z].flow;    // how many zones can run simultaneously
+      numpass = pumpnomflow / chanmap[z].flow;    // how many zones can run simultaneously
    }
 
    for (pass = 0; pass < numpass; pass++)
@@ -351,7 +351,7 @@ dogroup (uint8_t group, uint8_t action)
          if ((chanmap[zone].group & chanmap[group].group) && ((chanmap[zone].type & ISGROUP) == 0))
          {
             // if this zone will tip us over the max flow of the pump then schedule ahead
-            if ((flow + chanmap[zone].flow) > pumpmaxflow)
+            if ((flow + chanmap[zone].flow) > pumpnomflow)
             {
                start += (chanmap[group].duration / numpass);
                flow = 0;

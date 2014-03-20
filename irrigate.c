@@ -110,6 +110,11 @@ main (int argc, char **argv)
       chanmap[i].name[0] = '\0';
    }
 
+   for (i = 0; i < MAXPUMPS; i++)
+   {
+      pumpmap[i].zone = 0;
+   }
+
    openlog ("irrigate", LOG_PERROR, LOG_USER);
 
    log_printf (LOG_NOTICE, "Irrigation Controller Version %s Copyright (c) 2009-2014 Robin Gilks", VERSION);

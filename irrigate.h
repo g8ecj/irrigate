@@ -107,7 +107,8 @@ struct mapstruct
 struct pumpstruct
 {
    uint8_t zone;               // links back to chanmap
-   uint16_t minflow;              // minimum flow
+   uint16_t minflow;           // minimum flow
+   uint16_t nomflow;           // nominal flow
    uint16_t maxflow;           // maximum flow
    uint16_t maxstarts;         // how often pump can be started
    uint16_t start;             // start time when pump is allowed to run
@@ -325,7 +326,7 @@ char * getAddr (uint8_t * SNum);
 // convert clock hours to time based on current seconds count
 time_t hours2time(uint16_t decahours);
 // get maximum flow rate of the pumping system by finding the highest capacity pump value
-uint16_t get_maximum_flow(void);
+uint16_t get_nominal_flow(void);
 
 // statistics amd history
 void update_statistics (void);

@@ -117,25 +117,24 @@ uint16_t get_expected_flow(void)
 }
 
 // get maximum flow rate of the pumping system by finding the highest capacity pump value
-uint16_t get_maximum_flow(void)
+uint16_t get_nominal_flow(void)
 {
 
-   static uint16_t maxflow = 0;
+   static uint16_t nomflow = 0;
    uint8_t pump;
 
-   if (maxflow == 0)
+   if (nomflow == 0)
    {
-      for (pump = 0; pump < MAXPUMPS; pump++)
+      for (pump = 0; pumpmap[pump].zone; pump++)
       {
          // we're only interested in pumps
-         if (pumpmap[pump].maxflow > maxflow)
+         if (pumpmap[pump].nomflow > nomflow)
          {
-            maxflow = pumpmap[pump].maxflow;
-            printf ("Flow %d\n", maxflow);
+            nomflow = pumpmap[pump].nomflow;
          }
       }
    }
-   return maxflow;
+   return nomflow;
 }
 
 
