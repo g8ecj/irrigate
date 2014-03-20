@@ -404,6 +404,7 @@ manage_pumps (void)
    uint16_t totalflow = get_expected_flow();
    uint8_t pump;
 
+   // scan the list of pumps
    for (pump = 0; pumpmap[pump].zone; pump++)
    {
       // see if within the range of operation of this pump
@@ -411,7 +412,8 @@ manage_pumps (void)
       {
          pump_on(pumpmap[pump].zone);
       }
-      else if (chanmap[pumpmap[pump].zone].type & ISSTOCK)
+      // stock water flag is only meaningful if there is no other demand
+      else if ((chanmap[pumpmap[pump].zone].type & ISSTOCK) && (totalflow == 0))
       {
          // see if we are allowed to run it at this time of day
          if ((basictime > hours2time (pumpmap[pump].start)) && (basictime < hours2time (pumpmap[pump].end)))
