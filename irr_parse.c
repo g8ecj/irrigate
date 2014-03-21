@@ -42,6 +42,88 @@ char accesslog[MAXFILELEN] = "";
 double Tthreshold = -0.5;
 uint16_t frostlimit = 60;
 
+
+
+
+int
+modify_passwords_file (const char *fname, const char *domain, const char *user, const char *pass)
+{
+   int found;
+   char line[512], u[512], d[512], ha1[33], tmp[1024];
+   FILE *fp, *fp2;
+
+   found = 0;
+   fp = fp2 = NULL;
+
+   // Regard empty password as no password - remove user record.
+   if (pass != NULL && pass[0] == '\0')
+   {
+      pass = NULL;
+   }
+
+   (void) snprintf (tmp, sizeof (tmp), "%s.tmp", fname);
+
+   // Create the file if does not exist
+   if ((fp = fopen (fname, "a+")) != NULL)
+   {
+      fclose (fp);
+   }
+
+   // Open the given file and temporary file
+   if ((fp = fopen (fname, "r")) == NULL)
+   {
+      return 0;
+   }
+   else if ((fp2 = fopen (tmp, "w+")) == NULL)
+   {
+      fclose (fp);
+      return 0;
+   }
+
+   // Copy the stuff to temporary file
+   while (fgets (line, sizeof (line), fp) != NULL)
+   {
+      if (sscanf (line, "%[^:]:%[^:]:%*s", u, d) != 2)
+      {
+         continue;
+      }
+
+      if (!strcmp (u, user) && !strcmp (d, domain))
+      {
+         found++;
+         if (pass != NULL)
+         {
+            mg_md5 (ha1, user, ":", domain, ":", pass, NULL);
+            fprintf (fp2, "%s:%s:%s\n", user, domain, ha1);
+         }
+      }
+      else
+      {
+         fprintf (fp2, "%s", line);
+      }
+   }
+
+   // If new user, just add it
+   if (!found && pass != NULL)
+   {
+      mg_md5 (ha1, user, ":", domain, ":", pass, NULL);
+      fprintf (fp2, "%s:%s:%s\n", user, domain, ha1);
+   }
+
+   // Close files
+   fclose (fp);
+   fclose (fp2);
+
+   // Put the temp file in place of real file
+   remove (fname);
+   rename (tmp, fname);
+
+   return 1;
+}
+
+
+
+
 /**
  parseArguments
  * Parse command line arguments.
@@ -68,6 +150,17 @@ parseArguments (int argc, char **argv)
       {"debug",      required_argument, NULL,       'x'},
       {NULL, 0, NULL, 0}
    };
+
+  // Edit passwords file if -A option is specified
+   if (argc > 1 && !strcmp (argv[1], "-A"))
+   {
+      if (argc != 6)
+      {
+         printf ("Unknown option \"%s\". Use -h for help\n", argv[optind - 1]);
+         exit (EXIT_FAILURE);
+      }
+      exit (modify_passwords_file (argv[2], argv[3], argv[4], argv[5]) ? EXIT_SUCCESS : EXIT_FAILURE);
+   }
 
    while (TRUE)
    {
@@ -112,6 +205,8 @@ parseArguments (int argc, char **argv)
                  "-v,        --version   useful version information\n"
                  "-x         --debug     debug mode\n"
                  "-h,        --help      this help screen\n", argv[0]);
+         printf(" or: %s -A <htpasswd_file> <realm> <user> <passwd>\n", argv[0]);
+
          exit (0);
       case 'l':
          frostlimit = atoi (optarg);

@@ -320,7 +320,7 @@ GetCurrent (void)
    char path[32];
    char * tokenstring;
    double Vad;
-   size_t s ;
+   size_t s;
 
    if (VI < 0)
       return 0;
@@ -334,6 +334,40 @@ GetCurrent (void)
 
    return (uint16_t) Vad;
 }
+
+time_t
+GetTime (void)
+{
+   char path[32];
+   char * tokenstring;
+   time_t time;
+   size_t s;
+
+   if (VI < 0)
+      return 0;
+   sprintf(path, "/uncached/%s/udate", famvolt[VI]);
+   OW_get(path,&tokenstring,&s) ;
+   time = atol(tokenstring);
+   free(tokenstring);
+
+   return time;
+}
+
+void
+SetTime(void)
+{
+   char path[32];
+
+   if (VI < 0)
+      return;
+   sprintf(path, "/uncached/%s/date", famvolt[VI]);
+   // null length time is current date/time
+   OW_put(path, "", 0) ;
+
+}
+
+
+
 
 double
 GetTemp(uint16_t index)
