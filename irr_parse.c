@@ -156,7 +156,7 @@ parseArguments (int argc, char **argv)
    {
       if (argc != 6)
       {
-         printf ("Unknown option \"%s\". Use -h for help\n", argv[optind - 1]);
+         printf("%s -A <htpasswd_file> <realm> <user> <passwd>\n", argv[0]);
          exit (EXIT_FAILURE);
       }
       exit (modify_passwords_file (argv[2], argv[3], argv[4], argv[5]) ? EXIT_SUCCESS : EXIT_FAILURE);

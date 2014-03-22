@@ -335,6 +335,8 @@ GetCurrent (void)
    return (uint16_t) Vad;
 }
 
+
+// get/set the time in the DS2438 that handles the current transformer interface
 time_t
 GetTime (void)
 {
@@ -352,6 +354,7 @@ GetTime (void)
 
    return time;
 }
+
 
 void
 SetTime(void)
