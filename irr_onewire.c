@@ -347,7 +347,7 @@ GetTime (void)
 
    if (VI < 0)
       return 0;
-   sprintf(path, "/uncached/%s/udate", famvolt[VI]);
+   sprintf(path, "/%s/udate", famvolt[VI]);
    OW_get(path,&tokenstring,&s) ;
    time = atol(tokenstring);
    free(tokenstring);
@@ -363,7 +363,7 @@ SetTime(void)
 
    if (VI < 0)
       return;
-   sprintf(path, "/uncached/%s/date", famvolt[VI]);
+   sprintf(path, "/%s/date", famvolt[VI]);
    // null length time is current date/time
    OW_put(path, "", 0) ;
 
