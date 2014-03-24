@@ -212,7 +212,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       }
       else if (Vad > 4.5)
       {
-         *T2 = i;               // tap volts ~= supply, must be the 3rd temp sensor
+         *T2 = i;               // tap volts ~= supply, must be the 2nd temp sensor
          if (debug)
             printf ("Temp sensor 2 on address %s\n", famvolt[i]);
       }
@@ -227,6 +227,11 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       }
       monitor = FALSE;
    }
+
+   if (numtemp == 1)
+      *T1 = 0;
+   if (numtemp == 2)
+      *T2 = 1;
 
    return numgpio;
 }
@@ -380,7 +385,11 @@ GetTemp(uint16_t index)
    char * tokenstring;
    size_t s ;
 
-   sprintf(path, "/%s/temperature", famvolt[index]);
+   if (numtemp > 0)
+      sprintf(path, "/%s/temperature", famtemp[index]);
+   else
+      sprintf(path, "/%s/temperature", famvolt[index]);
+
    OW_get(path,&tokenstring,&s) ;
    temp = atof(tokenstring);
    free(tokenstring);
