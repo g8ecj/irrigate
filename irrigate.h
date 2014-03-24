@@ -42,9 +42,12 @@
 
 
 // Constant definitions
-#define SWITCH_FAM         0x3A
-#define VOLTS_FAM          0x26
-#define TEMP_FAM           0x28
+#define DS18S20_FAMILY_CODE       0x10
+#define DS18B20_FAMILY_CODE       0x28
+#define DS1822_FAMILY_CODE        0x22
+
+#define DS2413_FAMILY_CODE        0x3A
+#define DS2438_FAMILY_CODE        0x26
 #define MAXDEVICES         20
 
 #define MAXDEVLEN 80

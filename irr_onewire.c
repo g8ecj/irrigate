@@ -161,13 +161,15 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
          family = strtol(tokens[i], NULL, 16);
          switch (family)
          {
-         case SWITCH_FAM:
+         case DS2413_FAMILY_CODE:
             strncpy(famgpio[numgpio++], tokens[i], 16);
             break;
-         case VOLTS_FAM:
+         case DS2438_FAMILY_CODE:
             strncpy(famvolt[numvolt++], tokens[i], 16);
             break;
-         case TEMP_FAM:
+         case DS18S20_FAMILY_CODE:
+         case DS18B20_FAMILY_CODE:
+         case DS1822_FAMILY_CODE:
             strncpy(famtemp[numtemp++], tokens[i], 16);
             break;
          }
