@@ -398,7 +398,7 @@ GetTemp(uint16_t index)
 
    ret = OW_get(path,&tokenstring,&s);
    if (ret < 0)
-      temp = -999)
+      temp = -999;
    else
       temp = atof(tokenstring);
    free(tokenstring);
