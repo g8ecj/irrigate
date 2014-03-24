@@ -187,7 +187,14 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
    log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
 
+   // clear all hardware down
    general_reset (numgpio);
+
+   // if we have some ds18x20 chips then allocate them as temperature sensors
+   if (numtemp == 1)
+      *T1 = 0;
+   if (numtemp == 2)
+      *T2 = 1;
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
    for (i = 0; i < numvolt; i++)
@@ -198,23 +205,25 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       Vad = atoi(tokenstring);
       if (debug)
          printf ("Read %2.2f volts on Vad pin\n", Vad);
+      // at this point the current should be zero (hardware reset) so measured value
+      // from this sensor should be zero
       if (Vad < 1.0)
       {
-         VI = i;                // tap volts == ground, using voltage (current) sensors
-         if (debug)
-            printf ("Current sensor on address  %s\n", famvolt[i]);
+         if ((VI >= 0) && monitor)
+         {
+            log_printf (LOG_ERR, "Current monitor sensor duplicated");
+            monitor = FALSE;
+         }
+         else
+            VI = i;
       }
-      else if (Vad < 3.0)
+      else
       {
-         *T1 = i;               // tap volts == half supply, just using temp sensor
-         if (debug)
-            printf ("Temp sensor 1 on address  %s\n", famvolt[i]);
-      }
-      else if (Vad > 4.5)
-      {
-         *T2 = i;               // tap volts ~= supply, must be the 2nd temp sensor
-         if (debug)
-            printf ("Temp sensor 2 on address %s\n", famvolt[i]);
+         // see if temperature sensor(s) allocated yet
+         if (*T1 < 0)
+            *T1 = i;
+         else if (*T2 < 0)
+            *T2 = i;
       }
       free(tokenstring);
    }
@@ -228,10 +237,6 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       monitor = FALSE;
    }
 
-   if (numtemp == 1)
-      *T1 = 0;
-   if (numtemp == 2)
-      *T2 = 1;
 
    return numgpio;
 }
@@ -383,15 +388,19 @@ GetTemp(uint16_t index)
    double temp;
    char path[32];
    char * tokenstring;
-   size_t s ;
+   size_t s;
+   ssize_t ret;
 
    if (numtemp > 0)
       sprintf(path, "/%s/temperature", famtemp[index]);
    else
       sprintf(path, "/%s/temperature", famvolt[index]);
 
-   OW_get(path,&tokenstring,&s) ;
-   temp = atof(tokenstring);
+   ret = OW_get(path,&tokenstring,&s);
+   if (ret < 0)
+      temp = -999)
+   else
+      temp = atof(tokenstring);
    free(tokenstring);
    return temp;
 }
