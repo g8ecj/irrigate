@@ -86,6 +86,7 @@ readchanmap (void)
                      pumpmap[pump].maxrun = json_object_get_int (json_object_object_get (jobj, "maxrun"));
                      pumpmap[pump].start = json_object_get_int (json_object_object_get (jobj, "start"));
                      pumpmap[pump].end = json_object_get_int (json_object_object_get (jobj, "end"));
+                     pumpmap[pump].pumpingtime = 0;   // reset count
                      break;
                   }
                }

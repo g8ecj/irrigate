@@ -69,7 +69,7 @@ textpri (int pri)
 void
 update_statistics (void)
 {
-   struct json_object *jobj, *jtmp;
+   struct json_object *jobj;
    char statsfile[MAXFILELEN];
    uint8_t zone, changes = 0;
    FILE *fd;
@@ -100,11 +100,7 @@ update_statistics (void)
                   // if there is something recorded we have to update the stats file
                   if (pumpmap[get_pump_by_zone(zone)].pumpingtime > 0)
                      changes++;
-                  // careful with double/float input in case its not actually there!!
-                  jtmp = json_object_object_get (jobj, "pumptime");
-                  if (jtmp)
-                     pumpmap[get_pump_by_zone(zone)].pumpingtime += (json_object_get_double (jtmp) * 3600);
-                  json_object_put (jtmp);
+                  pumpmap[get_pump_by_zone(zone)].pumpingtime += json_object_get_double (json_object_object_get (jobj, "pumptime")) * 3600;
                }
                else
                {
@@ -145,7 +141,7 @@ update_statistics (void)
          json_object_put (jobj);
          pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
       }
-      if (chanmap[zone].totalflow > 0)
+      else if (chanmap[zone].totalflow > 0)
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
