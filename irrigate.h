@@ -114,9 +114,10 @@ struct pumpstruct
    uint16_t nomflow;           // nominal flow
    uint16_t maxflow;           // maximum flow
    uint16_t maxstarts;         // how often pump can be started
-   uint16_t maxrun;            // how long the pump can run for in one go
-   uint16_t start;             // start time when pump is allowed to run
-   uint16_t end;               // end time for running pump
+   uint32_t maxrun;            // how long the pump can run for in one go
+   uint16_t start;             // start time when pump is allowed to run (in HHMM format)
+   uint16_t end;               // end time for running pump (HHMM)
+   uint32_t pumpingtime;       // how long we spent running the pump in this session
 };
 
 
@@ -188,7 +189,6 @@ extern uint8_t frost_mode;
 extern bool frost_armed;
 extern bool monitor;
 extern int16_t interrupt;
-extern uint32_t welltime;
 extern double temperature;
 extern double temperature1, temperature2;
 extern double Tintegral;

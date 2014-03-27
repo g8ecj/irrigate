@@ -41,7 +41,6 @@ time_t basictime;
 
 struct mg_server *server;
 
-uint32_t welltime = 0;
 uint8_t frost_mode = FROST_OFF;
 bool frost_armed = FALSE;
 bool controlC = FALSE;
