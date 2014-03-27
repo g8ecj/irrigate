@@ -23,28 +23,6 @@
 
 #include "irrigate.h"
 
-void
-add_pump(int8_t zone, uint16_t minflow, uint16_t nomflow, uint16_t maxflow, uint16_t maxstarts, uint16_t start, uint16_t end)
-{
-   int8_t pump;
-// find a few pump slot
-   for (pump = 0; pump < MAXPUMPS; pump++)
-   {
-      if (pumpmap[pump].zone == 0)
-      {
-         // found a free one!!
-         pumpmap[pump].zone = zone;
-         pumpmap[pump].minflow = minflow;
-         pumpmap[pump].nomflow = nomflow;
-         pumpmap[pump].maxflow = maxflow;
-         pumpmap[pump].maxstarts = maxstarts;
-         pumpmap[pump].start = start;
-         pumpmap[pump].end = end;
-         break;
-      }
-   }
-}
-
 
 
 // read from a file to populate the chanmap array of mapstruct entries
@@ -58,6 +36,7 @@ readchanmap (void)
    int offset;
    char *p;
    char *input;
+   int8_t pump;
 
    FILE *fd;
    struct json_object *jobj, *jlist, *jtmp;
@@ -93,15 +72,23 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
             if (chanmap[zone].type & ISPUMP)
             {
-               uint16_t minflow = 1, nomflow = 100, maxflow = 9999, maxstarts = 3600, start = 0, end = 2400;
-
-               minflow = json_object_get_int (json_object_object_get (jobj, "minflow"));
-               nomflow = json_object_get_int (json_object_object_get (jobj, "nomflow"));
-               maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
-               maxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
-               start = json_object_get_int (json_object_object_get (jobj, "start"));
-               end = json_object_get_int (json_object_object_get (jobj, "end"));
-               add_pump(zone, minflow, nomflow, maxflow, maxstarts, start, end);
+               // find a few pump slot
+               for (pump = 0; pump < MAXPUMPS; pump++)
+               {
+                  if (pumpmap[pump].zone == 0)
+                  {
+                     // found a free one!!
+                     pumpmap[pump].zone = zone;
+                     pumpmap[pump].minflow = json_object_get_int (json_object_object_get (jobj, "minflow"));
+                     pumpmap[pump].nomflow = json_object_get_int (json_object_object_get (jobj, "nomflow"));
+                     pumpmap[pump].maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
+                     pumpmap[pump].maxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
+                     pumpmap[pump].maxrun = json_object_get_int (json_object_object_get (jobj, "maxrun"));
+                     pumpmap[pump].start = json_object_get_int (json_object_object_get (jobj, "start"));
+                     pumpmap[pump].end = json_object_get_int (json_object_object_get (jobj, "end"));
+                     break;
+                  }
+               }
             }
 
             chanmap[zone].AorB = json_object_get_boolean (json_object_object_get (jobj, "aorb"));

@@ -93,8 +93,8 @@ struct mapstruct
    char address[17];            // 8 byte chip address in hex - derived from famsw[dev]? includes null terminator
    char name[33];               // up to 32 chars free format name string
    uint8_t state;               // if currently on or off - used when toggling an object
-   int16_t duration;            // total of how long a zone is active for
-   uint16_t period;             // the working value of how long to be on for on this pass
+   time_t duration;            // total of how long a zone is active for
+   time_t period;             // the working value of how long to be on for on this pass
    int32_t frequency;           // how often the zone is activated
    uint8_t locked;              // > 0 if locked (only really applies to a pump)
    uint16_t flow;               // nominal flow rate
@@ -114,6 +114,7 @@ struct pumpstruct
    uint16_t nomflow;           // nominal flow
    uint16_t maxflow;           // maximum flow
    uint16_t maxstarts;         // how often pump can be started
+   uint16_t maxrun;            // how long the pump can run for in one go
    uint16_t start;             // start time when pump is allowed to run
    uint16_t end;               // end time for running pump
 };
@@ -172,6 +173,7 @@ typedef struct tqueue
 #define TESTON   4
 #define TESTOFF  5
 #define UNLOCK   6
+#define PUMPOFF  7
 
 
 // globals that all in this module can see

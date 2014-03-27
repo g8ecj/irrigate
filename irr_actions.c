@@ -124,6 +124,10 @@ doaction (uint8_t zone, uint8_t action)
 
       break;
 
+   case PUMPOFF:
+      pump_off(zone);
+      break;
+
    case UNLOCK:
       chanmap[zone].locked = FALSE;
       log_printf (LOG_NOTICE, "UNLOCK %s", chanmap[zone].name);
@@ -438,6 +442,7 @@ manage_pumps (void)
 void
 pump_on (uint8_t zone)
 {
+   uint8_t pump = get_pump_by_zone(zone);
 
    if ((chanmap[zone].locked) || (chanmap[zone].state == ACTIVE))
       return;                   // belt and braces
@@ -450,6 +455,7 @@ pump_on (uint8_t zone)
       chanmap[zone].starttime = basictime;      // say it starts now!!
       log_printf (LOG_NOTICE, "switch ON %s", chanmap[zone].name);
       chanmap[zone].actualstart = basictime;
+      insert (basictime + pumpmap[pump].maxrun, zone, PUMPOFF);
    }
    else
    {
@@ -481,6 +487,7 @@ pump_off (uint8_t zone)
          chanmap[zone].state = ERROR;
          write_history (zone, basictime, chanmap[zone].actualstart, WASFAIL);
       }
+      while (delete (zone));                // remove any outstanding 'off' action
       chanmap[zone].state = IDLE;
       chanmap[zone].locked = TRUE;
       chanmap[zone].period = locktime;
