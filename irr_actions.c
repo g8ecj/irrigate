@@ -478,7 +478,7 @@ pump_off (uint8_t zone)
       if (SetOutput (zone, OFF))
       {
          pumpmap[pump].pumpingtime += (basictime - chanmap[zone].starttime);
-         chanmap[zone].totalflow = 0;      // don't record well flow, its the time that is important
+         chanmap[zone].totalflow = 0;      // don't record pump flow, its the time that is important
          log_printf (LOG_NOTICE, "switch OFF %s and LOCK", chanmap[zone].name);
          write_history (zone, basictime, chanmap[zone].actualstart, WASOK);
       }

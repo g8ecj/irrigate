@@ -147,7 +147,7 @@ update_statistics (void)
          json_object_put (jobj);
          pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
       }
-      if (chanmap[zone].totalflow > 0)
+      else if (chanmap[zone].totalflow > 0)
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
