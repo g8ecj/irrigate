@@ -136,7 +136,7 @@ update_statistics (void)
    }
    for (zone = 1; zone < REALZONES; zone++)
    {
-      if (chanmap[zone].type & ISPUMP)
+      if ((chanmap[zone].type & ISPUMP) && (pumpmap[get_pump_by_zone(zone)].pumpingtime > 0))
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
