@@ -69,7 +69,7 @@ textpri (int pri)
 void
 update_statistics (void)
 {
-   struct json_object *jobj, *jtmp;
+   struct json_object *jobj;
    char statsfile[MAXFILELEN];
    uint8_t zone, changes = 0;
    FILE *fd;
@@ -93,25 +93,13 @@ update_statistics (void)
          else
          {
             zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+            // make sure I actually read a zone
             if (zone > 0)
             {
                if (chanmap[zone].type & ISPUMP)
-               {
-                  // if there is something recorded we have to update the stats file
-                  if (pumpmap[get_pump_by_zone(zone)].pumpingtime > 0)
-                     changes++;
-                  // careful with double/float input in case its not actually there!!
-                  jtmp = json_object_object_get (jobj, "pumptime");
-                  if (jtmp)
-                     pumpmap[get_pump_by_zone(zone)].pumpingtime += (json_object_get_double (jtmp) * 3600);
-                  json_object_put (jtmp);
-               }
+                  pumpmap[get_pump_by_zone(zone)].pumpingtime += json_object_get_double (json_object_object_get (jobj, "pumptime")) * 3600;
                else
-               {
-                  if (chanmap[zone].totalflow > 0)
-                     changes++;
                   chanmap[zone].totalflow += json_object_get_double (json_object_object_get (jobj, "totalflow"));
-               }
             }
          }
          json_object_put (jobj);
@@ -120,6 +108,20 @@ update_statistics (void)
       fclose (fd);
    }
 
+   // scan zones to see if we are making any changes to the stats
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      if (chanmap[zone].type & ISPUMP)
+      {
+         if (pumpmap[get_pump_by_zone(zone)].pumpingtime > 0)
+            changes++;
+      }
+      else
+      {
+         if (chanmap[zone].totalflow > 0)
+             changes++;
+      }
+   }
 
    // nothing to do if no changes!!
    if (changes == 0)
