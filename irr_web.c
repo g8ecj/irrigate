@@ -266,7 +266,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else
       strncpy (ing_ed, "ing", 4);
 
-   if (starttime + cmap->period < basictime)
+   if ((starttime + cmap->period < basictime) && (cmap->state != ACTIVE))
       strncpy (is_was, "was", 4);
    else
       strncpy (is_was, "is", 3);
