@@ -194,9 +194,9 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
 
    // if we have some ds18x20 chips then allocate them as temperature sensors
    if (numtemp == 1)
-      *T1 = 0;
+      *T1 = 0 | 0x80;
    if (numtemp == 2)
-      *T2 = 1;
+      *T2 = 1 | 0x80;
 
    // search all DS2438 chips, categorise according to the volts on the Vad pin
    for (i = 0; i < numvolt; i++)
@@ -393,8 +393,8 @@ GetTemp(uint16_t index)
    size_t s;
    ssize_t ret;
 
-   if (numtemp > 0)
-      sprintf(path, "/%s/temperature", famtemp[index]);
+   if (index & 0x80)
+      sprintf(path, "/%s/temperature", famtemp[index & 0x7f]);
    else
       sprintf(path, "/%s/temperature", famvolt[index]);
 
