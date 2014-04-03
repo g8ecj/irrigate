@@ -193,7 +193,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    general_reset (numgpio);
 
    // if we have some ds18x20 chips then allocate them as temperature sensors
-   if (numtemp == 1)
+   if (numtemp >= 1)
       *T1 = 0 | 0x80;
    if (numtemp == 2)
       *T2 = 1 | 0x80;
