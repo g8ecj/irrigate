@@ -109,6 +109,7 @@ update_statistics (void)
    }
 
    // scan zones to see if we are making any changes to the stats
+   // we must do this seperately otherwise we only see the zones already in the stats file.
    for (zone = 1; zone < REALZONES; zone++)
    {
       if (chanmap[zone].type & ISPUMP)
@@ -128,6 +129,7 @@ update_statistics (void)
       return;
 
    // update the records in the file and clear the current accumulated stats
+   // Note: this means we rewrite the whole file even if only one zone changes.
    fd = fopen (statsfile, "w");
    if (fd == NULL)
    {

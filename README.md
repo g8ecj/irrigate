@@ -20,6 +20,7 @@ See http://openwrt.org
 It uses the owfs system that makes 1-wire devices appear as a part of the file system.
 The interface to the owlib software is via the owcapi 'C' API library.
 
+
 These files implement an embedded http server with simple callbacks to the main code. It
 is licensed under the GPL V2 License. I'm using version 5.3 at present.
 ```
@@ -76,9 +77,9 @@ www/zones.jpg
 www/zones.conf
 ```
 
-The first is created using mongoose in stand-alone mode, the next 2 describe the layout of the general 
-webpage and the final file describes the 1-wire addesses (where appropriate), the characteristics of 
-each zone and where it appears on the browser image map.
+The first is created using the '-A' command line switch, the same as Mongoose in stand-alone mode,
+the next 2 describe the layout of the general webpage and the final file describes the 1-wire addesses 
+(where appropriate), the characteristics of each zone and where it appears on the browser image map.
 
 ```
 $ ./irrigate --help
@@ -113,8 +114,3 @@ irrigate -m -b -t 0.1 -l 15 -r /www -d /www -f /www/zones.conf -s /dev/tts/1
    * serial port used by modified WRT54GL (second serial port)
 ```
 
-TODO
-
- * allow use of either well pump on its own or domestic feed on its own
- * include password generation command sa per standalone mongoose server
- 
