@@ -193,6 +193,7 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    general_reset (numgpio);
 
    // if we have some ds18x20 chips then allocate them as temperature sensors
+   // note the use of an embedded flag bit so we know which device set we will be reading
    if (numtemp >= 1)
       *T1 = 0 | 0x80;
    if (numtemp == 2)
@@ -393,6 +394,7 @@ GetTemp(uint16_t index)
    size_t s;
    ssize_t ret;
 
+   // if the flag bit is set then read temperature rather than volts device
    if (index & 0x80)
       sprintf(path, "/%s/temperature", famtemp[index & 0x7f]);
    else
