@@ -230,14 +230,13 @@ main (int argc, char **argv)
          // the zone may be a virtual one that determines some special action
          if (zone == FROST_LOAD)
          {
-            frost_load ();
+            dofrost ();
          }
          else if (zone == RESCHEDULE)
          {
             check_schedule (FALSE);
             update_statistics ();
             clean_history ();
-            chanmap[zone].period = 3600;
             insert (basictime + 3600, RESCHEDULE, NOACTION);    // do again every hour...
          }
          else if (zone == RESET)
@@ -250,7 +249,7 @@ main (int argc, char **argv)
          }
          else if (chanmap[zone].type & ISTEST)
          {
-            test_load (zone, action);
+            dotest (zone, action);
          }
          else
          {
@@ -260,7 +259,7 @@ main (int argc, char **argv)
 
 
       // manage the pumps
-      manage_pumps();
+      dopumps();
 
       // a couple of things we do every second
       if (basictime >= lastsec + 1)
@@ -327,7 +326,7 @@ main (int argc, char **argv)
                            "Starting frost protect program - temperature is %2.2fC, integration time is %ld minutes",
                            temperature, (basictime - frosttime) / 60);
                   frost_cancel ();      // clear any current activity in the frost zones
-                  frost_load ();
+                  dofrost ();
                   frost_mode = FROST_ACTIVE;
                }
             }
@@ -367,7 +366,7 @@ main (int argc, char **argv)
 #ifdef PC
          extern uint16_t testcurrent;
          testcurrent = 0;
-#else
+//#else
 //         dump_log_msgs();
          print_chanmap ();
          print_queue ();

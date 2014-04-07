@@ -137,19 +137,18 @@ check_schedule (bool changes)
 
    for (zone = 1; zone < REALZONES; zone++)
    {
-      chanmap[zone].period = chanmap[zone].duration;    // assume we'll be doing something with this zone
       // first check the case where everything sums to be in the past and not repeating
       if (((chanmap[zone].starttime + chanmap[zone].duration) < basictime) && (chanmap[zone].frequency == 0))
       {
-         if (chanmap[zone].useful)      // if it was in the schedule
-            changes = TRUE;     // its gone from it now
+         if (chanmap[zone].useful)      // if it was in the schedule file
+            changes = TRUE;             // its gone from it now
          chanmap[zone].useful = FALSE;
-         chanmap[zone].frequency = 0;
          continue;
       }
 
       if (chanmap[zone].useful)
       {
+         chanmap[zone].period = chanmap[zone].duration;    // assume we'll be doing something with this zone
          future = chanmap[zone].starttime;
          updatestart = 0;
          while (future < (basictime + (60 * 60 * 24 * 8)))      // within the next week

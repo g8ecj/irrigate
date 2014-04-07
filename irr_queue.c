@@ -163,7 +163,8 @@ print_queue (void)
       "Cancel",
       "Test ON",
       "Test OFF",
-      "Unlock"
+      "Unlock",
+      "Pump OFF"
    };
    uint8_t index, zone, action;
    time_t starttime;

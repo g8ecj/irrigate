@@ -225,11 +225,11 @@ uint8_t walk_queue(uint8_t index, uint8_t * zone, time_t * starttime, uint8_t *a
 void doaction (uint8_t zone, uint8_t action);
 
 /* load all zones with an action to test the solenoid continuity (except the well pump) */
-void test_load (uint8_t zone, uint8_t action);
+void dotest (uint8_t zone, uint8_t action);
 void test_cancel (uint8_t zone);
 
 /* load up 'ISFROST' zones to run in a 'round-robin' with 1 minute duration with 1 second overlap */
-void frost_load (void);
+void dofrost (void);
 /* cancel the frost protect program by removing the virtual zone that keeps it going and remove any currently active */
 void frost_cancel (void);
 
@@ -251,7 +251,7 @@ void pump_off (uint8_t zone);
 //void pump_unlock (uint8_t zone);
 
 // look after well & domestic pumps
-void manage_pumps(void);
+void dopumps(void);
 
 // switch off all active zones and put into error state
 void emergency_off(uint8_t newstate);

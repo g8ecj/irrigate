@@ -479,6 +479,10 @@ set_state (struct mg_connection *conn)
    starttime = chanmap[zone].starttime; // save the current start time & freq for a mo
    frequency = chanmap[zone].frequency;
    chanmap[zone].useful = FALSE;        // assume we won't be using it any more
+
+   // all actions require that we cancel any existing activity in the zone
+   // we may put something back though
+
    // see if this is a virtual channel handling groups
    if (chanmap[zone].type & ISGROUP)
    {
@@ -490,7 +494,6 @@ set_state (struct mg_connection *conn)
    }
    else
    {
-      // all other actions require that we cancel any existing activity in the zone
       zone_cancel (zone, IDLE);
       chanmap[zone].locked = FALSE;        // manually clearing also unlocks
    }
@@ -522,7 +525,6 @@ set_state (struct mg_connection *conn)
       chanmap[zone].starttime = starttime;
       chanmap[zone].useful = TRUE;      // got some useful data here!!
       chanmap[zone].period = chanmap[zone].duration;
-//      insert (starttime, zone, TURNON);
    }
    // delay puts back the values we saved earlier but 24hrs further on
    else if (strncmp (cmd, "delay", 5) == 0)
@@ -586,7 +588,7 @@ set_frost (struct mg_connection *conn)
       if (strncmp (mode, "on", 2) == 0)
       {
          frost_cancel ();       // clear any current activity
-         frost_load ();         // before running the frost program
+         dofrost ();         // before running the frost program
          frost_mode = FROST_MANUAL;     // leave armed state alone
       }
       else if (strncmp (mode, "off", 3) == 0)

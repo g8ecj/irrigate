@@ -58,16 +58,11 @@ doaction (uint8_t zone, uint8_t action)
       chanmap[zone].totalflow += (flow / 1000);   // add up the number of cubic metres
       if (SetOutput (zone, OFF))
       {
-         time_t start;
          chanmap[zone].state = IDLE;
-         start = findonqueue (zone);
-         // no further entries on the queue for this zone & its not repeating
-         if ((start == 0) && (chanmap[zone].frequency == 0))
-            chanmap[zone].useful = FALSE;
          // if there is another entry on the queue then set the start time for it
          // otherwise we'd use the old (incorrect) time
-         if (start > 0)
-            chanmap[zone].starttime = start;
+         chanmap[zone].starttime = findonqueue (zone);
+
          log_printf (LOG_NOTICE, "switch OFF zone %d (%s)", zone, chanmap[zone].name);
          write_history (zone, basictime, chanmap[zone].actualstart, WASOK);
       }
@@ -149,14 +144,14 @@ zone_cancel (uint8_t zone, uint8_t state)
    while (delete (zone));
    insert (basictime - 1, zone, CANCEL);        // ensure it goes to the front of the time queue
    chanmap[zone].state = state;
-   chanmap[zone].frequency = 0;
-   chanmap[zone].useful = FALSE;
+   chanmap[zone].frequency = 0;                 // ensure it never repeats
+   chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
 }
 
 
 /* load all zones with an action to test the solenoid continuity (except the well pump) */
 void
-test_load (uint8_t testzone, uint8_t action)
+dotest (uint8_t testzone, uint8_t action)
 {
 
    uint8_t zone;
@@ -167,7 +162,7 @@ test_load (uint8_t testzone, uint8_t action)
       chanmap[testzone].state = IDLE;
       if ((findonqueue (testzone) == 0) && (chanmap[testzone].frequency == 0))
       {
-         chanmap[testzone].useful = FALSE;
+         chanmap[testzone].starttime = 0;
       }
       return;
    }
@@ -228,7 +223,6 @@ test_cancel (uint8_t testzone)
    chanmap[testzone].state = IDLE;
    chanmap[testzone].starttime = 0;
    chanmap[testzone].frequency = 0;
-   chanmap[testzone].useful = FALSE;
    // handle unlocking of the pumps
    for (zone = 1; zone < REALZONES; zone++)
    {
@@ -242,7 +236,7 @@ test_cancel (uint8_t testzone)
 
 /* load up 'ISFROST' zones to run in a 'round-robin' with 1 minute duration with 1 second overlap */
 void
-frost_load (void)
+dofrost (void)
 {
 
    uint8_t zone;
@@ -307,7 +301,7 @@ dogroup (uint8_t group, uint8_t action)
       chanmap[group].state = IDLE;
       if ((findonqueue (group) == 0) && (chanmap[group].frequency == 0))
       {
-         chanmap[group].useful = FALSE;
+         chanmap[group].starttime = 0;
       }
       return;
    }
@@ -393,11 +387,11 @@ group_cancel (uint8_t group, uint8_t state)
    }
    chanmap[group].state = state;
    chanmap[group].frequency = 0;
-   chanmap[group].useful = FALSE;
+   chanmap[group].starttime = 0;
 }
 
 void
-manage_pumps (void)
+dopumps (void)
 {
 // scan through the list of pumps looking for one that suits the current flow rate
 // having found it, make sure its allowed to run at the current time
