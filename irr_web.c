@@ -190,11 +190,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       strncpy (colour, "green", 6);
       strncpy (tmpstr, "queued", 7);
    }
-   else if (cmap->useful)
-   {
-      strncpy (colour, "green", 6);
-      strncpy (tmpstr, "queued", 7);
-   }
    else
    {
       strncpy (colour, "white", 6);

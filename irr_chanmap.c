@@ -131,11 +131,6 @@ readchanmap (void)
             }
             chanmap[zone].valid |= CONFIGURED;
          }
-         else
-         {
-            log_printf(LOG_ERR, "Invalid zone number %d", zone);
-            return FALSE;
-         }
          ret = TRUE;            // got something useful
       }
       json_object_put (jobj);
