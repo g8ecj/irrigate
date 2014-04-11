@@ -36,6 +36,7 @@
 // globals that all in this module can see
 struct mapstruct chanmap[MAXZONES];
 struct pumpstruct pumpmap[MAXPUMPS];
+struct sensorstruct sensormap[MAXSENSORS];
 
 time_t basictime;
 
@@ -369,6 +370,8 @@ main (int argc, char **argv)
 //#else
 //         dump_log_msgs();
          print_chanmap ();
+         print_pumpmap ();
+         print_sensormap ();
          print_queue ();
 //         update_statistics ();
 //         check_schedule (FALSE);

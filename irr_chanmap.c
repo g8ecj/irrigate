@@ -31,7 +31,7 @@
 bool
 readchanmap (void)
 {
-   uint8_t zone, group;
+   uint8_t zone, group, sensor;
    bool ret = FALSE;
    int offset;
    char *p;
@@ -108,7 +108,7 @@ readchanmap (void)
             }
             // if a zone has the group attribute then it controls the list of zones in that group
             group = json_object_get_int (json_object_object_get (jobj, "group"));
-            if (group > 0)
+            if ((group > 0) && (group <= MAXGROUPS))
             {
                int i;
                for (i = 1; i < REALZONES; i++)
@@ -130,6 +130,33 @@ readchanmap (void)
                chanmap[zone].type |= ISGROUP;
             }
             chanmap[zone].valid |= CONFIGURED;
+         }
+
+
+         sensor = json_object_get_int (json_object_object_get (jobj, "sensor"));
+         if ((sensor > 0) && (sensor <= MAXSENSORS))
+         {
+            sensormap[sensor].sensor = sensor;
+            sensormap[sensor].type = json_object_get_int (json_object_object_get (jobj, "type"));
+            jtmp = json_object_object_get (jobj, "address");
+            if (jtmp)
+            {
+               strncpy (sensormap[sensor].address, json_object_get_string (jtmp), 17);
+               json_object_put (jtmp);
+            }
+            jtmp = json_object_object_get (jobj, "name");
+            if (jtmp)
+            {
+               strncpy (sensormap[sensor].name, json_object_get_string (jtmp), 33);
+               json_object_put (jtmp);
+            }
+            jtmp = json_object_object_get (jobj, "path");
+            if (jtmp)
+            {
+               strncpy (sensormap[sensor].path, json_object_get_string (jtmp), 33);
+               json_object_put (jtmp);
+            }
+
          }
          ret = TRUE;            // got something useful
       }
@@ -240,5 +267,35 @@ print_chanmap (void)
       }
    }
 }
+
+void
+print_pumpmap (void)
+{
+   int pump;
+
+   for (pump = 0; pumpmap[pump].zone; pump++)
+   {
+      log_printf(LOG_DEBUG, "pump %d, zone %d, minflow %d, nom %d, max %d, starts %d, run %d, start, %d end %d, time %lu\n",
+         pump, pumpmap[pump].zone, pumpmap[pump].minflow, pumpmap[pump].nomflow, pumpmap[pump].maxflow, 
+         pumpmap[pump].maxstarts, pumpmap[pump].maxrun, pumpmap[pump].start, pumpmap[pump].end, pumpmap[pump].pumpingtime);
+   }
+}
+
+
+void
+print_sensormap (void)
+{
+   int sensor;
+   for (sensor = 1; sensor < MAXSENSORS; sensor++)
+   {
+      if (sensormap[sensor].sensor > 0)
+      {
+         log_printf(LOG_DEBUG, "sensor %d, name \"%s\", type %d, address \"%s\", path \"%s\"\n",
+            sensor, sensormap[sensor].name, sensormap[sensor].type, sensormap[sensor].address, sensormap[sensor].path);
+      }
+   }
+}
+
+
 
 

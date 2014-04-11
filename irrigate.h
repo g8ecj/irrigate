@@ -57,6 +57,8 @@
 //#define REALZONES (MAXDEVICES * 2)
 #define REALZONES 100
 #define MAXZONES (REALZONES + VIRTUALZONES)
+#define MAXGROUPS 20
+#define MAXSENSORS 20
 /* enumerate virtual zones */
 #define FROST_LOAD   (REALZONES + 1)
 #define RESCHEDULE   (REALZONES + 2)
@@ -121,6 +123,15 @@ struct pumpstruct
 };
 
 
+struct sensorstruct
+{
+   uint8_t sensor;
+   uint8_t type;
+   char address[17];            // 8 byte chip address in hex - derived from famsw[dev]? includes null terminator
+   char name[33];               // up to 32 chars free format name string
+   char path[33];
+};
+
 
 // what 'state' we are in
 #define IDLE      0
@@ -182,6 +193,7 @@ extern time_t basictime;
 extern time_t ampstime;
 extern struct mapstruct chanmap[];
 extern struct pumpstruct pumpmap[];
+extern struct sensorstruct sensormap[];
 extern int8_t wellzone;
 extern int16_t wellmaxflow;
 extern int16_t wellmaxstarts;
