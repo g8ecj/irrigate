@@ -138,6 +138,9 @@ readchanmap (void)
          {
             sensormap[sensor].sensor = sensor;
             sensormap[sensor].type = json_object_get_int (json_object_object_get (jobj, "type"));
+            if (sensormap[sensor].type > eMAXSENSE)
+               sensormap[sensor].sensor = 0;           // invalid sensor type
+
             jtmp = json_object_object_get (jobj, "address");
             if (jtmp)
             {

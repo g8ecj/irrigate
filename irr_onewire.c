@@ -158,6 +158,8 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
       if (tokens[i][2] == '.')
       {
          tokens[i][15] = '\0';
+         if (debug)
+            log_printf (LOG_INFO, "Device %s", tokens[i]);
          family = strtol(tokens[i], NULL, 16);
          switch (family)
          {

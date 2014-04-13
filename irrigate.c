@@ -115,6 +115,11 @@ main (int argc, char **argv)
       pumpmap[i].zone = 0;
    }
 
+   for (i = 0; i < MAXSENSORS; i++)
+   {
+      sensormap[i].sensor = 0;
+   }
+
    openlog ("irrigate", LOG_PERROR, LOG_USER);
 
    log_printf (LOG_NOTICE, "Irrigation Controller Version %s Copyright (c) 2009-2014 Robin Gilks", VERSION);

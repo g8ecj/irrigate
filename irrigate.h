@@ -48,7 +48,12 @@
 
 #define DS2413_FAMILY_CODE        0x3A
 #define DS2438_FAMILY_CODE        0x26
+// number of 1-wire devices of any one type
 #define MAXDEVICES         20
+// arbitrary number of pumps
+#define MAXPUMPS 10
+// number of sensors
+#define MAXSENSORS 20
 
 #define MAXDEVLEN 80
 #define MAXFILELEN 80
@@ -58,24 +63,28 @@
 #define REALZONES 100
 #define MAXZONES (REALZONES + VIRTUALZONES)
 #define MAXGROUPS 20
-#define MAXSENSORS 20
 /* enumerate virtual zones */
 #define FROST_LOAD   (REALZONES + 1)
 #define RESCHEDULE   (REALZONES + 2)
 #define RESET        (REALZONES + 3)
 
-// arbitrary number of pumps
-#define MAXPUMPS 10
 
 #define FROST_TIME 60
 #define VALVE_OVERLAP 1
 #define VoltToMilliAmp 275
 
 // times used in action stuff
-#define TEST_TIME 5
 #define FAILED_RETRY 30
-#define ONTIME 10800
-#define SLACK_TIME 5
+
+enum eSENSORS
+{
+   eCURRENT = 1,
+   eEXTTEMP,
+   eINTTEMP,
+   eMAXSENSE
+};
+
+
 
 /*
  Must put some info in here!!
@@ -285,6 +294,9 @@ void createchanmap (int numdev);
 // this will require editing by hand to create the display map and other parameters
 bool savechanmap (void);
 
+void print_pumpmap (void);
+void print_sensormap (void);
+void print_chanmap (void);
 
 void irr_web_init (void);
 void irr_web_poll (void);
@@ -334,7 +346,6 @@ bool SetOutput (uint8_t zone, uint8_t state);
 bool check_current(void);
 
 // diagnostic and user I/O functions
-void print_chanmap (void);
 void print_queue (void);
 
 // utility functions
