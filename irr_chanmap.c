@@ -69,6 +69,8 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isfrost")) ? ISFROST : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isstock")) ? ISSTOCK : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "istest")) ? ISTEST : 0;
+            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "issensor")) ? ISSENSOR : 0;
+            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isoutput")) ? ISOUTPUT : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
             if (chanmap[zone].type & ISPUMP)
             {
@@ -92,6 +94,32 @@ readchanmap (void)
                }
             }
 
+            if (chanmap[zone].type & ISSENSOR)
+            {
+               // find a few sensor slot
+               for (sensor = 0; sensor < MAXSENSORS; sensor++)
+               {
+                  if (sensormap[sensor].zone == 0)
+                  {
+                     // found a free one!!
+                     sensormap[sensor].zone = zone;
+                     sensormap[sensor].type = json_object_get_int (json_object_object_get (jobj, "type"));
+                     if (sensormap[sensor].type > eMAXSENSE)
+                     {
+                        sensormap[sensor].zone = 0;           // invalid sensor type
+                        break;
+                     }
+                     jtmp = json_object_object_get (jobj, "path");
+                     if (jtmp)
+                     {
+                        strncpy (sensormap[sensor].path, json_object_get_string (jtmp), 33);
+                        json_object_put (jtmp);
+                     }
+                     break;
+                  }
+               }
+            }
+
             chanmap[zone].AorB = json_object_get_boolean (json_object_object_get (jobj, "aorb"));
             // careful with string input in case its not actually there!!
             jtmp = json_object_object_get (jobj, "address");
@@ -106,6 +134,8 @@ readchanmap (void)
                strncpy (chanmap[zone].name, json_object_get_string (jtmp), 33);
                json_object_put (jtmp);
             }
+
+
             // if a zone has the group attribute then it controls the list of zones in that group
             group = json_object_get_int (json_object_object_get (jobj, "group"));
             if ((group > 0) && (group <= MAXGROUPS))
@@ -133,34 +163,6 @@ readchanmap (void)
          }
 
 
-         sensor = json_object_get_int (json_object_object_get (jobj, "sensor"));
-         if ((sensor > 0) && (sensor <= MAXSENSORS))
-         {
-            sensormap[sensor].sensor = sensor;
-            sensormap[sensor].type = json_object_get_int (json_object_object_get (jobj, "type"));
-            if (sensormap[sensor].type > eMAXSENSE)
-               sensormap[sensor].sensor = 0;           // invalid sensor type
-
-            jtmp = json_object_object_get (jobj, "address");
-            if (jtmp)
-            {
-               strncpy (sensormap[sensor].address, json_object_get_string (jtmp), 17);
-               json_object_put (jtmp);
-            }
-            jtmp = json_object_object_get (jobj, "name");
-            if (jtmp)
-            {
-               strncpy (sensormap[sensor].name, json_object_get_string (jtmp), 33);
-               json_object_put (jtmp);
-            }
-            jtmp = json_object_object_get (jobj, "path");
-            if (jtmp)
-            {
-               strncpy (sensormap[sensor].path, json_object_get_string (jtmp), 33);
-               json_object_put (jtmp);
-            }
-
-         }
          ret = TRUE;            // got something useful
       }
       json_object_put (jobj);
@@ -289,13 +291,10 @@ void
 print_sensormap (void)
 {
    int sensor;
-   for (sensor = 1; sensor < MAXSENSORS; sensor++)
+   for (sensor = 0; sensormap[sensor].zone; sensor++)
    {
-      if (sensormap[sensor].sensor > 0)
-      {
-         log_printf(LOG_DEBUG, "sensor %d, name \"%s\", type %d, address \"%s\", path \"%s\"\n",
-            sensor, sensormap[sensor].name, sensormap[sensor].type, sensormap[sensor].address, sensormap[sensor].path);
-      }
+      log_printf(LOG_DEBUG, "sensor %d, name \"%s\", type %d, address \"%s\", path \"%s\"\n",
+         sensor, chanmap[sensormap[sensor].zone].name, sensormap[sensor].type, chanmap[sensormap[sensor].zone].address, sensormap[sensor].path);
    }
 }
 

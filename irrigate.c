@@ -47,7 +47,6 @@ bool frost_armed = FALSE;
 bool controlC = FALSE;
 int16_t interrupt = 0;
 double temperature = 0;
-double temperature1 = 0, temperature2 = 0;
 double Tintegral = 0;
 
 char daystr[][10] = {
@@ -91,8 +90,7 @@ main (int argc, char **argv)
    int i;                       //loop counter
    uint8_t zone;
    uint8_t action;
-   uint16_t numgpio;
-   int16_t T1 = -1, T2 = -1;
+   uint16_t numdev;
    time_t lastsec = 0, lastmin = 0, frosttime = 0;
 
    basictime = time (NULL);
@@ -117,7 +115,7 @@ main (int argc, char **argv)
 
    for (i = 0; i < MAXSENSORS; i++)
    {
-      sensormap[i].sensor = 0;
+      sensormap[i].zone = 0;
    }
 
    openlog ("irrigate", LOG_PERROR, LOG_USER);
@@ -154,14 +152,15 @@ main (int argc, char **argv)
 
    log_printf (LOG_INFO, "Opening device %s", device);
 
+
    // start up all the one-wire stuff
-   numgpio = irr_onewire_init (&T1, &T2);
+   numdev = irr_onewire_init ();
 
    if (!readchanmap ())
    {
       if (config)
       {
-         createchanmap (numgpio);
+         createchanmap (numdev);
          savechanmap ();
          exit (EXIT_SUCCESS);
       }
@@ -182,8 +181,9 @@ main (int argc, char **argv)
       }
    }
 
-   // match up the 1-wire addresses to zones
-   irr_match (numgpio);
+   // match up the addresses to zones
+   irr_onewire_match (numdev);
+
 
    if (background)
    {
@@ -247,7 +247,7 @@ main (int argc, char **argv)
          }
          else if (zone == RESET)
          {
-            doreset(numgpio);
+            doreset();
          }
          else if (chanmap[zone].type & ISGROUP)
          {
@@ -285,34 +285,11 @@ main (int argc, char **argv)
       /* only read and check the temperature every minute */
       if (basictime >= lastmin + 60)
       {
-         int num = 0;
-         double Ttotal = 0;
          lastmin = basictime;
 
-         if (T1 >= 0)
-         {
-            temperature1 = GetTemp (T1);
-            if (temperature1 != -999)
-            {
-               Ttotal += temperature1;
-               num++;
-            }
-         }
-         if (T2 >= 0)
-         {
-            temperature2 = GetTemp (T2);
-            if (temperature2 != -999)
-            {
-               Ttotal += temperature2;
-               num++;
-            }
-         }
-         if (num)               // only if any temperature sensors present
-         {
-            temperature = Ttotal / num;
-         }
+         temperature = GetTemp ();
 
-         if ((num) && (frost_armed))    // only process low temperature if have sensors and we are armed
+         if ((temperature != -999) && (frost_armed))    // only process low temperature if have sensors and we are armed
          {
             // calculate degree-minutes as we go under a threshold - if we have a frost limit defined
             // its OK to carry on increasing the integrated temperaure-time value as we only come out if above the threshold
@@ -363,8 +340,8 @@ main (int argc, char **argv)
          testcurrent = 1;
 #endif
          log_printf (LOG_NOTICE,
-                  "Temperatures T1 = %2.2fC, T2 = %2.2fC, integral value = %2.2f, current = %d",
-                  temperature1, temperature2, Tintegral, GetCurrent());
+                  "Temperature = %2.2fC, integral value = %2.2f, current = %d",
+                  temperature, Tintegral, GetCurrent());
          interrupt = 0;
       }
       if (interrupt == SIGUSR2)
@@ -387,7 +364,7 @@ main (int argc, char **argv)
    }
    while (!controlC);
 
-   doreset(numgpio);
+   doreset();
 
    if (debug > 1)
       print_chanmap ();

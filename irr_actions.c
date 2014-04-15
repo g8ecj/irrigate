@@ -530,12 +530,12 @@ emergency_off (uint8_t newstate)
 
 
 void
-doreset(uint16_t numgpio)
+doreset(void)
 {
    uint8_t zone;
 
    // belt and braces - hardware cleardown and ensure the pump manager doesn't go off
-   general_reset (numgpio);
+   general_reset ();
    for (zone = 1; zone < REALZONES; zone++)
       chanmap[zone].output = OFF;
    log_printf (LOG_NOTICE, "Done general reset");

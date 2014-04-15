@@ -76,13 +76,13 @@
 // times used in action stuff
 #define FAILED_RETRY 30
 
-enum eSENSORS
+typedef enum
 {
    eCURRENT = 1,
    eEXTTEMP,
    eINTTEMP,
    eMAXSENSE
-};
+} eSENSOR;
 
 
 
@@ -134,10 +134,8 @@ struct pumpstruct
 
 struct sensorstruct
 {
-   uint8_t sensor;
+   uint8_t zone;
    uint8_t type;
-   char address[17];            // 8 byte chip address in hex - derived from famsw[dev]? includes null terminator
-   char name[33];               // up to 32 chars free format name string
    char path[33];
 };
 
@@ -164,7 +162,9 @@ struct sensorstruct
 #define ISGROUP  4              // first bit of several groups possible
 #define ISSTOCK  8
 #define ISTEST   16
-#define ISSPARE  64
+#define ISSENSOR 32
+#define ISOUTPUT 64
+#define ISSPARE  256
 
 // what state the frost protect can be in
 #define FROST_OFF    1
@@ -211,7 +211,6 @@ extern bool frost_armed;
 extern bool monitor;
 extern int16_t interrupt;
 extern double temperature;
-extern double temperature1, temperature2;
 extern double Tintegral;
 extern char daystr[][10];
 
@@ -276,7 +275,7 @@ void dopumps(void);
 
 // switch off all active zones and put into error state
 void emergency_off(uint8_t newstate);
-void doreset (uint16_t numgpio);
+void doreset ();
 
 
 // Parse command line arguments.
@@ -323,12 +322,12 @@ void check_schedule (bool changes);
 
 
 // one wire interface
-uint16_t irr_onewire_init(int16_t *T1, int16_t *T2);
-void general_reset(uint16_t numgpio);
+uint16_t irr_onewire_init(void);
+void irr_onewire_match (uint16_t numdev);
+void general_reset(void);
 void irr_onewire_stop(void);
-void irr_match(uint16_t numgpio);
 uint16_t GetCurrent (void);
-double GetTemp(uint16_t index);
+double GetTemp(void);
 void setGPIOraw(uint8_t index, uint8_t value);
 char * getGPIOAddr (uint8_t index);
 // get expected solenoid current by adding up all the active valves

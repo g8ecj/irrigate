@@ -25,12 +25,9 @@
 #include "irrigate.h"
 
 
-int8_t VI = -1;
-char famgpio[MAXDEVICES][16];
+char devcopy[MAXDEVICES][16];
 uint8_t numgpio = 0;
-char famvolt[MAXDEVICES][16];
 uint8_t numvolt = 0;
-char famtemp[MAXDEVICES][16];
 uint8_t numtemp = 0;
 
 // define the following if using a version of OWFS prior to 2.9p3
@@ -44,10 +41,8 @@ uint16_t testcurrent = 0;
 /* these are a set of dummy functions that are used when compiled for a PC
  * that has no 1-wire devices attached */
 uint16_t
-irr_onewire_init (int16_t *T1, int16_t *T2)
+irr_onewire_init (void)
 {
-   *T1 = 1;
-   *T2 = 2;
    return TRUE;
 }
 
@@ -64,7 +59,7 @@ DoOutput (uint8_t zone, uint8_t state)
    return TRUE;
 }
 
-void general_reset(uint16_t UNUSED (numgpio))
+void general_reset(void)
 {
 }
 
@@ -103,7 +98,7 @@ GetCurrent (void)
 }
 
 double
-GetTemp(uint16_t UNUSED (index))
+GetTemp(void)
 {
    return 0;
 }
@@ -126,17 +121,17 @@ getGPIOAddr (uint8_t UNUSED (index))
  */
 
 
+// this function relies on chanmap_read having already been called to load up the 
+// chanmap with details of what devices should be present
 uint16_t
-irr_onewire_init (int16_t * T1, int16_t * T2)
+irr_onewire_init (void)
 {
-   uint8_t i = 0;
+   uint8_t numdev = 0;
    int16_t family;
    char * tokenstring;
    size_t s ;
    char seps[] = ",";
-   char* tokens[MAXDEVICES];
-   char path[64];
-   double Vad;
+   char* token;
    char val[10];
 
    if (OW_init(device))
@@ -151,37 +146,37 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
 // get a list of the top of the 1-wire tree to see what devices there are
    OW_get("/",&tokenstring,&s) ;
 
-   tokens[i] = strtok (tokenstring, seps);
-   while (tokens[i] != NULL)
+   token = strtok (tokenstring, seps);
+   while (token != NULL)
    {
 // keep a copy of the addresses of the devices we find and catagorise them
-      if (tokens[i][2] == '.')
+      if (token[2] == '.')
       {
-         tokens[i][15] = '\0';
+         token[15] = '\0';
          if (debug)
-            log_printf (LOG_INFO, "Device %s", tokens[i]);
-         family = strtol(tokens[i], NULL, 16);
+            log_printf (LOG_INFO, "Device %s", token);
+         strncpy(devcopy[numdev++], token, 16);
+         family = strtol(token, NULL, 16);
          switch (family)
          {
          case DS2413_FAMILY_CODE:
-            strncpy(famgpio[numgpio++], tokens[i], 16);
+            numgpio++;
             break;
          case DS2438_FAMILY_CODE:
-            strncpy(famvolt[numvolt++], tokens[i], 16);
+            numvolt++;
             break;
          case DS18S20_FAMILY_CODE:
          case DS18B20_FAMILY_CODE:
          case DS1822_FAMILY_CODE:
-            strncpy(famtemp[numtemp++], tokens[i], 16);
+            numtemp++;
             break;
          }
       }
-      i++;
-      tokens[i] = strtok (NULL, seps);
+      token = strtok (NULL, seps);
    }
    free(tokenstring);
 
-   if (numgpio + numvolt + numtemp == 0)
+   if (numdev == 0)
    {
       log_printf (LOG_ERR, "Error: nothing found on 1-wire bus - check cables?");
       exit (EXIT_FAILURE);
@@ -191,73 +186,45 @@ irr_onewire_init (int16_t * T1, int16_t * T2)
    log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
    log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
 
-   // clear all hardware down
-   general_reset (numgpio);
+   // clear all hardware outputs down
+   general_reset ();
 
-   // if we have some ds18x20 chips then allocate them as temperature sensors
-   // note the use of an embedded flag bit so we know which device set we will be reading
-   if (numtemp >= 1)
-      *T1 = 0 | 0x80;
-   if (numtemp == 2)
-      *T2 = 1 | 0x80;
 
-   // search all DS2438 chips, categorise according to the volts on the Vad pin
-   for (i = 0; i < numvolt; i++)
+   return numdev;
+}
+
+void irr_onewire_match (uint16_t numdev)
+{
+   uint8_t dev, zone;
+   // match the values I've read from the file with the devices I scanned and match them up
+   for (zone = 1; zone < REALZONES; zone++)
    {
-
-      sprintf(path, "/%s/VAD", famvolt[i]);
-      OW_get(path,&tokenstring,&s) ;
-      Vad = atoi(tokenstring);
-      if (debug)
-         printf ("Read %2.2f volts on Vad pin\n", Vad);
-      // at this point the current should be zero (hardware reset) so measured value
-      // from this sensor should be zero
-      if (Vad < 1.0)
+      for (dev = 0; dev < numdev; dev++)
       {
-         if ((VI >= 0) && monitor)
+         if (strncasecmp (chanmap[zone].address, devcopy[dev], 15) == 0)
          {
-            log_printf (LOG_ERR, "Current monitor sensor duplicated");
-            monitor = FALSE;
+            if (debug)
+               printf ("Match at zone %d device %d port %c 1-wire address %s\n", zone, dev,
+                       chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address);
+            chanmap[zone].valid |= HARDWARE;       // got real hardware here
+            chanmap[zone].dev = dev;
          }
-         else
-            VI = i;
       }
-      else
-      {
-         // see if temperature sensor(s) allocated yet
-         if (*T1 < 0)
-            *T1 = i;
-         else if (*T2 < 0)
-            *T2 = i;
-      }
-      free(tokenstring);
    }
-
-   if (VI < 0)
-   {
-      if (monitor)
-      {
-         log_printf (LOG_ERR, "Current monitor enabled but no current sensor found");
-      }
-      monitor = FALSE;
-   }
-
-
-   return numgpio;
 }
 
 #if OW_ENDIAN_BUG
-ssize_t OW_pio_workaround(uint8_t index, bool AorB, uint8_t state)
+ssize_t OW_pio_workaround(uint8_t zone, uint8_t state)
 {
    static uint8_t iocache[MAXDEVICES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
    char path[32];
    char val[10];
-   uint8_t ioval;
+   uint8_t ioval, index = chanmap[zone].dev;
    ssize_t ret;
 
-   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+   sprintf(path, "/%s/PIO.BYTE", chanmap[zone].address);
 
-   if (AorB)
+   if (chanmap[zone].AorB)
    {
       // operating on PIOA - need current state of B with A bit cleared to activate it
       if (state == OFF)
@@ -286,42 +253,24 @@ ssize_t OW_pio_workaround(uint8_t index, bool AorB, uint8_t state)
 #endif
 
 
-void general_reset(uint16_t numgpio)
+void general_reset(void)
 {
    int16_t i;
    char path[32];
    char val[10] = "0,0";
 
-   for (i = 0; i < numgpio; i++)
+   for (i = 1; i < REALZONES; i++)
    {
-      sprintf(path, "/%s/PIO.ALL", famgpio[i]);
-      OW_put(path, val, strlen(val)) ;
-   }
-}
-
-
-
-void
-irr_match (uint16_t numgpio)
-{
-   int dev, zone;
-
-   // match the values I've read from the file with the devices I scanned and match them up
-   for (zone = 1; zone < REALZONES; zone++)
-   {
-      for (dev = 0; dev < numgpio; dev++)
+      if (chanmap[i].type & ISOUTPUT)
       {
-         if (strncasecmp (chanmap[zone].address, famgpio[dev], 15) == 0)
-         {
-            if (debug)
-               printf ("Match at zone %d device %d port %C 1-wire address %s\n", zone, dev,
-                       chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address);
-            chanmap[zone].valid |= HARDWARE;       // got real hardware here
-            chanmap[zone].dev = dev;
-         }
+         sprintf(path, "/%s/PIO.ALL", chanmap[i].address);
+         OW_put(path, val, strlen(val)) ;
       }
    }
 }
+
+
+
 
 void
 irr_onewire_stop (void)
@@ -329,28 +278,72 @@ irr_onewire_stop (void)
    OW_finish() ;
 }
 
-uint16_t
-GetCurrent (void)
+
+// using the configured sensor mapping, average the readings from all the
+// sensors of the type requested
+double
+GetSensor(eSENSOR type)
 {
+   uint8_t sensor, num = 0;
+   double value = 0;
+   ssize_t ret;
    char path[32];
    char * tokenstring;
-   double Vad;
    size_t s;
 
-   if (VI < 0)
-      return 0;
-   sprintf(path, "/uncached/%s/VAD", famvolt[VI]);
-   OW_get(path,&tokenstring,&s) ;
-   Vad = atof(tokenstring) * VoltToMilliAmp;
-   free(tokenstring);
-// can't read reliably below 1.5 volts (but need down to ~0.1V)
-   if (Vad < 50)
-      Vad = 0;
 
-   return (uint16_t) Vad;
+   for (sensor = 0; sensormap[sensor].zone; sensor++)
+   {
+      if (sensormap[sensor].type == type)
+      {
+         sprintf(path, sensormap[sensor].path, chanmap[sensormap[sensor].zone].address);
+         ret = OW_get(path,&tokenstring,&s);
+         if (ret < 0)
+         {
+            num = 0;        // flag that we failed to get data
+            break;
+         }
+         else
+         {
+            value += atof(tokenstring);
+            free(tokenstring);
+            num++;
+         }
+      }
+   }
+   if (num > 0)
+      return value / num;
+   else
+      return -999;
+
 }
 
 
+// read the volts from the current transformer interface, convert volts to current.
+uint16_t
+GetCurrent (void)
+{
+   double volts;
+
+   volts = GetSensor(eCURRENT) * VoltToMilliAmp;
+// can't read reliably below 1.5 volts (but need down to ~0.1V)
+   if (volts < 50)
+      volts = 0;
+
+   return (uint16_t) volts;
+}
+
+double
+GetTemp(void)
+{
+   double temp;
+
+   temp = GetSensor(eEXTTEMP);
+
+   return temp;
+}
+
+#if 0
 // get/set the time in the DS2438 that handles the current transformer interface
 time_t
 GetTime (void)
@@ -384,33 +377,7 @@ SetTime(void)
 
 }
 
-
-
-
-double
-GetTemp(uint16_t index)
-{
-   double temp;
-   char path[32];
-   char * tokenstring;
-   size_t s;
-   ssize_t ret;
-
-   // if the flag bit is set then read temperature rather than volts device
-   if (index & 0x80)
-      sprintf(path, "/%s/temperature", famtemp[index & 0x7f]);
-   else
-      sprintf(path, "/%s/temperature", famvolt[index]);
-
-   ret = OW_get(path,&tokenstring,&s);
-   if (ret < 0)
-      temp = -999;
-   else
-      temp = atof(tokenstring);
-   free(tokenstring);
-   return temp;
-}
-
+#endif
 
 void
 setGPIOraw(uint8_t index, uint8_t value)
@@ -418,7 +385,7 @@ setGPIOraw(uint8_t index, uint8_t value)
    char path[32];
    char val[10];
 
-   sprintf(path, "/%s/PIO.BYTE", famgpio[index]);
+   sprintf(path, "/%s/PIO.BYTE", devcopy[index]);
    sprintf(val, "%d", value);
    OW_put(path, val, strlen(val)) ;
 
@@ -427,7 +394,7 @@ setGPIOraw(uint8_t index, uint8_t value)
 char *
 getGPIOAddr (uint8_t index)
 {
-   return famgpio[index];
+   return devcopy[index];
 }
    
 //--------------------------------------------------------------------------
@@ -457,24 +424,24 @@ DoOutput (uint8_t zone, uint8_t state)
    if (chanmap[zone].AorB)
    {
       // operating on PIOA
-      sprintf(path, "/%s/PIO.A", famgpio[chanmap[zone].dev]);
+      sprintf(path, "/%s/PIO.A", devcopy[chanmap[zone].dev]);
    }
    else
    {
       // operating on PIOB
-      sprintf(path, "/%s/PIO.B", famgpio[chanmap[zone].dev]);
+      sprintf(path, "/%s/PIO.B", devcopy[chanmap[zone].dev]);
    }
 
    sprintf(val, "%d", state == OFF ? 0 : 1);
 #if OW_ENDIAN_BUG
-   ret = OW_pio_workaround(chanmap[zone].dev, chanmap[zone].AorB, state);
+   ret = OW_pio_workaround(zone, state);
 #else
    ret = OW_put(path, val, strlen(val));
 #endif
 
    if (debug)
    {
-      printf ("Device %s port %c state %02x\n",famgpio[chanmap[zone].dev],
+      printf ("Device %s port %c state %02x\n", devcopy[chanmap[zone].dev],
               chanmap[zone].AorB ? 'A' : 'B', state);
    }
 

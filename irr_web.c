@@ -337,8 +337,6 @@ show_status (struct mg_connection *conn)
    sprintf (tmpstr, "Version %s compiled on %s at %s", VERSION, __DATE__, __TIME__);
    json_object_object_add (jobj, "version", json_object_new_string (tmpstr));
 
-   json_object_object_add (jobj, "temp_sensor_1", json_object_new_int (temperature1 * 100));
-   json_object_object_add (jobj, "temp_sensor_2", json_object_new_int (temperature2 * 100));
    json_object_object_add (jobj, "flow", json_object_new_int (get_expected_flow()));
 
    // frost can be on (manual or cold!), armed or off - 4 different outcomes
