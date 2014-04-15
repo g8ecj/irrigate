@@ -64,7 +64,7 @@ void general_reset(void)
 }
 
 void
-irr_match (uint16_t UNUSED (numgpio))
+irr_onewire_match (uint16_t UNUSED (numgpio))
 {
    int i;
    for (i = 1; i < REALZONES; i++)
