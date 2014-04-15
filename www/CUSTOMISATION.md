@@ -41,11 +41,14 @@ json boolean keys that modify a zone
 ```
 "ispump":           bool       zone controls a pump
 "isfrost":          bool       frost protection applies
-"istest":           bool       is a virtual zone that trigger test mode
+"istest":           bool       is a virtual zone that triggers test mode
+"isstock":          bool       indicates a pump that also provides stock water when there is no other demand
+"isoutput":         bool       defines a 1-wire device that controls an output
+"issensor":         bool       defines a 1-wire device that is read as a sensor
 "isspare":          bool       not used
 ```
 
-json keys that pass useful information about a zonpumpe
+json keys that pass useful information about a pump
 ```
 "minflow":          int        minimum flow of a pump in litres/minute
 "nomflow":          int        nominal flow of a pump in litres/minute
@@ -56,7 +59,15 @@ json keys that pass useful information about a zonpumpe
 "end":              int        time in hhmm format of when to stop a pump with the isstock attribute
 ```
 
+json keys that pass useful information about a sensor
+```
+"path":
+"type":             int        what type of sensor: CURRENT = 1, EXTTEMP = 2, INTTEMP = 3
+
+```
+
 json keys that identify virtual zones
+```
 "group"             int        identifier for a group from 1-15
 "zones"             array      list of zones in a group
 ```
@@ -64,7 +75,7 @@ json keys that identify virtual zones
 experimental keys
 ```
 "zoom":             int        optional zoom factor. Determines whether to try and show name of the zone
-                               doessn't work with image maps very well!!
+                               doesn't work with image maps very well!!
 ```
 
 
