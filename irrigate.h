@@ -81,6 +81,8 @@ typedef enum
    eCURRENT = 1,
    eEXTTEMP,
    eINTTEMP,
+   eSETTIME,
+   eGETTIME,
    eMAXSENSE
 } eSENSOR;
 

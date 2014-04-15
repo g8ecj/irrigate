@@ -72,9 +72,10 @@ readchanmap (void)
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "issensor")) ? ISSENSOR : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isoutput")) ? ISOUTPUT : 0;
             chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
+
             if (chanmap[zone].type & ISPUMP)
             {
-               // find a few pump slot
+               // find a free pump slot
                for (pump = 0; pump < MAXPUMPS; pump++)
                {
                   if (pumpmap[pump].zone == 0)
@@ -96,7 +97,7 @@ readchanmap (void)
 
             if (chanmap[zone].type & ISSENSOR)
             {
-               // find a few sensor slot
+               // find a free sensor slot
                for (sensor = 0; sensor < MAXSENSORS; sensor++)
                {
                   if (sensormap[sensor].zone == 0)
