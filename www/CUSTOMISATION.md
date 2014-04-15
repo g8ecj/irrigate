@@ -57,6 +57,7 @@ json keys that pass useful information about a zonpumpe
 ```
 
 json keys that identify virtual zones
+```
 "group"             int        identifier for a group from 1-15
 "zones"             array      list of zones in a group
 ```
