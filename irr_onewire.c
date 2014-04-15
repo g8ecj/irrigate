@@ -343,24 +343,15 @@ GetTemp(void)
    return temp;
 }
 
-#if 0
 // get/set the time in the DS2438 that handles the current transformer interface
 time_t
 GetTime (void)
 {
-   char path[32];
-   char * tokenstring;
-   time_t time;
-   size_t s;
+   double time;
 
-   if (VI < 0)
-      return 0;
-   sprintf(path, "/%s/udate", famvolt[VI]);
-   OW_get(path,&tokenstring,&s) ;
-   time = atol(tokenstring);
-   free(tokenstring);
+   time = GetSensor(eGETTIME);
 
-   return time;
+   return (time_t)time;
 }
 
 
@@ -368,16 +359,19 @@ void
 SetTime(void)
 {
    char path[32];
+   uint8_t sensor;
 
-   if (VI < 0)
-      return;
-   sprintf(path, "/%s/date", famvolt[VI]);
-   // null length time is current date/time
-   OW_put(path, "", 0) ;
-
+   for (sensor = 0; sensormap[sensor].zone; sensor++)
+   {
+      if (sensormap[sensor].type == eSETTIME)
+      {
+         sprintf(path, sensormap[sensor].path, chanmap[sensormap[sensor].zone].address);
+         OW_put(path, "", 0) ;
+         break;
+      }
+   }
 }
 
-#endif
 
 void
 setGPIOraw(uint8_t index, uint8_t value)
