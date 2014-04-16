@@ -24,6 +24,16 @@
 #include "irrigate.h"
 
 
+char sensornames[][9] = 
+{
+   "",
+   "CURRENT",
+   "EXTTEMP",
+   "INTTEMP",
+   "SETTIME",
+   "GETTIME"
+};
+
 
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
@@ -31,12 +41,12 @@
 bool
 readchanmap (void)
 {
-   uint8_t zone, group, sensor;
+   uint8_t zone, group, sensor, pump, i;
    bool ret = FALSE;
    int offset;
    char *p;
    char *input;
-   int8_t pump;
+   char type[12];
 
    FILE *fd;
    struct json_object *jobj, *jlist, *jtmp;
@@ -104,9 +114,25 @@ readchanmap (void)
                   {
                      // found a free one!!
                      sensormap[sensor].zone = zone;
-                     sensormap[sensor].type = json_object_get_int (json_object_object_get (jobj, "type"));
-                     if (sensormap[sensor].type > eMAXSENSE)
+                     // extract the type string, then try and match it
+                     jtmp = json_object_object_get (jobj, "type");
+                     if (jtmp)
                      {
+                        strncpy (type, json_object_get_string (jtmp), 12);
+                        json_object_put (jtmp);
+                     }
+
+                     for (i = 0; i < eMAXSENSE; i++)
+                     {
+                        if (strncasecmp(type, sensornames[i], 12) == 0)
+                        {
+                           sensormap[sensor].type = i;
+                           break;
+                        }
+                     }
+                     if (i == eMAXSENSE)
+                     {
+                        log_printf (LOG_INFO, "Invalid sensor type %s", type);
                         sensormap[sensor].zone = 0;           // invalid sensor type
                         break;
                      }
@@ -294,8 +320,8 @@ print_sensormap (void)
    int sensor;
    for (sensor = 0; sensormap[sensor].zone; sensor++)
    {
-      log_printf(LOG_DEBUG, "sensor %d, name \"%s\", type %d, address \"%s\", path \"%s\"\n",
-         sensor, chanmap[sensormap[sensor].zone].name, sensormap[sensor].type, chanmap[sensormap[sensor].zone].address, sensormap[sensor].path);
+      log_printf(LOG_DEBUG, "sensor %d, name \"%s\", type %s, address \"%s\", path \"%s\"\n",
+         sensor, chanmap[sensormap[sensor].zone].name, sensornames[sensormap[sensor].type], chanmap[sensormap[sensor].zone].address, sensormap[sensor].path);
    }
 }
 

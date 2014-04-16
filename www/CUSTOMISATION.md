@@ -62,7 +62,7 @@ json keys that pass useful information about a pump
 json keys that pass useful information about a sensor
 ```
 "path":             alphanum   string that defines the owfs node to access
-"type":             int        what type of sensor: CURRENT = 1, EXTTEMP = 2, INTTEMP = 3, SETTIME = 4, GETTIME = 5
+"type":             alphanum   what type of sensor: CURRENT, EXTTEMP, INTTEMP, SETTIME, GETTIME
 ```
 
 json keys that identify virtual zones
