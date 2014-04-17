@@ -114,7 +114,7 @@ readchanmap (void)
                   {
                      // found a free one!!
                      sensormap[sensor].zone = zone;
-                     // extract the type string, then try and match it
+                     // extract the type string
                      jtmp = json_object_object_get (jobj, "type");
                      if (jtmp)
                      {
@@ -122,6 +122,7 @@ readchanmap (void)
                         json_object_put (jtmp);
                      }
 
+                     // then try and match it (case insensitive)
                      for (i = 0; i < eMAXSENSE; i++)
                      {
                         if (strncasecmp(type, sensornames[i], 12) == 0)
