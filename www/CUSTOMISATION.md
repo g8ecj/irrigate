@@ -193,5 +193,21 @@ Another virtual zone that has no valves but in this case operates on a specific 
 "istest": true                   // say what it does
 ```
 
+A temperature sensor implemented with a DS18B20
+```
+"zone": 51
+"id": "sensor2"
+"x":  0                          // none of the positioning data is used
+"y":  0
+"w":  0
+"h":  0
+"zoom": 3
+"selectable": false
+"name": "Sky Temperature"
+"address": "28.620A62050000"    // how to find the device on the 1-wire bus
+"path": "/%s/temperature"       // how to addess the capability
+"issensor": true                // say what it is
+"type": "exttemp"               // say what type it is
+```
 
 
