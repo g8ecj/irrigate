@@ -204,8 +204,17 @@ void irr_onewire_match (uint16_t numdev)
          if (strncasecmp (chanmap[zone].address, devcopy[dev], 15) == 0)
          {
             if (debug)
-               printf ("Match at zone %d device %d port %c 1-wire address %s\n", zone, dev,
-                       chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address);
+            {
+               if (chanmap[zone].type & ISSENSOR)
+               {
+                  printf ("Match at zone %d (%s) device %d address %s sensor type %s\n", 
+                       zone, chanmap[zone].name, dev, chanmap[zone].address, sensornames[sensormap[chanmap[zone].link].type]);
+               }
+               else
+               {
+                  printf ("Match at zone %d (%s) device %d port %c 1-wire address %s\n", 
+                       zone, chanmap[zone].name, dev, chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address);
+               }
             chanmap[zone].valid |= HARDWARE;       // got real hardware here
             chanmap[zone].dev = dev;
          }

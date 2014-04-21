@@ -100,6 +100,7 @@ readchanmap (void)
                      pumpmap[pump].start = json_object_get_int (json_object_object_get (jobj, "start"));
                      pumpmap[pump].end = json_object_get_int (json_object_object_get (jobj, "end"));
                      pumpmap[pump].pumpingtime = 0;   // reset count
+                     chanmap[zone].link = pump;         // cross link refs
                      break;
                   }
                }
@@ -137,6 +138,7 @@ readchanmap (void)
                         sensormap[sensor].zone = 0;           // invalid sensor type
                         break;
                      }
+                     chanmap[zone].link = sensor;         // cross link refs
                      jtmp = json_object_object_get (jobj, "path");
                      if (jtmp)
                      {
@@ -290,7 +292,7 @@ print_chanmap (void)
       {
          localtime_r (&(chanmap[zone].starttime), &tm);
          log_printf(LOG_DEBUG, 
-             "zone %d, %s name %s, port %c, add %s, flow %d, start %s %02d:%02d:%02d (%lu), dur %d, per %d, freq %d val %d use %d group %02x type %02x tf %2.5f lck %d\n",
+             "zone %d, %s name %s, port %c, addr %s, flow %d, start %s %02d:%02d:%02d (%lu), dur %d, per %d, freq %d valid %d use %d group %02x type %02x tf %2.5f lock %d\n",
              chanmap[zone].zone, state[chanmap[zone].state], chanmap[zone].name,
              chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address, chanmap[zone].flow,
              daystr[tm.tm_wday], tm.tm_hour, tm.tm_min, tm.tm_sec, chanmap[zone].starttime,

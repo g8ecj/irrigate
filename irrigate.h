@@ -106,8 +106,8 @@ struct mapstruct
    char address[17];            // 8 byte chip address in hex - derived from famsw[dev]? includes null terminator
    char name[33];               // up to 32 chars free format name string
    uint8_t state;               // if currently on or off - used when toggling an object
-   time_t duration;            // total of how long a zone is active for
-   time_t period;             // the working value of how long to be on for on this pass
+   time_t duration;             // total of how long a zone is active for
+   time_t period;               // the working value of how long to be on for on this pass
    int32_t frequency;           // how often the zone is activated
    uint8_t locked;              // > 0 if locked (only really applies to a pump)
    uint16_t flow;               // nominal flow rate
@@ -117,6 +117,7 @@ struct mapstruct
    uint16_t type;               // bit ORed for pump, frost bits
    uint16_t group;              // what groups the zone is in
    uint16_t current;            // expected current draw in mA
+   uint8_t link;                // used to map to pump or sensor list
 };
 
 
