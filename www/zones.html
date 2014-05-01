@@ -101,6 +101,7 @@ function get_status()
 function get_timeline()
 {
    get("timeline").value = "Program"
+   get("timeline").title = "Program a zone or zones"
    get("timeline").onclick = function() {display_all();}
    var request =
    {
@@ -535,6 +536,7 @@ function display_all()
    get("map").innerHTML = "<img src='zones.jpg' alt=''/>";
    display_map()
    get("timeline").value = "Timeline"
+   get("timeline").title = "Timeline display for last and next week of watering"
    get("timeline").onclick = function() {get_timeline();}
    next_timer_tick()
 }
