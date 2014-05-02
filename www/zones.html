@@ -98,11 +98,9 @@ function get_status()
    submit_object_as_JSON(request, "status", status_reply, 0)
 }
 
+
 function get_timeline()
 {
-   get("timeline").value = "Program"
-   get("timeline").title = "Program a zone or zones"
-   get("timeline").onclick = function() {display_all();}
    var request =
    {
       'cmd': 'get_timedata'
@@ -531,13 +529,25 @@ function end_popup()
    hide(get("popup_window"))
 }
 
-function display_all()
+function display_timeline()
 {
-   get("map").innerHTML = "<img src='zones.jpg' alt=''/>";
-   display_map()
+
+   get("timeline").value = "Program"
+   get("timeline").title = "Program a zone or zones"
+   get("timeline").onclick = function() {display_program();}
+
+   get_timeline()
+}
+
+
+function display_program()
+{
    get("timeline").value = "Timeline"
    get("timeline").title = "Timeline display for last and next week of watering"
-   get("timeline").onclick = function() {get_timeline();}
+   get("timeline").onclick = function() {display_timeline();}
+
+   get("map").innerHTML = "<img src='zones.jpg' alt=''/>";
+   display_map()
    next_timer_tick()
 }
 
@@ -597,7 +607,7 @@ addLoadEvent(display_map)
 <img src="zones.jpg">
 </div>
 <div>
-<input id="timeline" type="button" name="link" value="Timeline" title="Timeline display for last and next week of watering" onclick="get_timeline()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input id="timeline" type="button" name="link" value="Timeline" title="Timeline display for last and next week of watering" onclick="display_timeline()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=timer></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=temperature></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=current></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
