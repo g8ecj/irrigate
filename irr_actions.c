@@ -436,6 +436,7 @@ dopumps (void)
 void
 pump_on (uint8_t zone)
 {
+   uint16_t locktime;
    uint8_t pump = get_pump_by_zone(zone);
 
    if ((chanmap[zone].locked) || (chanmap[zone].state == ACTIVE))
@@ -455,6 +456,13 @@ pump_on (uint8_t zone)
    {
       chanmap[zone].state = ERROR;      // report the error to the GUI
       write_history (zone, basictime + 1, basictime, WASFAIL);
+      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
+      // set lock if failure to prevent retries happening too fast
+      chanmap[zone].locked = TRUE;
+      chanmap[zone].period = locktime;
+      chanmap[zone].duration = locktime;
+      chanmap[zone].starttime = basictime;
+      insert (basictime + locktime, zone, UNLOCK);
    }
 }
 

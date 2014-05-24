@@ -132,16 +132,23 @@ stock troughs and taps about the place. It also handles low volume irrigation up
 "w":  2
 "h":  2
 "zoom": 13
-"selectable": false
+"selectable": false              // not user programable - handled by the server
 "name": "Domestic Feed"
-"aorb": false
-"address": "3a.9b8d03000000"
-"flow": 0
-"isdpfeed": true                 // tell the system its special
-"start": 0700                    // even if no demand then turn on at 7:00am anyway
-"end": 2100                      // if no demand the turn off at night
+"aorb": false, "address"
+"3a.9b8d03000000"
+"ispump": true                   // tell the system its a pump
+"isstock": true                  // tell the system it is used by time as well as by demand
+"minflow": 1                     // minimum demand level
+"nomflow": 100                   // can deliver this amount normally
+"maxflow": 100                   // can deliver this much as a maximum
+"maxstarts": 720                 // translates to how long to remain off after shutdown
+"maxrun": 10800                  // when run by timr, how long in one go
+"start": 0700                    // time period for running starts here
+"end": 2100                      // - and ends here
 "current": 160
+"isoutput": true                 // its an output, not a sensor
 ```
+
 
 A zone that describes a pump
 ```
@@ -156,11 +163,14 @@ A zone that describes a pump
 "name": "Well Pump"
 "aorb": true                     // 1-wire data of how to control it
 "address": "3a.824b01000000"     // not as valve but the contactor that runs it is driven the same way
-"flow": 100                      // flow rate below which the pump switches off
 "ispump": true                   // describes what it is
+"minflow": 101                   // flow rate below which the pump switches off
+"nomflow": 300                   // when calculating a group, how much should be done at once
+"maxflow": 9999                  // stop it complaining if manually more is scheduled than nominal flow
 "maxstarts": 20                  // locks for 3 mins when stopped to prevent abuse
-"maxflow": 230                   // when calculating a group, how much should be done at once
+"maxrun": 43200
 "current": 120
+"isoutput": true
 ```
 
 
