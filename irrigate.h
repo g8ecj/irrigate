@@ -76,6 +76,8 @@
 // times used in action stuff
 #define FAILED_RETRY 30
 
+extern char * sensornames;
+
 typedef enum
 {
    eCURRENT = 1,
