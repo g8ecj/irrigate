@@ -116,7 +116,7 @@ function drawVisualization(obj,id)
        var data = [];
        for (i in obj.events)
        {
-            if ((obj.events[i].status == 'failed') || (obj.events[i].status == 'error') || (obj.events[i].duration == 0))
+            if ((obj.events[i].status == 'failed') || (obj.events[i].status == 'error') || (obj.events[i].duration < 300))
                type = 'box'
             else
                type = 'range'
@@ -531,7 +531,7 @@ function end_popup()
 
 function display_timeline()
 {
-
+   // change label and hover text to indicate how to get back to Program mode
    get("timeline").value = "Program"
    get("timeline").title = "Program a zone or zones"
    get("timeline").onclick = function() {display_program();}
@@ -542,6 +542,7 @@ function display_timeline()
 
 function display_program()
 {
+   // change label and hover text to indicate how to get to Timeline mode
    get("timeline").value = "Timeline"
    get("timeline").title = "Timeline display for last and next week of watering"
    get("timeline").onclick = function() {display_timeline();}

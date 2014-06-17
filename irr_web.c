@@ -224,8 +224,13 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       break;
    }
 
+   if (cmap->duration > 0)
+      duration = cmap->duration;
+   else
+      duration = abs(basictime - starttime);
+
    strftime(startstr, sizeof(startstr), fmt, localtime(&starttime));
-   t = starttime + cmap->period;
+   t = starttime + duration;
    strftime(endstr, sizeof(endstr), fmt, localtime(&t));
 
    if (((starttime > basictime) 
@@ -256,10 +261,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    // (2) start time + period < basictime
    // (3) frequency > 0
    // (4) infuture, not today
-   if (cmap->duration > 0)
-      duration = cmap->duration;
-   else
-      abs(duration = basictime - starttime);
 
    if (starttime < basictime)
       strncpy (ing_ed, "ed", 3);
