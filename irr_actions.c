@@ -142,7 +142,7 @@ zone_cancel (uint8_t zone, uint8_t state)
 {
 
    while (delete (zone));
-   insert (basictime - 1, zone, CANCEL);        // ensure it goes to the front of the time queue
+   insert (1, zone, CANCEL);                    // ensure it goes to the front of the time queue
    chanmap[zone].state = state;
    chanmap[zone].frequency = 0;                 // ensure it never repeats
    chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
@@ -157,7 +157,7 @@ dotest (uint8_t testzone, uint8_t action)
    uint8_t zone;
    time_t start = basictime + 2;    // start after the reset has occured
 
-   if (action == TURNOFF)       // use this to toggle the display status
+   if (action == TURNOFF)           // use this to toggle the display status
    {
       chanmap[testzone].state = IDLE;
       if ((findonqueue (testzone) == 0) && (chanmap[testzone].frequency == 0))
@@ -195,16 +195,16 @@ dotest (uint8_t testzone, uint8_t action)
          start += chanmap[testzone].period;
       }
    }
-   chanmap[testzone].state = ACTIVE;       // say we're active
+   chanmap[testzone].state = ACTIVE;                     // say we're active
    chanmap[testzone].period = start - chanmap[testzone].starttime;
-   insert (start, testzone, TURNOFF);      // switch off display at the end
+   insert (start, testzone, TURNOFF);                    // switch off display at the end
 
    for (zone = 1; zone < REALZONES; zone++)
    {
       if ((chanmap[zone].type & ISPUMP) != 0)
       {
-         chanmap[zone].starttime = basictime;  // have a base time to know when unlock occurs
-         insert (start, zone, UNLOCK);         // then allow well to start again
+         chanmap[zone].starttime = basictime;            // have a base time to know when unlock occurs
+         insert (start, zone, UNLOCK);                   // then allow well to start again
          chanmap[zone].period = chanmap[testzone].period;
       }
    }
