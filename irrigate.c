@@ -39,6 +39,7 @@ struct pumpstruct pumpmap[MAXPUMPS];
 struct sensorstruct sensormap[MAXSENSORS];
 
 time_t basictime;
+time_t startuptime;
 
 struct mg_server *server;
 
@@ -94,6 +95,7 @@ main (int argc, char **argv)
    time_t lastsec = 0, lastmin = 0, frosttime = 0;
 
    basictime = time (NULL);
+   startuptime = basictime;
 
    for (i = 0; i < MAXZONES; i++)
    {
@@ -275,8 +277,7 @@ main (int argc, char **argv)
          // poll the current being drawn by the valves and see if its as expected
          if (!check_current())
          {
-            log_printf (LOG_ERR,
-                     "Polled current out of spec. Doing emergency shutdown");
+            log_printf (LOG_ERR, "Polled current out of spec. Doing emergency shutdown");
             emergency_off(ERROR);
          }
 

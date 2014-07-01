@@ -484,8 +484,7 @@ check_current(void)
       actual_current = GetCurrent ();
       if (((actual_current > maxC) || (actual_current < minC)) && (expected_current > 0))
       {
-         log_printf (LOG_ERR,
-                  "Current draw %u - expecting from %u to %u", actual_current, minC, maxC);
+         log_printf (LOG_ERR, "Current draw %u - expecting from %u to %u", actual_current, minC, maxC);
          ret = FALSE;
       }
    }
@@ -527,8 +526,7 @@ SetOutput (uint8_t zone, uint8_t state)
       // force this last zone off
       DoOutput(zone, OFF);
       chanmap[zone].output = OFF;
-      log_printf (LOG_ERR,
-               "Switching %s zone %u current out of spec.", state ? "ON" : "OFF", zone);
+      log_printf (LOG_ERR, "Switching %s zone %u current out of spec.", state ? "ON" : "OFF", zone);
    }
    return ret;
 }

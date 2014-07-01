@@ -1,11 +1,13 @@
-The UI is 'soft' in that the position of the buttons is entirely described by the html, the
-colours of events by the CSS and the positions of zones on the image map by the configuration file.
+The UI (User Interface) is 'soft' in that the position of the programming buttons is entirely described
+by the web (html) file, the colours of events by the CSS (Cascading Style Sheets) and the positions of
+zones on the image map by the configuration file.
 
 The image file can be any jpg or png file, and can be sized to suit the UI required or the UI
 could be constructed without an image.
 
-The configuration file is shared by the UI and the server. It contains a list of json objects, some
-keys for which are used by both UI and server, others are exclusive for one or the other.
+The configuration file is shared by the UI and the server. It contains a list of json objects. These 
+consist of a set of lines of the form "key" = "value", some of these keys are used by both UI and 
+server, others are exclusive for one or the other.
 
 The configuration file basics can be interactively generated using the -c command line switch. This
 will cause the zones to be activated one by one in the order of 1-wire discovery and the user is
@@ -113,11 +115,11 @@ A small zone that runs the misters in a tunnel house
 "y": 42                          // how far down
 "w":  2                          // quite narrow!!
 "h":  6                          // tall
-"zoom": 13                       // values > 10 dipsplay the whole name in the box
+"zoom": 13                       // values > 10 display the whole name in the box
 "selectable": true               // can be selected to program
 "name": "Tunnel House"           // friendly name
-"aorb": true                     // PIO.A
-"address": "3a.2d3201000000"     // owfs format 1-wire address
+"aorb": true                     // hardware channel PIO.A
+"address": "3a.2d3201000000"     // hardware channel owfs format 1-wire address
 "flow": 8                        // 8 l/m flow rate
 "current": 160                   // draws 160mA
 ```
@@ -134,15 +136,15 @@ stock troughs and taps about the place. It also handles low volume irrigation up
 "zoom": 13
 "selectable": false              // not user programable - handled by the server
 "name": "Domestic Feed"
-"aorb": false, "address"
-"3a.9b8d03000000"
+"aorb": false
+"address": "3a.9b8d03000000"
 "ispump": true                   // tell the system its a pump
 "isstock": true                  // tell the system it is used by time as well as by demand
 "minflow": 1                     // minimum demand level
 "nomflow": 100                   // can deliver this amount normally
 "maxflow": 100                   // can deliver this much as a maximum
 "maxstarts": 720                 // translates to how long to remain off after shutdown
-"maxrun": 10800                  // when run by timr, how long in one go
+"maxrun": 10800                  // when run by timer, how long in one go to prevent valve sticking
 "start": 0700                    // time period for running starts here
 "end": 2100                      // - and ends here
 "current": 160

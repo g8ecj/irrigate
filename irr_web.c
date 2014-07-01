@@ -284,13 +284,13 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    {
       localtime_r (&starttime, &tm);
       sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3lu minutes and %s %s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration / 60, is_was, tmpstr, fromday);
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, fromday);
    }
    else
    {
       localtime_r (&starttime, &tm);
       sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3lu minutes and %s %s %s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration / 60, is_was, tmpstr, rptstr, fromday);
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, rptstr, fromday);
    }
 
    jobj = json_object_new_object ();
@@ -318,6 +318,8 @@ show_status (struct mg_connection *conn)
    uint8_t zone;
    struct json_object *jobj, *jzones;
    char tmpstr[80];
+   char uptimestr[80];
+   time_t uptime = basictime - startuptime;
 
    struct tm tm;
 
@@ -365,6 +367,14 @@ show_status (struct mg_connection *conn)
          strncpy (tmpstr, "off", 4);
       break;
    }
+
+   gmtime_r(&uptime, &tm);
+   if (tm.tm_yday == 0)
+      sprintf (uptimestr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+   else
+      sprintf (uptimestr, "%d %02d:%02d:%02d", tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+   json_object_object_add (jobj, "uptime", json_object_new_string (uptimestr));
    json_object_object_add (jobj, "frost", json_object_new_string (tmpstr));
    json_object_object_add (jobj, "temperature", json_object_new_int ((int) (temperature * 100)));
    json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));

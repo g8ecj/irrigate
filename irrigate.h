@@ -218,6 +218,7 @@ extern int16_t interrupt;
 extern double temperature;
 extern double Tintegral;
 extern char daystr[][10];
+extern time_t startuptime;
 
 // config items
 extern int16_t debug;
