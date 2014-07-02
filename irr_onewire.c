@@ -333,14 +333,14 @@ GetSensor(eSENSOR type)
 uint16_t
 GetCurrent (void)
 {
-   double volts;
+   double milliamps;
 
-   volts = GetSensor(eCURRENT) * VoltToMilliAmp;
+   milliamps = GetSensor(eCURRENT) * VoltToMilliAmp;
 // can't read reliably below 1.5 volts (but need down to ~0.1V)
-   if (volts < 50)
-      volts = 0;
+   if (milliamps < 50)
+      milliamps = 0;
 
-   return (uint16_t) volts;
+   return (uint16_t) milliamps;
 }
 
 double
