@@ -123,7 +123,7 @@ function drawVisualization(obj,id)
             data.push ({
             'start' : new Date(obj.events[i].start),
             'end' : new Date(obj.events[i].end),
-            'content' : obj.events[i].description,
+            'content' : "<div title='" + obj.events[i].description + "'>" + obj.events[i].title + "</div>",
             'className' : 'tl' + obj.events[i].status,
             'type' : type
             });
@@ -140,14 +140,6 @@ function drawVisualization(obj,id)
 
         // Instantiate our timeline object.
         timeline = new links.Timeline(document.getElementById('map'));
-
-        function onRangeChanged(properties) {
-            document.getElementById('info').innerHTML += 'rangechanged ' +
-                    properties.start + ' - ' + properties.end + '<br>';
-        }
-
-        // attach an event listener using the links events handler
-        links.events.addListener(timeline, 'rangechanged', onRangeChanged);
 
         // Draw our timeline with the created data and options
         timeline.draw(data, options);

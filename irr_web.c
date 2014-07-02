@@ -283,13 +283,13 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->frequency == 0)
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3lu minutes and %s %s %s", 
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s", 
          cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, fromday);
    }
    else
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %3lu minutes and %s %s %s %s", 
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s %s", 
          cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, rptstr, fromday);
    }
 
