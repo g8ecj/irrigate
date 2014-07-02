@@ -318,7 +318,6 @@ show_status (struct mg_connection *conn)
    uint8_t zone;
    struct json_object *jobj, *jzones;
    char tmpstr[80];
-   char uptimestr[80];
    time_t uptime = basictime - startuptime;
 
    struct tm tm;
@@ -329,7 +328,8 @@ show_status (struct mg_connection *conn)
 
    for (zone = 1; zone < REALZONES; zone++)
    {
-      if (chanmap[zone].valid)
+      // only report status of valid zones - ignore sensors
+      if ((chanmap[zone].valid) && ((chanmap[zone].type & ISSENSOR) == 0))
       {
 
          jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
@@ -367,15 +367,15 @@ show_status (struct mg_connection *conn)
          strncpy (tmpstr, "off", 4);
       break;
    }
+   json_object_object_add (jobj, "frost", json_object_new_string (tmpstr));
 
    gmtime_r(&uptime, &tm);
    if (tm.tm_yday == 0)
-      sprintf (uptimestr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+      sprintf (tmpstr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
    else
-      sprintf (uptimestr, "%d %02d:%02d:%02d", tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+      sprintf (tmpstr, "%d %02d:%02d:%02d", tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+   json_object_object_add (jobj, "uptime", json_object_new_string (tmpstr));
 
-   json_object_object_add (jobj, "uptime", json_object_new_string (uptimestr));
-   json_object_object_add (jobj, "frost", json_object_new_string (tmpstr));
    json_object_object_add (jobj, "temperature", json_object_new_int ((int) (temperature * 100)));
    json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));
    json_object_object_add (jobj, "zones", jzones);
