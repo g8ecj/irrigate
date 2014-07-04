@@ -299,6 +299,7 @@ read_history (struct mapstruct *cmap, FILE * fd)
          if (cmap->zone > 0)
          {
             cmap->state = json_object_get_int (json_object_object_get (jobj, "result"));
+            cmap->lasterrno = json_object_get_int (json_object_object_get (jobj, "errno"));
             cmap->starttime = json_object_get_int (json_object_object_get (jobj, "time"));
             cmap->period = json_object_get_int (json_object_object_get (jobj, "period"));
             cmap->duration = cmap->period;
@@ -349,9 +350,11 @@ write_history (uint8_t zone, time_t endtime, time_t starttime, uint8_t result)
       json_object_object_add (jobj, "time", json_object_new_int (starttime));
       json_object_object_add (jobj, "period", json_object_new_int (endtime - starttime));
       json_object_object_add (jobj, "result", json_object_new_int (result));
+      json_object_object_add (jobj, "errno", json_object_new_int (errno));
       fputs (json_object_to_json_string (jobj), fd);
       fputc ('\n', fd);
       json_object_put (jobj);
+      errno = 0;
    }
    fclose (fd);
 }

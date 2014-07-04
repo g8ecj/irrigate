@@ -128,27 +128,27 @@ main (int argc, char **argv)
 
    if (signal (SIGINT, sig_ctlc) == SIG_ERR)
    {
-      log_printf (LOG_ERR, "Error: could not setup int handler");
+      log_printf (LOG_EMERG, "Error: could not setup int handler");
       exit (EXIT_FAILURE);
    }
    if (signal (SIGTERM, sig_ctlc) == SIG_ERR)
    {
-      log_printf (LOG_ERR, "Error: could not setup term handler");
+      log_printf (LOG_EMERG, "Error: could not setup term handler");
       exit (EXIT_FAILURE);
    }
    if (signal (SIGHUP, sig_hup) == SIG_ERR)
    {
-      log_printf (LOG_ERR, "Error: could not setup hup handler");
+      log_printf (LOG_EMERG, "Error: could not setup hup handler");
       exit (EXIT_FAILURE);
    }
    if (signal (SIGUSR1, sig_usr) == SIG_ERR)
    {
-      log_printf (LOG_ERR, "Error: could not setup usr1 handler");
+      log_printf (LOG_EMERG, "Error: could not setup usr1 handler");
       exit (EXIT_FAILURE);
    }
    if (signal (SIGUSR2, sig_usr) == SIG_ERR)
    {
-      log_printf (LOG_ERR, "Error: could not setup usr2 handler");
+      log_printf (LOG_EMERG, "Error: could not setup usr2 handler");
       exit (EXIT_FAILURE);
    }
 
@@ -199,7 +199,7 @@ main (int argc, char **argv)
       pid = fork ();
       if (pid < 0)
       {
-         log_printf (LOG_ERR, "Failed to run in background");
+         log_printf (LOG_EMERG, "Failed to run in background");
          exit (EXIT_FAILURE);
       }
       /* If we got a good PID, then we can exit the parent process. */
@@ -277,6 +277,7 @@ main (int argc, char **argv)
          // poll the current being drawn by the valves and see if its as expected
          if (!check_current())
          {
+            errno = ERANGE;
             log_printf (LOG_ERR, "Polled current out of spec. Doing emergency shutdown");
             emergency_off(ERROR);
          }

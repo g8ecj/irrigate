@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -120,6 +121,7 @@ struct mapstruct
    uint16_t group;              // what groups the zone is in
    uint16_t current;            // expected current draw in mA
    uint8_t link;                // used to map to pump or sensor list
+   int lasterrno;               // copy of last system errno
 };
 
 
@@ -154,6 +156,8 @@ struct sensorstruct
 #define WASOK      3
 #define WASCANCEL  4
 #define WASFAIL    5
+#define WASPOLL    6
+#define WASAMPS    7
 
 // what an output can do
 #define OFF       0

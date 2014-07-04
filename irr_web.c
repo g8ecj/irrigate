@@ -146,6 +146,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    char is_was[10];
    char tmpstr[30];
    char rptstr[30];
+   char errstr[30];
 
    if (cmap->state == ACTIVE)
    {
@@ -174,6 +175,21 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    {
       strncpy (colour, "fuchsia", 8);
       strncpy (tmpstr, "failed", 7);
+      switch (cmap->lasterrno)
+      {
+      case EIO:
+         strncpy (errstr, " [Driver failure] ", 19);
+         break;
+      case ERANGE:
+         strncpy (errstr, " [Valve current] ", 18);
+         break;
+      case ENOTSUP:
+         strncpy (errstr, " [Invalid command] ", 20);
+         break;
+      default:
+         errstr[0] = '\0';
+         break;
+      }
    }
    else if (cmap->frequency)
    {
@@ -283,14 +299,14 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->frequency == 0)
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, fromday);
    }
    else
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, rptstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, rptstr, fromday);
    }
 
    jobj = json_object_new_object ();
@@ -556,6 +572,7 @@ set_state (struct mg_connection *conn)
    }
    else
    {
+      errno = ENOTSUP;
       log_printf (LOG_ERR, "Invalid command %s", cmd);
    }
 

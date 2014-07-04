@@ -136,7 +136,7 @@ irr_onewire_init (void)
 
    if (OW_init(device))
    {
-      log_printf (LOG_ERR, "Error: failed to acquire port");
+      log_printf (LOG_EMERG, "Error: failed to acquire port");
       exit (EXIT_FAILURE);
    }
 
@@ -178,7 +178,7 @@ irr_onewire_init (void)
 
    if (numdev == 0)
    {
-      log_printf (LOG_ERR, "Error: nothing found on 1-wire bus - check cables?");
+      log_printf (LOG_EMERG, "Error: nothing found on 1-wire bus - check cables?");
       exit (EXIT_FAILURE);
    }
 
@@ -450,7 +450,10 @@ DoOutput (uint8_t zone, uint8_t state)
    }
 
    if (ret < 0)
+   {
+      errno = EIO;
       log_printf (LOG_ERR, "Failed to switch zone %d %s", zone, state ? "ON" : "OFF");
+   }
 
    return (ret < 0 ? FALSE : TRUE);
 }
@@ -526,6 +529,7 @@ SetOutput (uint8_t zone, uint8_t state)
       // force this last zone off
       DoOutput(zone, OFF);
       chanmap[zone].output = OFF;
+      errno = ERANGE;
       log_printf (LOG_ERR, "Switching %s zone %u current out of spec.", state ? "ON" : "OFF", zone);
    }
    return ret;
