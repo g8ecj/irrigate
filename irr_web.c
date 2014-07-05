@@ -138,12 +138,12 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    time_t t, duration;
 
    char descstr[140];
-   char startstr[64] = {0};
-   char endstr[64] = {0};
+   char startstr[64];
+   char endstr[64];
+   char colour[10];
+   char ing_ed[10];
+   char is_was[10];
    char fromday[64] = {0};
-   char colour[10] = {0};
-   char ing_ed[10] = {0};
-   char is_was[10] = {0};
    char tmpstr[30] = {0};
    char rptstr[30] = {0};
    char errstr[30] = {0};
@@ -243,19 +243,13 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    t = starttime + duration;
    strftime(endstr, sizeof(endstr), fmt, localtime(&t));
 
-   if (((starttime > basictime) 
-         && (starttime < (basictime + 60 * 60 * 24))) 
-            || ((starttime + cmap->frequency > basictime) 
-               && (starttime + cmap->frequency < (basictime + 60 * 60 * 24))))        // start OR repeat is today
-   {
-      fromday[0] = '\0';
-   }
-   else if (starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
+   // default to not having day
+   if (starttime > (basictime + 60 * 60 * 24)) // start more than 24hrs ahead - always have day
    {
       localtime_r (&starttime, &tm);
       sprintf(fromday, "from %s", daystr[tm.tm_wday]);     // use starttime to find day
    }
-   else if (starttime + cmap->frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead
+   else if (starttime + cmap->frequency > (basictime + 60 * 60 * 24))  // repeat sometime more than 24hrs ahead so has day
    {
       t = starttime + cmap->frequency;
       localtime_r (&t, &tm);
