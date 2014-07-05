@@ -138,15 +138,15 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    time_t t, duration;
 
    char descstr[140];
-   char startstr[64];
-   char endstr[64];
-   char fromday[64];
-   char colour[10];
-   char ing_ed[10];
-   char is_was[10];
-   char tmpstr[30];
-   char rptstr[30];
-   char errstr[30];
+   char startstr[64] = {0};
+   char endstr[64] = {0};
+   char fromday[64] = {0};
+   char colour[10] = {0};
+   char ing_ed[10] = {0};
+   char is_was[10] = {0};
+   char tmpstr[30] = {0};
+   char rptstr[30] = {0};
+   char errstr[30] = {0};
 
    if (cmap->state == ACTIVE)
    {
@@ -185,9 +185,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
          break;
       case ENOTSUP:
          strncpy (errstr, " [Invalid command] ", 20);
-         break;
-      default:
-         errstr[0] = '\0';
          break;
       }
    }
@@ -235,9 +232,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    case 168:
       strncpy (rptstr, "weekly ", 8);
       break;
-   default:
-      strncpy (rptstr, "", 2);
-      break;
    }
 
    if (cmap->duration > 0)
@@ -266,10 +260,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       t = starttime + cmap->frequency;
       localtime_r (&t, &tm);
       sprintf(fromday, "from %s", daystr[tm.tm_wday]);     // use starttime to find day
-   }
-   else
-   {
-      fromday[0] = '\0';
    }
    // description is 
    // start{ing/ed}(1) at <time> for a duration of <period> and {is/was}(2) <state>  {and is repeating/""}(3) <rptstr> {from <daystr>}(4)
