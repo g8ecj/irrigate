@@ -141,8 +141,9 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    char startstr[64];
    char endstr[64];
    char colour[10];
-   char ing_ed[10];
-   char is_was[10];
+   char ing_ed[5];
+   char is_was[5];
+   char of_less[10];
    char fromday[64] = {0};
    char tmpstr[30] = {0};
    char rptstr[30] = {0};
@@ -235,9 +236,15 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    }
 
    if (cmap->duration > 0)
+   {
+      strncpy (of_less, "of", 3);
       duration = cmap->duration;
+   }
    else
+   {
+      strncpy (of_less, "less than", 10);
       duration = abs(basictime - starttime);
+   }
 
    strftime(startstr, sizeof(startstr), fmt, localtime(&starttime));
    t = starttime + duration;
@@ -283,14 +290,14 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->frequency == 0)
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s%s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s %lu minutes and %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, of_less, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, fromday);
    }
    else
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration of %lu minutes and %s %s %s%s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, rptstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s %lu minutes and %s %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, of_less, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, rptstr, fromday);
    }
 
    jobj = json_object_new_object ();
