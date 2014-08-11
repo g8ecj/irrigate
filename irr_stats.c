@@ -281,43 +281,54 @@ int
 read_history (struct mapstruct *cmap, FILE * fd)
 {
    char *input;
-   int ret = TRUE;
+   int ret = TRUE, repeats = TRUE;;
    struct json_object *jobj;
+   static int lasterror = -1;
+   static time_t lasttime = -1;
+
 
    input = malloc (1024);
-   if (fgets (input, 1024, fd) != NULL)
+   while (repeats)
    {
-      jobj = json_tokener_parse (input);
-      if (is_error (jobj))
+      if (fgets (input, 1024, fd) != NULL)
       {
-         printf ("error parsing json object %s\n", input);
-         ret = FALSE;
+         jobj = json_tokener_parse (input);
+         if (is_error (jobj))
+         {
+            printf ("error parsing json object %s\n", input);
+            ret = FALSE;
+         }
+         else
+         {
+            cmap->zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+            if (cmap->zone > 0)
+            {
+               cmap->state = json_object_get_int (json_object_object_get (jobj, "result"));
+               cmap->lasterrno = json_object_get_int (json_object_object_get (jobj, "errno"));
+               cmap->starttime = json_object_get_int (json_object_object_get (jobj, "time"));
+               cmap->period = json_object_get_int (json_object_object_get (jobj, "period"));
+               cmap->duration = cmap->period;
+               strcpy(cmap->name, chanmap[cmap->zone].name);
+               // can't repeat or be locked in the past
+               cmap->frequency = 0;
+               cmap->locked = 0;
+            }
+            // the value here for time is a fudge - it assumes all repeated items are failures
+            if (!((lasterror == cmap->lasterrno) && (lasttime > cmap->starttime - (FAILED_RETRY + 1))))
+               repeats = FALSE;
+
+            lasterror = cmap->lasterrno;
+            lasttime = cmap->starttime;
+         }
+         json_object_put (jobj);
       }
       else
       {
-         cmap->zone = json_object_get_int (json_object_object_get (jobj, "zone"));
-         if (cmap->zone > 0)
-         {
-            cmap->state = json_object_get_int (json_object_object_get (jobj, "result"));
-            cmap->lasterrno = json_object_get_int (json_object_object_get (jobj, "errno"));
-            cmap->starttime = json_object_get_int (json_object_object_get (jobj, "time"));
-            cmap->period = json_object_get_int (json_object_object_get (jobj, "period"));
-            cmap->duration = cmap->period;
-            strcpy(cmap->name, chanmap[cmap->zone].name);
-            // can't repeat or be locked in the past
-            cmap->frequency = 0;
-            cmap->locked = 0;
-         }
+         repeats = FALSE;
+         ret = FALSE;
       }
-      json_object_put (jobj);
    }
-   else
-   {
-      ret = FALSE;
-   }
-
    free (input);
-
    return ret;
 }
 
