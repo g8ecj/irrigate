@@ -75,7 +75,7 @@
 #define VoltToMilliAmp 275
 
 // times used in action stuff
-#define FAILED_RETRY 30
+#define FAILED_RETRY 60
 
 extern char sensornames[][9];
 
