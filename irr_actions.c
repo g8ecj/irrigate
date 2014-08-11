@@ -436,7 +436,6 @@ dopumps (void)
 void
 pump_on (uint8_t zone)
 {
-   uint16_t locktime;
    uint8_t pump = get_pump_by_zone(zone);
 
    if ((chanmap[zone].locked) || (chanmap[zone].state == ACTIVE))
@@ -456,13 +455,12 @@ pump_on (uint8_t zone)
    {
       chanmap[zone].state = ERROR;      // report the error to the GUI
       write_history (zone, basictime + 1, basictime, WASFAIL);
-      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
       // set lock if failure to prevent retries happening too fast
       chanmap[zone].locked = TRUE;
-      chanmap[zone].period = locktime;
-      chanmap[zone].duration = locktime;
       chanmap[zone].starttime = basictime;
-      insert (basictime + locktime, zone, UNLOCK);
+      chanmap[zone].period = FAILED_RETRY;
+      chanmap[zone].duration = FAILED_RETRY;
+      insert (basictime + FAILED_RETRY, zone, UNLOCK);
    }
 }
 
@@ -476,7 +474,6 @@ pump_off (uint8_t zone)
 
    if (chanmap[zone].state == ACTIVE)
    {
-      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
       if (SetOutput (zone, OFF))
       {
          pumpmap[pump].pumpingtime += (basictime - chanmap[zone].starttime);
@@ -492,9 +489,10 @@ pump_off (uint8_t zone)
       while (delete (zone));                // remove any outstanding 'off' action
       chanmap[zone].state = IDLE;
       chanmap[zone].locked = TRUE;
+      chanmap[zone].starttime = basictime;
+      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
       chanmap[zone].period = locktime;
       chanmap[zone].duration = locktime;
-      chanmap[zone].starttime = basictime;
       insert (basictime + locktime, zone, UNLOCK);
    }
 }
