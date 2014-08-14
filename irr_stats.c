@@ -285,6 +285,7 @@ read_history (struct mapstruct *cmap, FILE * fd)
    struct json_object *jobj;
    static int lasterror = -1;
    static time_t lasttime = -1;
+   static uint8_t lastzone = -1;
 
 
    input = malloc (1024);
@@ -314,11 +315,12 @@ read_history (struct mapstruct *cmap, FILE * fd)
                cmap->locked = 0;
             }
             // the value here for time is a fudge - it assumes all repeated items are failures
-            if (!((lasterror == cmap->lasterrno) && (lasttime > cmap->starttime - (FAILED_RETRY + 1))))
+            if (!((lasterror == cmap->lasterrno) && (lasttime > cmap->starttime - (FAILED_RETRY + 1)) && (lastzone == cmap->zone)))
                repeats = FALSE;
 
             lasterror = cmap->lasterrno;
             lasttime = cmap->starttime;
+            lastzone = cmap->zone;
          }
          json_object_put (jobj);
       }
