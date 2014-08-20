@@ -140,7 +140,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    char descstr[140];
    char startstr[64];
    char endstr[64];
-   char colour[10];
    char ing_ed[5];
    char is_was[5];
    char of_less[10];
@@ -151,30 +150,25 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (cmap->state == ACTIVE)
    {
-      if (starttime > basictime)        // more than one instance queued, only the 1st is active
-         strncpy (colour, "green", 6);
+      if (starttime > basictime)           // if this instance is in the future then its queued
+         strncpy (tmpstr, "queued", 7);
       else
-         strncpy (colour, "red", 4);
-      strncpy (tmpstr, "active", 7);
+         strncpy (tmpstr, "active", 7);
    }
    else if (cmap->state == ERROR)
    {
-      strncpy (colour, "fuchsia", 8);
       strncpy (tmpstr, "error", 6);
    }
    else if (cmap->state == WASOK)
    {
-      strncpy (colour, "green", 6);
       strncpy (tmpstr, "completed", 10);
    }
    else if (cmap->state == WASCANCEL)
    {
-      strncpy (colour, "blue", 5);
       strncpy (tmpstr, "cancelled", 10);
    }
    else if (cmap->state == WASFAIL)
    {
-      strncpy (colour, "fuchsia", 8);
       strncpy (tmpstr, "failed", 7);
       switch (cmap->lasterrno)
       {
@@ -191,22 +185,18 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    }
    else if (cmap->frequency)
    {
-      strncpy (colour, "cyan", 5);
       strncpy (tmpstr, "repeating", 10);
    }
    else if (cmap->locked)
    {
-      strncpy (colour, "blue", 5);
       strncpy (tmpstr, "locked", 7);
    }
    else if (findonqueue (zone) > 0)
    {
-      strncpy (colour, "green", 6);
       strncpy (tmpstr, "queued", 7);
    }
    else
    {
-      strncpy (colour, "white", 6);
       strncpy (tmpstr, "idle", 5);
    }
 
