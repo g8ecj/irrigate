@@ -316,7 +316,7 @@ show_status (struct mg_connection *conn)
    struct json_object *jobj, *jzones;
    char tmpstr[80];
    time_t uptime = basictime - startuptime;
-
+   double value;
    struct tm tm;
 
    send_headers(conn);
@@ -332,6 +332,18 @@ show_status (struct mg_connection *conn)
          jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
          json_object_array_add (jzones, jobj);
       }
+      else if (chanmap[zone].type & ISSENSOR)
+      {
+         value = GetSensorbyZone(zone);
+         sprintf (tmpstr, "%s - value is %f", chanmap[zone].name, value);
+         jobj = json_object_new_object ();
+         json_object_object_add (jobj, "zone", json_object_new_int (zone));
+         json_object_object_add (jobj, "status", json_object_new_string ("queued"));
+         json_object_object_add (jobj, "description", json_object_new_string (tmpstr));
+         json_object_array_add (jzones, jobj);
+
+      }
+
    }
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("status"));

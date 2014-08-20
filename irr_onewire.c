@@ -103,6 +103,12 @@ GetTemp(void)
    return 0;
 }
 
+double
+GetSensorbyZone(uint8_t zone)
+{
+   return zone * 4;
+}
+
 void
 setGPIOraw(uint8_t UNUSED (index), uint8_t UNUSED (value))
 {
@@ -286,6 +292,28 @@ void
 irr_onewire_stop (void)
 {
    OW_finish() ;
+}
+
+// read the value of a sensor indexed by the zone
+double
+GetSensorbyZone(uint8_t zone)
+{
+   uint8_t sensor;
+   double value = 0;
+   ssize_t ret;
+   char path[32];
+   char * tokenstring;
+   size_t s;
+
+   sensor = chanmap[zone].link;
+   sprintf(path, sensormap[sensor].path, chanmap[zone].address);
+   ret = OW_get(path,&tokenstring,&s);
+   if (ret >= 0)
+   {
+      value = atof(tokenstring);
+      free(tokenstring);
+   }
+   return value;
 }
 
 

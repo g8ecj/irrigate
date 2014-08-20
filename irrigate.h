@@ -346,6 +346,8 @@ uint16_t get_expected_current(void);
 uint16_t get_expected_flow(void);
 // get the pump number fro mthe zone number
 uint8_t get_pump_by_zone(uint8_t zone);
+// read sensors directly by zone
+double GetSensorbyZone(uint8_t zone);
 
 
 // This routine uses 'DoOutput' and 'check_current' to do the heavy lifting
