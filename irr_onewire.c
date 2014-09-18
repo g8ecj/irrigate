@@ -29,6 +29,7 @@ char devcopy[MAXDEVICES][16];
 uint8_t numgpio = 0;
 uint8_t numvolt = 0;
 uint8_t numtemp = 0;
+uint8_t numlcd  = 0;
 
 // define the following if using a version of OWFS prior to 2.9p3
 // which has a problem with big endian handling of aggregate PIO devices (e.g. DS2408, DS2413)
@@ -106,7 +107,7 @@ GetTemp(void)
 double
 GetSensorbyZone(uint8_t zone)
 {
-   return zone * 4;
+   return zone + 4;
 }
 
 void
@@ -175,6 +176,9 @@ irr_onewire_init (void)
          case DS18B20_FAMILY_CODE:
          case DS1822_FAMILY_CODE:
             numtemp++;
+            break;
+         case DS2408_FAMILY_CODE:
+            numlcd++;
             break;
          }
       }

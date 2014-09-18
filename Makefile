@@ -45,7 +45,7 @@ all: $(BINARY)
 $(BINARY): $(OBJS)
 	echo "$(COMPILER) $(OBJS) -> $(BINARY)"
 	$(CC) $(CFLAGS) $(OBJS) -o $(BINARY) $(LIBS)
-#	$(STRIP) $(BINARY)
+	$(STRIP) $(BINARY)
 	@echo 'Finished building target: $@'
 
 %.o: %.c

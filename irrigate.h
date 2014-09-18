@@ -49,6 +49,7 @@
 
 #define DS2413_FAMILY_CODE        0x3A
 #define DS2438_FAMILY_CODE        0x26
+#define DS2408_FAMILY_CODE        0x1D
 // number of 1-wire devices of any one type
 #define MAXDEVICES         20
 // arbitrary number of pumps

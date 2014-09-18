@@ -335,7 +335,7 @@ show_status (struct mg_connection *conn)
       else if (chanmap[zone].type & ISSENSOR)
       {
          value = GetSensorbyZone(zone);
-         sprintf (tmpstr, "%s - value is %f", chanmap[zone].name, value);
+         sprintf (tmpstr, "%s = %.2f", chanmap[zone].name, value);
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (zone));
          json_object_object_add (jobj, "status", json_object_new_string ("queued"));
