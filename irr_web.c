@@ -474,7 +474,7 @@ static int show_sensors(struct mg_connection *conn)
          sprintf (tmpstr, "%s - value is %f", chanmap[zone].name, value);
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (zone));
-         json_object_object_add (jobj, "status", json_object_new_string ("queued"));
+         json_object_object_add (jobj, "status", json_object_new_string ("ready"));
          json_object_object_add (jobj, "description", json_object_new_string (tmpstr));
          json_object_array_add (jzones, jobj);
 
@@ -482,6 +482,7 @@ static int show_sensors(struct mg_connection *conn)
    }
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("sensors"));
+   json_object_object_add (jobj, "zones", jzones);
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
