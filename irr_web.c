@@ -316,7 +316,6 @@ show_status (struct mg_connection *conn)
    struct json_object *jobj, *jzones;
    char tmpstr[80];
    time_t uptime = basictime - startuptime;
-   double value;
    struct tm tm;
 
    send_headers(conn);
@@ -331,17 +330,6 @@ show_status (struct mg_connection *conn)
 
          jobj = create_json_zone (zone, chanmap[zone].starttime, &chanmap[zone]);
          json_object_array_add (jzones, jobj);
-      }
-      else if (chanmap[zone].type & ISSENSOR)
-      {
-         value = GetSensorbyZone(zone);
-         sprintf (tmpstr, "%s - value is %f", chanmap[zone].name, value);
-         jobj = json_object_new_object ();
-         json_object_object_add (jobj, "zone", json_object_new_int (zone));
-         json_object_object_add (jobj, "status", json_object_new_string ("queued"));
-         json_object_object_add (jobj, "description", json_object_new_string (tmpstr));
-         json_object_array_add (jzones, jobj);
-
       }
 
    }
@@ -464,6 +452,43 @@ show_timedata (struct mg_connection *conn)
    json_object_put (jobj);
    return MG_TRUE;
 }
+
+
+
+static int show_sensors(struct mg_connection *conn)
+{
+   uint8_t zone;
+   struct json_object *jobj, *jzones;
+   char tmpstr[80];
+   double value;
+
+   send_headers(conn);
+
+   jzones = json_object_new_array ();
+
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      if (chanmap[zone].type & ISSENSOR)
+      {
+         value = GetSensorbyZone(zone);
+         sprintf (tmpstr, "%s - value is %f", chanmap[zone].name, value);
+         jobj = json_object_new_object ();
+         json_object_object_add (jobj, "zone", json_object_new_int (zone));
+         json_object_object_add (jobj, "status", json_object_new_string ("queued"));
+         json_object_object_add (jobj, "description", json_object_new_string (tmpstr));
+         json_object_array_add (jzones, jobj);
+
+      }
+   }
+   jobj = json_object_new_object ();
+   json_object_object_add (jobj, "cmd", json_object_new_string ("sensors"));
+
+   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
+   json_object_put (jobj);
+   return MG_TRUE;
+
+}
+
 
 /*
  * This callback is attached to the URI "/set_state"
@@ -654,6 +679,7 @@ static const struct web_config
 {
    { MG_REQUEST, "/status", &show_status},
    { MG_REQUEST, "/timedata", &show_timedata},
+   { MG_REQUEST, "/sensors", &show_sensors},
    { MG_AUTH,    "/set_state", &check_authorised},
    { MG_REQUEST, "/set_state", &set_state},
    { MG_AUTH,    "/set_frost", &check_authorised},
