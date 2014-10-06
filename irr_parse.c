@@ -39,7 +39,7 @@ char datapath[MAXFILELEN] = "/www";
 char httpport[10] = "8080";
 char httproot[MAXFILELEN] = "/www";
 char accesslog[MAXFILELEN] = "";
-double Tthreshold = -0.5;
+double Tthreshold = 0.0;
 uint16_t frostlimit = 60;
 
 
@@ -191,20 +191,20 @@ parseArguments (int argc, char **argv)
       case 'h':
          printf ("usage: %s [bcdfhlprstv]\n"
                  "\n"
-                 "-a <file>, --file      access log file name\n"
-                 "-b,        --background run in daemon mode\n"
-                 "-c,        --config    configure zone mapping\n"
-                 "-d <dir>,  --datapath  data file directory\n"
-                 "-f <file>, --file      config file name\n"
-                 "-l <int>,  --limit     degree-minutes before frost program runs\n"
-                 "-m,        --monitor   check current drawn by solenoid valves\n"
-                 "-p <int>,  --port      http port number\n"
-                 "-r <dir>,  --root      http root directory\n"
-                 "-s <dev>,  --serialport serial port device\n"
-                 "-t <int>,  --threshold temperature below which frost protect operates\n"
-                 "-v,        --version   useful version information\n"
-                 "-x         --debug     debug mode\n"
-                 "-h,        --help      this help screen\n", argv[0]);
+                 "-a <file>,  --file       access log file name\n"
+                 "-b,         --background run in daemon mode\n"
+                 "-c,         --config     configure zone mapping\n"
+                 "-d <dir>,   --datapath   data file directory\n"
+                 "-f <file>,  --file       config file name\n"
+                 "-l <int>,   --limit      degree-minutes before frost program runs\n"
+                 "-m,         --monitor    check current drawn by solenoid valves\n"
+                 "-p <int>,   --port       http port number\n"
+                 "-r <dir>,   --root       http root directory\n"
+                 "-s <dev>,   --serialport serial port device\n"
+                 "-t <float>, --threshold  temperature below which frost protect operates\n"
+                 "-v,         --version    useful version information\n"
+                 "-x          --debug      debug mode\n"
+                 "-h,          --help      this help screen\n", argv[0]);
          printf(" or: %s -A <htpasswd_file> <realm> <user> <passwd>\n", argv[0]);
 
          exit (0);
@@ -231,9 +231,9 @@ parseArguments (int argc, char **argv)
          break;
       case 't':
          Tthreshold = atof (optarg);
-         if ((Tthreshold < -10) || (Tthreshold > 0))
+         if ((Tthreshold < -10) || (Tthreshold > 5))
          {
-            printf ("Warning: threshold range is -10 to 0. Input was %2.2f\n", Tthreshold);
+            printf ("Warning: threshold range is -10 to 5. Input was %2.2f\n", Tthreshold);
          }
          log_printf (LOG_NOTICE, "Frost protection threshold temperature is %2.2f", Tthreshold);
          break;
