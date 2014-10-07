@@ -51,13 +51,6 @@
 
 <script>
 
-var frost = new Array();
-frost["on"]  = "Frost Protect: activated by low temperature"
-frost["man"] = "Frost Protect: activated by manual override"
-frost["arm"] = "Frost Protect: monitoring automatic temperature control"
-frost["run"] = "Frost Protect: start trigger activated - counting down..."
-frost["off"] = "Frost Protect: off"
-
 var error_count = 0
 
 function error(msg)
@@ -157,16 +150,16 @@ function status_reply(obj,id)
    get("temperature").innerHTML = "Temperature: " + obj.temperature / 100 + "C"
    get("current").innerHTML = "Current: " + obj.current / 1000 + "A"
    get("flow").innerHTML = "Flow: " + obj.flow + "l/min"
-   get("frost").className = "frost" + obj.frost
-   get("frost").title = frost[obj.frost]
+   get("frost").className = "frost" + obj.frost.status
+   get("frost").title = obj.frost.description
 
    for(i in obj.zones)
    {
       var z = zone_id_search[obj.zones[i].zone]
       z.state = obj.zones[i].status
-         z.div.title   = obj.zones[i].description
-         z.o_div.title = z.div.title
-         z.h_div.title = z.div.title
+      z.div.title   = obj.zones[i].description
+      z.o_div.title = z.div.title
+      z.h_div.title = z.div.title
       redraw_zone(z)
    }
 }

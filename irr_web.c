@@ -313,8 +313,8 @@ static int
 show_status (struct mg_connection *conn)
 {
    uint8_t zone;
-   struct json_object *jobj, *jzones;
-   char tmpstr[80];
+   struct json_object *jobj, *jzones, *jfrost;
+   char str1[80], str2[80];
    time_t uptime = basictime - startuptime;
    struct tm tm;
 
@@ -336,42 +336,56 @@ show_status (struct mg_connection *conn)
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("status"));
    localtime_r (&basictime, &tm);
-   sprintf (tmpstr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
-   json_object_object_add (jobj, "time", json_object_new_string (tmpstr));
+   sprintf (str1, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+   json_object_object_add (jobj, "time", json_object_new_string (str1));
 
-   sprintf (tmpstr, "Version %s compiled on %s at %s", VERSION, __DATE__, __TIME__);
-   json_object_object_add (jobj, "version", json_object_new_string (tmpstr));
+   sprintf (str1, "Version %s compiled on %s at %s", VERSION, __DATE__, __TIME__);
+   json_object_object_add (jobj, "version", json_object_new_string (str1));
 
    json_object_object_add (jobj, "flow", json_object_new_int (get_expected_flow()));
 
    // frost can be on (manual or cold!), armed or off - 4 different outcomes
    // might need to use Tintegral here (or equiv)
+   jfrost = json_object_new_object ();
    switch (frost_mode)
    {
    case FROST_MANUAL:
-      strncpy (tmpstr, "man", 4);
+      strcpy (str1, "man");
+      strcpy (str2, "Frost Protect - activated by manual override");
       break;
    case FROST_ACTIVE:
-      strncpy (tmpstr, "on", 3);
+      strcpy (str1, "on");
+      strcpy (str2, "Frost Protect - activated by low temperature");
       break;
    case FROST_OFF:
       if (frost_armed)
          if (Tintegral > 0)
-            strncpy (tmpstr, "run", 4);
+         {
+            strcpy (str1, "run");
+            sprintf(str2, "Frost Protect - triggered - %2d/%2d degree minutes...", (int)Tintegral, frostlimit);
+         }
          else
-            strncpy (tmpstr, "arm", 4);
+         {
+            strcpy (str1, "arm");
+            strcpy (str2, "Frost Protect - monitoring automatic temperature control");
+         }
       else
-         strncpy (tmpstr, "off", 4);
+      {
+         strcpy (str1, "off");
+         strcpy (str2, "Frost Protect - off");
+      }
       break;
    }
-   json_object_object_add (jobj, "frost", json_object_new_string (tmpstr));
+   json_object_object_add (jfrost, "status", json_object_new_string (str1));
+   json_object_object_add (jfrost, "description", json_object_new_string (str2));
+   json_object_object_add (jobj, "frost", jfrost);
 
    gmtime_r(&uptime, &tm);
    if (tm.tm_yday == 0)
-      sprintf (tmpstr, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+      sprintf (str1, "%02d:%02d:%02d", tm.tm_hour, tm.tm_min, tm.tm_sec);
    else
-      sprintf (tmpstr, "%d %02d:%02d:%02d", tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-   json_object_object_add (jobj, "uptime", json_object_new_string (tmpstr));
+      sprintf (str1, "%d %02d:%02d:%02d", tm.tm_yday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+   json_object_object_add (jobj, "uptime", json_object_new_string (str1));
 
    json_object_object_add (jobj, "temperature", json_object_new_int ((int) (temperature * 100)));
    json_object_object_add (jobj, "current", json_object_new_int (GetCurrent()));
