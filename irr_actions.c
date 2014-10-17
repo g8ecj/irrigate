@@ -54,7 +54,7 @@ doaction (uint8_t zone, uint8_t action)
 
    case TURNOFF:
       // switch off
-      flow = (basictime - chanmap[zone].starttime) * chanmap[zone].flow / 60;   // convert secs to mins * l/min
+      flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;   // convert secs to mins * l/min
       chanmap[zone].totalflow += (flow / 1000);   // add up the number of cubic metres
       if (SetOutput (zone, OFF))
       {
@@ -76,8 +76,9 @@ doaction (uint8_t zone, uint8_t action)
    case CANCEL:                // used from the event queue to cancel zones
       if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))       // attempt switchoff if active 
       {
-         flow = (basictime - chanmap[zone].starttime) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
+         flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
          chanmap[zone].totalflow += (flow / 1000);      // add up the number of cubic metres
+         printf ("Flow %f\r\n", flow);
          SetOutput (zone, OFF);
          log_printf (LOG_WARNING, "switch OFF (cancel) zone %d (%s)", zone, chanmap[zone].name);
          write_history (zone, basictime, chanmap[zone].actualstart, WASCANCEL);
@@ -476,7 +477,7 @@ pump_off (uint8_t zone)
    {
       if (SetOutput (zone, OFF))
       {
-         pumpmap[pump].pumpingtime += (basictime - chanmap[zone].starttime);
+         pumpmap[pump].pumpingtime += (basictime - chanmap[zone].actualstart);
          chanmap[zone].totalflow = 0;      // don't record pump flow, its the time that is important
          log_printf (LOG_NOTICE, "switch OFF %s and LOCK", chanmap[zone].name);
          write_history (zone, basictime, chanmap[zone].actualstart, WASOK);
