@@ -143,6 +143,7 @@ update_statistics (void)
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
          json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
+         json_object_object_add (jobj, "type", json_object_new_string ("pump"));
          json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
          fputs (json_object_to_json_string (jobj), fd);
          fputc ('\n', fd);
@@ -154,6 +155,7 @@ update_statistics (void)
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
          json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
+         json_object_object_add (jobj, "type", json_object_new_string ("zone"));
          json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
          fputs (json_object_to_json_string (jobj), fd);
          fputc ('\n', fd);

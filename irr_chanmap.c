@@ -35,6 +35,46 @@ char sensornames[][9] =
 };
 
 
+// globals that all in this module can see
+struct mapstruct chanmap[MAXZONES];
+struct pumpstruct pumpmap[MAXPUMPS];
+struct sensorstruct sensormap[MAXSENSORS];
+
+
+void
+maps_init(void)
+{
+   uint8_t i;
+
+   for (i = 0; i < MAXZONES; i++)
+   {
+      chanmap[i].zone = 0;
+      chanmap[i].valid = 0;
+      chanmap[i].state = IDLE;
+      chanmap[i].output = 0;
+      chanmap[i].starttime = 0;
+      chanmap[i].duration = 0;
+      chanmap[i].totalflow = 0;
+      chanmap[i].locked = FALSE;
+      chanmap[i].name[0] = '\0';
+   }
+
+   for (i = 0; i < MAXPUMPS; i++)
+   {
+      pumpmap[i].zone = 0;
+   }
+
+   for (i = 0; i < MAXSENSORS; i++)
+   {
+      sensormap[i].zone = 0;
+   }
+
+
+
+
+}
+
+
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it

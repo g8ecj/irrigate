@@ -33,11 +33,6 @@
 #include "irrigate.h"
 
 
-// globals that all in this module can see
-struct mapstruct chanmap[MAXZONES];
-struct pumpstruct pumpmap[MAXPUMPS];
-struct sensorstruct sensormap[MAXSENSORS];
-
 time_t basictime;
 time_t startuptime;
 
@@ -88,7 +83,6 @@ sig_ctlc (int UNUSED (signo))
 int
 main (int argc, char **argv)
 {
-   int i;                       //loop counter
    uint8_t zone;
    uint8_t action;
    uint16_t numdev;
@@ -97,28 +91,7 @@ main (int argc, char **argv)
    basictime = time (NULL);
    startuptime = basictime;
 
-   for (i = 0; i < MAXZONES; i++)
-   {
-      chanmap[i].zone = 0;
-      chanmap[i].valid = 0;
-      chanmap[i].state = IDLE;
-      chanmap[i].output = 0;
-      chanmap[i].starttime = 0;
-      chanmap[i].duration = 0;
-      chanmap[i].totalflow = 0;
-      chanmap[i].locked = FALSE;
-      chanmap[i].name[0] = '\0';
-   }
-
-   for (i = 0; i < MAXPUMPS; i++)
-   {
-      pumpmap[i].zone = 0;
-   }
-
-   for (i = 0; i < MAXSENSORS; i++)
-   {
-      sensormap[i].zone = 0;
-   }
+   maps_init();
 
    openlog ("irrigate", LOG_PERROR, LOG_USER);
 

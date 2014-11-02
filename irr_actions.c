@@ -78,7 +78,6 @@ doaction (uint8_t zone, uint8_t action)
       {
          flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
          chanmap[zone].totalflow += (flow / 1000);      // add up the number of cubic metres
-         printf ("Flow %f\r\n", flow);
          SetOutput (zone, OFF);
          log_printf (LOG_WARNING, "switch OFF (cancel) zone %d (%s)", zone, chanmap[zone].name);
          write_history (zone, basictime, chanmap[zone].actualstart, WASCANCEL);

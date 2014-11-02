@@ -156,8 +156,6 @@ struct sensorstruct
 #define WASOK      3
 #define WASCANCEL  4
 #define WASFAIL    5
-#define WASPOLL    6
-#define WASAMPS    7
 
 // what an output can do
 #define OFF       0
@@ -277,8 +275,6 @@ void pump_on (uint8_t zone);
 // switch off the pump, update the state and say the zone is locked (busy)
 // queue an unlock for later
 void pump_off (uint8_t zone);
-// just mark the well zone as no longer locked
-//void pump_unlock (uint8_t zone);
 
 // look after well & domestic pumps
 void dopumps(void);
@@ -292,6 +288,7 @@ void doreset ();
 void parseArguments (int argc, char **argv);
 
 
+void maps_init(void);
 // read from a file to populate the chanmap array of mapstruct entries
 // return TRUE if we got some good config data
 // return FALSE if no file or something wrong with it
