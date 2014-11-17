@@ -135,18 +135,19 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 {
    struct json_object *jobj;
    struct tm tm;
-   time_t t, duration;
+   time_t t;
 
    char descstr[140];
    char startstr[64];
    char endstr[64];
+   char ending_ed[64];
    char ing_ed[5];
    char is_was[5];
-   char of_less[10];
    char fromday[64] = {0};
    char tmpstr[30] = {0};
    char rptstr[30] = {0};
    char errstr[30] = {0};
+   char durstr[30] = {0};
 
    if (cmap->state == ACTIVE)
    {
@@ -227,18 +228,33 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (cmap->duration > 0)
    {
-      strncpy (of_less, "of", 3);
-      duration = cmap->duration;
+      if (cmap->duration > 5400)
+         sprintf(durstr, "of %d hours", (int)cmap->duration / 3600);
+      else
+         sprintf(durstr, "of %d minutes", (int)cmap->duration / 60);
+      t = starttime + cmap->duration;
    }
    else
    {
-      strncpy (of_less, "less than", 10);
-      duration = abs(basictime - starttime);
+      sprintf(durstr, "less than %d minutes", abs(basictime - starttime) / 60);
+      t = basictime;
    }
 
    strftime(startstr, sizeof(startstr), fmt, localtime(&starttime));
-   t = starttime + duration;
    strftime(endstr, sizeof(endstr), fmt, localtime(&t));
+
+   localtime_r (&t, &tm);
+   if (t < basictime)
+      sprintf (ending_ed, "ended at %02d%02d", tm.tm_hour, tm.tm_min);
+   else
+      sprintf (ending_ed, "ending at %02d%02d", tm.tm_hour, tm.tm_min);
+
+
+   if (starttime < basictime)
+      strncpy (ing_ed, "ed", 3);
+   else
+      strncpy (ing_ed, "ing", 4);
+
 
    // default to not having day
    if (((starttime > basictime) && (starttime < (basictime + 60 * 60 * 24))) 
@@ -265,11 +281,6 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    // (3) frequency > 0
    // (4) infuture, not today
 
-   if (starttime < basictime)
-      strncpy (ing_ed, "ed", 3);
-   else
-      strncpy (ing_ed, "ing", 4);
-
    if ((starttime + cmap->period < basictime) && (cmap->state != ACTIVE))
       strncpy (is_was, "was", 4);
    else
@@ -286,21 +297,21 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    else if (cmap->frequency == 0)
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s %lu minutes and %s %s%s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, of_less, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s, %s and %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, durstr, ending_ed, is_was, tmpstr, errstr, fromday);
    }
    else
    {
       localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s %lu minutes and %s %s %s%s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, of_less, duration < 60 ? 1 : duration / 60, is_was, tmpstr, errstr, rptstr, fromday);
+      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s, %s and %s %s %s%s %s", 
+         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, durstr, ending_ed, is_was, tmpstr, errstr, rptstr, fromday);
    }
 
    jobj = json_object_new_object ();
 
    json_object_object_add (jobj, "zone", json_object_new_int (zone));
    json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
-   json_object_object_add (jobj, "duration", json_object_new_int (duration));
+   json_object_object_add (jobj, "duration", json_object_new_int (cmap->duration));
    json_object_object_add (jobj, "start", json_object_new_string (startstr));
    json_object_object_add (jobj, "end", json_object_new_string (endstr));
    json_object_object_add (jobj, "title", json_object_new_string (cmap->name));
