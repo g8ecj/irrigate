@@ -294,14 +294,9 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       localtime_r (&t, &tm);
       sprintf (descstr, "%s - locked until %02d%02d", cmap->name, tm.tm_hour, tm.tm_min);
    }
-   else if (cmap->frequency == 0)
-   {
-      localtime_r (&starttime, &tm);
-      sprintf (descstr, "%s - start%s at %02d%02d for a duration %s, %s and %s %s%s %s", 
-         cmap->name, ing_ed, tm.tm_hour, tm.tm_min, durstr, ending_ed, is_was, tmpstr, errstr, fromday);
-   }
    else
    {
+      // note that the following relies on initial null termination of the strings.
       localtime_r (&starttime, &tm);
       sprintf (descstr, "%s - start%s at %02d%02d for a duration %s, %s and %s %s %s%s %s", 
          cmap->name, ing_ed, tm.tm_hour, tm.tm_min, durstr, ending_ed, is_was, tmpstr, errstr, rptstr, fromday);

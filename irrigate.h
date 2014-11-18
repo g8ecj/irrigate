@@ -37,7 +37,7 @@
 
 #include "mongoose.h"
 
-#define VERSION "3.60"
+#define VERSION "3.70"
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 
