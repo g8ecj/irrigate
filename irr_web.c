@@ -25,7 +25,7 @@
 
 struct mg_server *server;
 
-const char *fmt = "%a, %d %b %Y %H:%M:%S %z";
+const char *fmt = "%a, %d %b %Y %H:%M:%S";
 
 static void
 send_headers (struct mg_connection *conn)

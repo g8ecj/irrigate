@@ -53,6 +53,7 @@ maps_init(void)
       chanmap[i].state = IDLE;
       chanmap[i].output = 0;
       chanmap[i].starttime = 0;
+      chanmap[i].lastrun = 0;
       chanmap[i].duration = 0;
       chanmap[i].totalflow = 0;
       chanmap[i].locked = FALSE;
@@ -332,13 +333,13 @@ print_chanmap (void)
       {
          localtime_r (&(chanmap[zone].starttime), &tm);
          log_printf(LOG_DEBUG, 
-             "zone %d, %s name %s, port %c, addr %s, flow %d, start %s %02d:%02d:%02d (%lu), dur %d, per %d, freq %d valid %d use %d group %02x type %02x tf %2.5f lock %d\n",
+             "zone %d, %s name %s, port %c, addr %s, flow %d, start %s %02d:%02d:%02d (%lu), dur %d, per %d, freq %d valid %d use %d group %02x type %02x tf %2.5f lock %d last %lu\n",
              chanmap[zone].zone, state[chanmap[zone].state], chanmap[zone].name,
              chanmap[zone].AorB ? 'A' : 'B', chanmap[zone].address, chanmap[zone].flow,
              daystr[tm.tm_wday], tm.tm_hour, tm.tm_min, tm.tm_sec, chanmap[zone].starttime,
              chanmap[zone].duration, chanmap[zone].period, chanmap[zone].frequency,
              chanmap[zone].valid, chanmap[zone].useful, chanmap[zone].group, chanmap[zone].type,
-             chanmap[zone].totalflow, chanmap[zone].locked);
+             chanmap[zone].totalflow, chanmap[zone].locked, chanmap[zone].lastrun);
       }
    }
 }

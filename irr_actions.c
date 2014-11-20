@@ -39,6 +39,7 @@ doaction (uint8_t zone, uint8_t action)
          chanmap[zone].state = ACTIVE;
          log_printf (LOG_NOTICE, "switch ON zone %d (%s) for %d minutes", zone, chanmap[zone].name, chanmap[zone].period / 60);
          chanmap[zone].actualstart = basictime;
+         chanmap[zone].lastrun = basictime;
       }
       else
       {
@@ -93,6 +94,7 @@ doaction (uint8_t zone, uint8_t action)
          chanmap[zone].state = ACTIVE;
          log_printf (LOG_NOTICE, "testing zone %d (%s)", zone, chanmap[zone].name);
          chanmap[zone].actualstart = basictime;
+         chanmap[zone].lastrun = basictime;
       }
       else
       {

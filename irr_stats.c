@@ -74,6 +74,8 @@ update_statistics (void)
    uint8_t zone, changes = 0;
    FILE *fd;
    char *input;
+   char laststr[64];
+   time_t lastrun = 0;
 
    strcpy (statsfile, datapath);
    strncat (statsfile, "/statistics", 12);
@@ -100,6 +102,10 @@ update_statistics (void)
                   pumpmap[get_pump_by_zone(zone)].pumpingtime += json_object_get_double (json_object_object_get (jobj, "pumptime")) * 3600;
                else
                   chanmap[zone].totalflow += json_object_get_double (json_object_object_get (jobj, "totalflow"));
+
+               lastrun = json_object_get_int (json_object_object_get (jobj, "lastrun"));
+               if (chanmap[zone].lastrun < lastrun)
+                  chanmap[zone].lastrun = lastrun;
             }
          }
          json_object_put (jobj);
@@ -138,29 +144,35 @@ update_statistics (void)
    }
    for (zone = 1; zone < REALZONES; zone++)
    {
-      if ((chanmap[zone].type & ISPUMP) && (pumpmap[get_pump_by_zone(zone)].pumpingtime > 0))
+      if (chanmap[zone].valid & CONFIGURED)
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
          json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
-         json_object_object_add (jobj, "type", json_object_new_string ("pump"));
-         json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+
+         if (chanmap[zone].type & ISPUMP)
+         {
+            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
+            json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+            pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
+         }
+         else if (chanmap[zone].type & ISOUTPUT)
+         {
+            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
+            json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
+            chanmap[zone].totalflow = 0;   // reset count
+         }
+
+         if (chanmap[zone].lastrun > 0)
+         {
+            strftime(laststr, sizeof(laststr), fmt, localtime(&chanmap[zone].lastrun));
+            json_object_object_add (jobj, "lastrun", json_object_new_int (chanmap[zone].lastrun));
+            json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
+         }
+
          fputs (json_object_to_json_string (jobj), fd);
          fputc ('\n', fd);
          json_object_put (jobj);
-         pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
-      }
-      else if (chanmap[zone].totalflow > 0)
-      {
-         jobj = json_object_new_object ();
-         json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
-         json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
-         json_object_object_add (jobj, "type", json_object_new_string ("zone"));
-         json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
-         fputs (json_object_to_json_string (jobj), fd);
-         fputc ('\n', fd);
-         json_object_put (jobj);
-         chanmap[zone].totalflow = 0;   // reset count
       }
    }
 

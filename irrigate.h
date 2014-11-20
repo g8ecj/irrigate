@@ -37,7 +37,7 @@
 
 #include "mongoose.h"
 
-#define VERSION "3.70"
+#define VERSION "3.80"
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 
@@ -77,6 +77,8 @@
 // times used in action stuff
 #define FAILED_RETRY 60
 
+extern const char *fmt;
+
 extern char sensornames[][9];
 
 typedef enum
@@ -111,6 +113,7 @@ struct mapstruct
    uint8_t state;               // if currently on or off - used when toggling an object
    time_t duration;             // total of how long a zone is active for
    time_t period;               // the working value of how long to be on for on this pass
+   time_t lastrun;              // the last time the zone was activated
    int32_t frequency;           // how often the zone is activated
    uint8_t locked;              // > 0 if locked (only really applies to a pump)
    uint16_t flow;               // nominal flow rate

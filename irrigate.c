@@ -330,7 +330,7 @@ main (int argc, char **argv)
          print_pumpmap ();
          print_sensormap ();
          print_queue ();
-//         update_statistics ();
+         update_statistics ();
 //         check_schedule (FALSE);
 #endif
 
@@ -339,6 +339,8 @@ main (int argc, char **argv)
    }
    while (!controlC);
 
+   update_statistics ();
+
    doreset();
 
    if (debug > 1)
@@ -346,7 +348,6 @@ main (int argc, char **argv)
 
    irr_onewire_stop ();
 
-   update_statistics ();
    mg_destroy_server(&server);
 
    return 0;
