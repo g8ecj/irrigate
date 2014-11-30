@@ -34,6 +34,11 @@ send_headers (struct mg_connection *conn)
    mg_send_header (conn, "Content-Type", "application/x-javascript");
 }
 
+static int
+refuse (struct mg_connection UNUSED(*conn))
+{
+   return MG_FALSE;
+}
 
 static int
 check_authorised(struct mg_connection *conn)
@@ -136,6 +141,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    struct json_object *jobj;
    struct tm tm;
    time_t t;
+   time_t duration;
 
    char descstr[140];
    char startstr[64];
@@ -233,10 +239,12 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
       else
          sprintf(durstr, "of %d minutes", (int)cmap->duration / 60);
       t = starttime + cmap->duration;
+      duration = cmap->duration;
    }
    else
    {
-      sprintf(durstr, "less than %d minutes", abs(basictime - starttime) / 60);
+      duration = abs(basictime - starttime);
+      sprintf(durstr, "less than %d minutes", (int)duration / 60);
       t = basictime;
    }
 
@@ -306,7 +314,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    json_object_object_add (jobj, "zone", json_object_new_int (zone));
    json_object_object_add (jobj, "status", json_object_new_string (tmpstr));
-   json_object_object_add (jobj, "duration", json_object_new_int (cmap->duration));
+   json_object_object_add (jobj, "duration", json_object_new_int (duration));
    json_object_object_add (jobj, "start", json_object_new_string (startstr));
    json_object_object_add (jobj, "end", json_object_new_string (endstr));
    json_object_object_add (jobj, "title", json_object_new_string (cmap->name));
@@ -703,6 +711,7 @@ static const struct web_config
    int (*func) (struct mg_connection *);
 } web_config[] =
 {
+   { MG_AUTH,    "/passfile", &refuse},
    { MG_REQUEST, "/status", &show_status},
    { MG_REQUEST, "/timedata", &show_timedata},
    { MG_REQUEST, "/sensors", &show_sensors},
