@@ -74,7 +74,8 @@ update_statistics (void)
    uint8_t zone, changes = 0;
    FILE *fd;
    char *input;
-   char laststr[64];
+   char tmp[64];
+   char laststr[100];
    time_t lastrun = 0;
 
    strcpy (statsfile, datapath);
@@ -144,7 +145,7 @@ update_statistics (void)
    }
    for (zone = 1; zone < REALZONES; zone++)
    {
-      if (chanmap[zone].valid & CONFIGURED)
+      if (chanmap[zone].type & (ISPUMP | ISOUTPUT))
       {
          jobj = json_object_new_object ();
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
@@ -165,7 +166,8 @@ update_statistics (void)
 
          if (chanmap[zone].lastrun > 0)
          {
-            strftime(laststr, sizeof(laststr), fmt, localtime(&chanmap[zone].lastrun));
+            strftime(tmp, sizeof(tmp), fmt, localtime(&chanmap[zone].lastrun));
+            sprintf(laststr, "Last run %s for a duration of %lu minutes", tmp, chanmap[zone].lastdur);
             json_object_object_add (jobj, "lastrun", json_object_new_int (chanmap[zone].lastrun));
             json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
          }

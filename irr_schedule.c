@@ -124,8 +124,8 @@ read_schedule (void)
 
 /*
   Iterate the chanmap and insert items into the time queue that haven't yet expired
-  This function will only schedule items up to 24 hours ahead so it should be called 
-  at least once a day as well as on startup
+  This function will only schedule items up to 8 days ahead so it should be called
+  regularly to maintain the queue as well as on startup
   */
 void
 check_schedule (bool changes)

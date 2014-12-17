@@ -54,6 +54,7 @@ maps_init(void)
       chanmap[i].output = 0;
       chanmap[i].starttime = 0;
       chanmap[i].lastrun = 0;
+      chanmap[i].lastdur = 0;
       chanmap[i].duration = 0;
       chanmap[i].totalflow = 0;
       chanmap[i].locked = FALSE;

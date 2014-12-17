@@ -40,6 +40,7 @@ doaction (uint8_t zone, uint8_t action)
          log_printf (LOG_NOTICE, "switch ON zone %d (%s) for %d minutes", zone, chanmap[zone].name, chanmap[zone].period / 60);
          chanmap[zone].actualstart = basictime;
          chanmap[zone].lastrun = basictime;
+         chanmap[zone].lastdur = chanmap[zone].duration / 60;
       }
       else
       {
