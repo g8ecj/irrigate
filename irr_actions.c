@@ -40,7 +40,6 @@ doaction (uint8_t zone, uint8_t action)
          log_printf (LOG_NOTICE, "switch ON zone %d (%s) for %d minutes", zone, chanmap[zone].name, chanmap[zone].period / 60);
          chanmap[zone].actualstart = basictime;
          chanmap[zone].lastrun = basictime;
-         chanmap[zone].lastdur = chanmap[zone].duration / 60;
       }
       else
       {
@@ -58,6 +57,7 @@ doaction (uint8_t zone, uint8_t action)
       // switch off
       flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;   // convert secs to mins * l/min
       chanmap[zone].totalflow += (flow / 1000);   // add up the number of cubic metres
+      chanmap[zone].lastdur = (chanmap[zone].actualstart - basictime) / 60;
       if (SetOutput (zone, OFF))
       {
          chanmap[zone].state = IDLE;
@@ -76,6 +76,9 @@ doaction (uint8_t zone, uint8_t action)
       break;
 
    case CANCEL:                // used from the event queue to cancel zones
+      chanmap[zone].lastdur = (chanmap[zone].actualstart - basictime) / 60;
+      chanmap[zone].frequency = 0;                 // ensure it never repeats
+      chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
       if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))       // attempt switchoff if active 
       {
          flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
@@ -147,8 +150,6 @@ zone_cancel (uint8_t zone, uint8_t state)
    while (delete (zone));
    insert (1, zone, CANCEL);                    // ensure it goes to the front of the time queue
    chanmap[zone].state = state;
-   chanmap[zone].frequency = 0;                 // ensure it never repeats
-   chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
 }
 
 
