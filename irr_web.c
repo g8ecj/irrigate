@@ -234,12 +234,12 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (cmap->duration > 0)
    {
-      if (cmap->duration > 5400)
-         sprintf(durstr, "of %d hours", (int)cmap->duration / 3600);
-      else
-         sprintf(durstr, "of %d minutes", (int)cmap->duration / 60);
-      t = starttime + cmap->duration;
       duration = cmap->duration;
+      if (cmap->duration > 5400)
+         sprintf(durstr, "of %.1f hours", duration / 3600.0);
+      else
+         sprintf(durstr, "of %d minutes", (int)duration / 60);
+      t = starttime + duration;
    }
    else
    {
