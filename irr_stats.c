@@ -60,23 +60,20 @@ textpri (int pri)
    return res;
 }
 
-
-
 /*
  * every hour update the time spent with the well pump on (assuming it has been on at all)
  * and count how much water has been put on each zone (based on config file values)
  */
 void
-update_statistics (void)
+read_statistics ()
 {
    struct json_object *jobj;
    char statsfile[MAXFILELEN];
-   uint8_t zone, changes = 0;
+   uint8_t zone;
    FILE *fd;
    char *input;
-   char tmp[64];
-   char laststr[100];
    time_t lastrun = 0;
+   time_t lastdur = 0;
 
    strcpy (statsfile, datapath);
    strncat (statsfile, "/statistics", 12);
@@ -105,8 +102,13 @@ update_statistics (void)
                   chanmap[zone].totalflow += json_object_get_double (json_object_object_get (jobj, "totalflow"));
 
                lastrun = json_object_get_int (json_object_object_get (jobj, "lastrun"));
+               lastdur = json_object_get_int (json_object_object_get (jobj, "lastdur"));
+               // if the value from the file is more recent than memory then update memory copy
                if (chanmap[zone].lastrun < lastrun)
+               {
                   chanmap[zone].lastrun = lastrun;
+                  chanmap[zone].lastdur = lastdur;
+               }
             }
          }
          json_object_put (jobj);
@@ -114,6 +116,76 @@ update_statistics (void)
       free (input);
       fclose (fd);
    }
+}
+
+struct json_object *
+get_statistics (uint8_t zone, bool humanreadable)
+{
+   struct json_object *jobj;
+   char tmp[64];
+   char laststr[100];
+
+   if (chanmap[zone].type & (ISPUMP | ISOUTPUT))
+   {
+      jobj = json_object_new_object ();
+      json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
+      json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
+
+      if (chanmap[zone].type & ISPUMP)
+      {
+         json_object_object_add (jobj, "type", json_object_new_string ("pump"));
+         json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+         pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
+      }
+      else if (chanmap[zone].type & ISOUTPUT)
+      {
+         json_object_object_add (jobj, "type", json_object_new_string ("zone"));
+         json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
+         chanmap[zone].totalflow = 0;   // reset count
+      }
+
+      if (chanmap[zone].lastrun > 0)
+      {
+         if (humanreadable)
+         {
+            // include a human readable string of historic stats
+            strftime(tmp, sizeof(tmp), fmt, localtime(&chanmap[zone].lastrun));
+            if (chanmap[zone].lastdur > 90)
+               sprintf(laststr, "Last run %s for a duration of %lu hours", tmp, chanmap[zone].lastdur / 60);
+            else
+               sprintf(laststr, "Last run %s for a duration of %lu minutes", tmp, chanmap[zone].lastdur);
+            json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
+         }
+         else
+         {
+            // save the numeric values of last run and duration times
+            json_object_object_add (jobj, "lastrun", json_object_new_int (chanmap[zone].lastrun));
+            json_object_object_add (jobj, "lastdur", json_object_new_int (chanmap[zone].lastdur));
+         }
+
+
+      }
+      return jobj;
+   }
+   else
+      return NULL;
+
+}
+
+
+
+/*
+ * every hour update the time spent with the well pump on (assuming it has been on at all)
+ * and count how much water has been put on each zone (based on config file values)
+ */
+void
+update_statistics (void)
+{
+   char statsfile[MAXFILELEN];
+   FILE *fd;
+   struct json_object *jobj;
+   uint8_t zone, changes = 0;
+
 
    // scan zones to see if we are making any changes to the stats
    // we must do this seperately otherwise we only see the zones already in the stats file.
@@ -135,6 +207,12 @@ update_statistics (void)
    if (changes == 0)
       return;
 
+   // accumulate the file data into memory
+   read_statistics();
+
+   strcpy (statsfile, datapath);
+   strncat (statsfile, "/statistics", 12);
+
    // update the records in the file and clear the current accumulated stats
    // Note: this means we rewrite the whole file even if only one zone changes.
    fd = fopen (statsfile, "w");
@@ -143,41 +221,17 @@ update_statistics (void)
       printf ("Can't open statistics file [%s]\n", statsfile);
       return;                   // fatal error
    }
+
    for (zone = 1; zone < REALZONES; zone++)
    {
-      if (chanmap[zone].type & (ISPUMP | ISOUTPUT))
+      // get stats specifying that we don't want the human readable stuff included
+      if ((jobj = get_statistics(zone, false)) != NULL)
       {
-         jobj = json_object_new_object ();
-         json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
-         json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
-
-         if (chanmap[zone].type & ISPUMP)
-         {
-            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
-            json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
-            pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
-         }
-         else if (chanmap[zone].type & ISOUTPUT)
-         {
-            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
-            json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
-            chanmap[zone].totalflow = 0;   // reset count
-         }
-
-         if (chanmap[zone].lastrun > 0)
-         {
-            strftime(tmp, sizeof(tmp), fmt, localtime(&chanmap[zone].lastrun));
-            sprintf(laststr, "Last run %s for a duration of %lu minutes", tmp, chanmap[zone].lastdur);
-            json_object_object_add (jobj, "lastrun", json_object_new_int (chanmap[zone].lastrun));
-            json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
-         }
-
          fputs (json_object_to_json_string (jobj), fd);
          fputc ('\n', fd);
          json_object_put (jobj);
       }
    }
-
    fclose (fd);
 }
 

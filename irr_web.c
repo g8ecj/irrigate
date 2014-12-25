@@ -519,8 +519,38 @@ static int show_sensors(struct mg_connection *conn)
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
+
    return MG_TRUE;
 
+}
+
+
+
+static int
+show_stats (struct mg_connection *conn)
+{
+   uint8_t zone;
+   struct json_object *jobj;
+
+
+   // tell the browser to expect some javascript
+   //send_headers(conn);
+   // Not implemented yet so in the meantime, just make it print/readable
+   mg_send_header (conn, "Content-Type", "text/html");
+   // load stats from file
+   read_statistics();
+
+   for (zone = 1; zone < REALZONES; zone++)
+   {
+      // get stats specifying that we want the human readable stuff included
+      if ((jobj = get_statistics(zone, true)) != NULL)
+      {
+         mg_printf_data (conn, "%s<br>", json_object_to_json_string (jobj));
+         json_object_put (jobj);
+      }
+   }
+
+   return MG_TRUE;
 }
 
 
@@ -715,6 +745,7 @@ static const struct web_config
    { MG_REQUEST, "/status", &show_status},
    { MG_REQUEST, "/timedata", &show_timedata},
    { MG_REQUEST, "/sensors", &show_sensors},
+   { MG_REQUEST, "/stats", &show_stats},
    { MG_AUTH,    "/set_state", &check_authorised},
    { MG_REQUEST, "/set_state", &set_state},
    { MG_AUTH,    "/set_frost", &check_authorised},

@@ -64,6 +64,7 @@ maps_init(void)
    for (i = 0; i < MAXPUMPS; i++)
    {
       pumpmap[i].zone = 0;
+      pumpmap[i].pumpingtime = 0;
    }
 
    for (i = 0; i < MAXSENSORS; i++)

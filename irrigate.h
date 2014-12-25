@@ -369,6 +369,8 @@ time_t hours2time(uint16_t decahours);
 uint16_t get_nominal_flow(void);
 
 // statistics amd history
+struct json_object * get_statistics (uint8_t zone, bool humanreadable);
+void read_statistics ();
 void update_statistics (void);
 void clean_history (void);
 FILE * open_history(void);

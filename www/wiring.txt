@@ -1,0 +1,55 @@
+    zone       name          cable colour         wire colour          Common
+
+     1       "Walnuts 1"        Red              Red             Red/Black
+
+     2       "Walnuts 2"        Red              Green           Red/Black
+
+     3       "Walnuts 3"        Black            Green           Black/Black
+
+     4       "Walnuts 4"        NA               Green           NA/Black
+
+     5       "Walnuts 5"        NA               Red             NA/Black
+
+     6       "Willows"          Black            Red             Black/Black
+
+     7       "Veg Plot 1"       Red              Black           Red/Red
+
+     8       "Tunnel House"     Red              Green           Red/Red
+
+     9       "Shade House"      Yellow           Red             Black/Black
+
+    10       "Veg Plot 2"       Black            Green           Black/Black
+
+    11       "Veg Plot 3"       Black            Red             Black/Black
+
+    12       "Long Border"      Green            Red             Red/Red
+
+    13       "Native Border"    Blue             Black           Red/Red
+
+    14       "Firewood"         Blue             Green           Red/Red
+
+    15       "Chook Border"     Green            Black           Red/Red
+
+    16       "Well Pump"        xxxx
+
+    17       "Cottage Garden"   Blue             Red             Red/Red
+
+    18       "Quake Garden"     Yellow           Black           Black/Black
+
+    19       "Big Gun"          small            Red             small/Bl+Wh
+
+    20       "spare01"          small            Green           small/Bl+Wh
+
+    21       "Wasabi"           small            Yellow          small/Bl+Wh
+
+    22       "Pool topup"       cat5
+
+    32       "Domestic Feed"    xxxx
+
+
+Yellow/Green is spare
+Green/Green is spare
+
+
+
+
