@@ -77,8 +77,6 @@ doaction (uint8_t zone, uint8_t action)
 
    case CANCEL:                // used from the event queue to cancel zones
       chanmap[zone].lastdur = (basictime - chanmap[zone].actualstart) / 60;
-      chanmap[zone].frequency = 0;                 // ensure it never repeats
-      chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
       if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))       // attempt switchoff if active 
       {
          flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;        // convert secs to mins * l/min
@@ -150,6 +148,8 @@ zone_cancel (uint8_t zone, uint8_t state)
    while (delete (zone));
    insert (1, zone, CANCEL);                    // ensure it goes to the front of the time queue
    chanmap[zone].state = state;
+   chanmap[zone].frequency = 0;                 // ensure it never repeats
+   chanmap[zone].starttime = 0;                 // and that it gets removed from the schedule on the next check_schedule
 }
 
 
