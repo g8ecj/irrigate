@@ -56,15 +56,17 @@ Compiling under OpenWrt is simple. Download the latest stable openwrt sources us
    'git clone git://git.openwrt.org/14.07/openwrt.git'
 ```
 Unpack the compressed file 'openwrt-package' that provides the package makefile and control files for 
-native packaging and installation into the 'package' directory in your openwrt directory.
+native packaging and copy into the 'package' directory in your openwrt directory maintaining the directory structure.
 Install the optional feeds packages to get owfs
 ```
    './scripts/feeds update -a'
    './scripts/feeds install owfs'
 ```
 and copy the .config file to the top level of openwrt.
+```
 make oldconfig
 make
+```
 
 Alternatively, configure the system to build the package by running 'make menuconfig' and select
 ```
