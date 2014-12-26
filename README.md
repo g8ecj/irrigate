@@ -51,9 +51,22 @@ been released to the public domain.
 The makefile will do a native build under Linux by defining a 'PC' target that causes a 1-wire simulator
 to be built, allowing the web interface to be tested.
 
-Compiling under OpenWrt is simple. Unpack the compressed file 'openwrt-package' that provides the 
-package makefile and control files for native packaging and installation into the 'package'
-directory. Configure the system to build the package by running 'make menuconfig' and select
+Compiling under OpenWrt is simple. Download the latest stable openwrt sources using
+```
+   'git clone git://git.openwrt.org/14.07/openwrt.git'
+```
+Unpack the compressed file 'openwrt-package' that provides the package makefile and control files for 
+native packaging and installation into the 'package' directory in your openwrt directory.
+Install the optional feeds packages to get owfs
+```
+   './scripts/feeds update -a'
+   './scripts/feeds install owfs'
+```
+and copy the .config file to the top level of openwrt.
+make oldconfig
+make
+
+Alternatively, configure the system to build the package by running 'make menuconfig' and select
 ```
     'Utils' -> 'irrigate'
             -> 'Filesystem' -> 'owfs'
