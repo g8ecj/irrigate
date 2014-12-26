@@ -57,7 +57,7 @@ doaction (uint8_t zone, uint8_t action)
       // switch off
       flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;   // convert secs to mins * l/min
       chanmap[zone].totalflow += (flow / 1000);   // add up the number of cubic metres
-      chanmap[zone].lastdur = (basictime - chanmap[zone].actualstart) / 60;
+      chanmap[zone].lastdur = basictime - chanmap[zone].actualstart;
       if (SetOutput (zone, OFF))
       {
          chanmap[zone].state = IDLE;
@@ -76,7 +76,7 @@ doaction (uint8_t zone, uint8_t action)
       break;
 
    case CANCEL:                // used from the event queue to cancel zones
-      chanmap[zone].lastdur = (basictime - chanmap[zone].actualstart) / 60;
+      chanmap[zone].lastdur = basictime - chanmap[zone].actualstart;
       if ((chanmap[zone].output == ON) || (chanmap[zone].output == TEST))       // attempt switchoff if active 
       {
          flow = (basictime - chanmap[zone].actualstart) * chanmap[zone].flow / 60;        // convert secs to mins * l/min

@@ -150,10 +150,10 @@ get_statistics (uint8_t zone, bool humanreadable)
          {
             // include a human readable string of historic stats
             strftime(tmp, sizeof(tmp), fmt, localtime(&chanmap[zone].lastrun));
-            if (chanmap[zone].lastdur > 90)
-               sprintf(laststr, "Last run %s for a duration of %lu hours", tmp, chanmap[zone].lastdur / 60);
+            if (chanmap[zone].lastdur > 5400)
+               sprintf(laststr, "Last run %s for a duration of %.1f hours", tmp, chanmap[zone].lastdur / 3600.0);
             else
-               sprintf(laststr, "Last run %s for a duration of %lu minutes", tmp, chanmap[zone].lastdur);
+               sprintf(laststr, "Last run %s for a duration of %d minutes", tmp, (int)chanmap[zone].lastdur / 60);
             json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
          }
          else
