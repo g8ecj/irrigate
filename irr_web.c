@@ -234,7 +234,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
 
    if (cmap->duration > 0)
    {
-      duration = cmap->duration;
+      duration = cmap->period;
       if (cmap->duration > 5400)
          sprintf(durstr, "of %.1f hours", duration / 3600.0);
       else
@@ -524,19 +524,23 @@ static int show_sensors(struct mg_connection *conn)
 
 }
 
-
+#define jjj 0
 
 static int
 show_stats (struct mg_connection *conn)
 {
    uint8_t zone;
    struct json_object *jobj;
-
+#if jjj > 0
+   struct json_object *jzones;
 
    // tell the browser to expect some javascript
-   //send_headers(conn);
+   send_headers(conn);
+   jzones = json_object_new_array ();
    // Not implemented yet so in the meantime, just make it print/readable
+#else
    mg_send_header (conn, "Content-Type", "text/html");
+#endif
    // load stats from file
    read_statistics();
 
@@ -545,11 +549,23 @@ show_stats (struct mg_connection *conn)
       // get stats specifying that we want the human readable stuff included
       if ((jobj = get_statistics(zone, true)) != NULL)
       {
+#if jjj > 0
+         json_object_array_add (jzones, jobj);
+#else
          mg_printf_data (conn, "%s<br>", json_object_to_json_string (jobj));
          json_object_put (jobj);
+#endif
       }
    }
 
+#if jjj > 0
+   jobj = json_object_new_object ();
+   json_object_object_add (jobj, "cmd", json_object_new_string ("stats"));
+   json_object_object_add (jobj, "zones", jzones);
+
+   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
+   json_object_put (jobj);
+#endif
    return MG_TRUE;
 }
 

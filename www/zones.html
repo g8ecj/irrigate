@@ -101,6 +101,14 @@ function get_timeline()
    submit_object_as_JSON(request, "timedata", drawVisualization, 0)
 }
 
+function get_stats()
+{
+   var request =
+   {
+      'cmd': 'get_stats'
+   }
+   submit_object_as_JSON(request, "stats", stats_reply, 0)
+}
 
 // Called when the Visualization API is loaded.
 function drawVisualization(obj,id) 
@@ -139,6 +147,7 @@ function drawVisualization(obj,id)
 }
 
 
+
 function status_reply(obj,id)
 {
    if(test_error(obj))
@@ -165,7 +174,12 @@ function status_reply(obj,id)
 }
 
 
+function stats_reply(obj,id)
+{
+   var z = JSON.stringify(obj.zones,null,'<br>')
+   get("map").innerHTML = z
 
+}
 
 
 var timer = 0
@@ -514,6 +528,7 @@ function end_popup()
    hide(get("popup_window"))
 }
 
+
 function display_timeline()
 {
    // change label and hover text to indicate how to get back to Program mode
@@ -537,6 +552,11 @@ function display_program()
    next_timer_tick()
 }
 
+
+function display_stats()
+{
+   get_stats()
+}
 
 var zoom_level = 10
 function zoom_in()
@@ -594,6 +614,7 @@ addLoadEvent(display_map)
 </div>
 <div>
 <input id="timeline" type="button" name="link" value="Timeline" title="Timeline display for last and next week of watering" onclick="display_timeline()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<input id="stats" type="button" name="stats" value="Statistics" title="Statistics on total water and pump usage" onclick="display_stats()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=timer></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=temperature></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=current></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;

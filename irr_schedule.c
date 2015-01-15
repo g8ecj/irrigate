@@ -148,7 +148,7 @@ check_schedule (bool changes)
 
       if (chanmap[zone].useful)
       {
-         chanmap[zone].period = chanmap[zone].duration;    // assume we'll be doing something with this zone
+//         chanmap[zone].period = chanmap[zone].duration;    // assume we'll be doing something with this zone
          future = chanmap[zone].starttime;
          updatestart = 0;
          while (future < (basictime + (60 * 60 * 24 * 8)))      // within the next week
@@ -166,7 +166,7 @@ check_schedule (bool changes)
                timediff = basictime - future;
                if ((timediff > 0) && (chanmap[zone].state != ACTIVE))   // start time has already passed and not yet started
                {
-                  chanmap[zone].period -= timediff;
+                  chanmap[zone].period = chanmap[zone].duration - timediff;   // adjust running period from defined duration
                }
 
                if ((chanmap[zone].state != ACTIVE) || (findonqueue (zone) == 0)) // not started or queued yet
