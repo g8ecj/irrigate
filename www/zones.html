@@ -656,7 +656,7 @@ addLoadEvent(display_map)
      <option value="0000">2400</option>
    </select>
 
-     Runtime:
+     For:
    <select title="How long to water the Zone for" name="duration" id="duration">
      <option value="600">10 Mins</option>
      <option value="1200">20 Mins</option>
@@ -674,9 +674,10 @@ addLoadEvent(display_map)
      <option value="43200">12 Hrs</option>
      <option value="10">10 Secs</option>
    </select>
-     Frequency:
+
+     Repeating:
    <select title="How often to repeat the watering of the Zone" name="frequency" id="frequency">
-     <option value=0>Once</option>
+     <option value=0>None</option>
      <option value=6>4 times daily</option>
      <option value=12>Twice daily</option>
      <option value=24>Daily</option>
@@ -684,6 +685,11 @@ addLoadEvent(display_map)
      <option value=72>Every 3 days</option>
      <option value=96>Every 4 days</option>
      <option value=168>Weekly</option>
+     <option value=1026>2 days a week</option>
+     <option value=1027>3 days a week</option>
+     <option value=1028>4 days a week</option>
+     <option value=1029>5 days a week</option>
+     <option value=1030>6 days a week</option>
    </select>
 
    <input type="button" name="program" value="Go" title="Start or program the watering for this Zone" onclick="program()"> 

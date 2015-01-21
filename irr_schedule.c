@@ -30,9 +30,9 @@
 bool
 write_schedule (void)
 {
-   uint8_t zone;
+   uint8_t zone, i;
    FILE *fd;
-   struct json_object *jobj;
+   struct json_object *jobj, *jarray;
    char schedulefile[MAXFILELEN];
 
    strcpy (schedulefile, datapath);
@@ -51,6 +51,10 @@ write_schedule (void)
          json_object_object_add (jobj, "starttime", json_object_new_int (chanmap[zone].starttime));
          json_object_object_add (jobj, "duration", json_object_new_int (chanmap[zone].duration));
          json_object_object_add (jobj, "frequency", json_object_new_int (chanmap[zone].frequency));
+         jarray = json_object_new_array ();
+         for (i = 0; i < 7; i++)
+            json_object_array_add(jarray, json_object_new_int(chanmap[zone].daylist[i]));
+         json_object_object_add (jobj, "daylist", jarray);
          fputs (json_object_to_json_string (jobj), fd);
          fputc ('\n', fd);
          json_object_put (jobj);
@@ -76,10 +80,10 @@ write_schedule (void)
 bool
 read_schedule (void)
 {
-   uint8_t zone;
+   uint8_t zone, i;
    bool ret = FALSE;
    FILE *fd;
-   struct json_object *jobj;
+   struct json_object *jobj, *jarray;
    char schedulefile[MAXFILELEN];
    char *input;
 
@@ -104,6 +108,9 @@ read_schedule (void)
             chanmap[zone].starttime = json_object_get_int (json_object_object_get (jobj, "starttime"));
             chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
             chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency"));
+            jarray = json_object_object_get (jobj, "daylist");
+            for (i = 0; i < json_object_array_length (jarray); i++)
+               chanmap[zone].daylist[i] = json_object_get_int (json_object_array_get_idx (jarray, i));
             chanmap[zone].useful = TRUE;        // assume useful until I try a check_schedule
             chanmap[zone].period = chanmap[zone].duration;
          }
@@ -131,8 +138,9 @@ void
 check_schedule (bool changes)
 {
    uint8_t zone, updatestart;
-   int32_t timediff;
+   int32_t timediff, frequency;
    time_t future;
+   struct tm tm;
 
 
    for (zone = 1; zone < REALZONES; zone++)
@@ -148,14 +156,31 @@ check_schedule (bool changes)
 
       if (chanmap[zone].useful)
       {
-//         chanmap[zone].period = chanmap[zone].duration;    // assume we'll be doing something with this zone
          future = chanmap[zone].starttime;
          updatestart = 0;
          while (future < (basictime + (60 * 60 * 24 * 8)))      // within the next week
          {
+            // see if we are using the daylist to determine when to run or we're using a fixed interval
+            if (chanmap[zone].frequency < 0)
+            {
+               // daylist operations use a faked interval of 24hrs
+               frequency = 60 * 60 * 24;
+               localtime_r (&future, &tm);
+               // is this day of the week allowed?
+               if (!chanmap[zone].daylist[tm.tm_wday])
+               {
+                  future += frequency;
+                  continue;
+               }
+            }
+            else
+            {
+               frequency = chanmap[zone].frequency;
+            }
+
             if ((future + chanmap[zone].duration) >= basictime) // see if this instance is now or in the future
             {
-               timediff = (future + chanmap[zone].frequency) - basictime;
+               timediff = (future + frequency) - basictime;
                // adjust starttime that might be in the past (but only once!!)
                if ((timediff > 0) && (updatestart == 0))
                {
@@ -175,8 +200,9 @@ check_schedule (bool changes)
                   changes = TRUE;       // always update starttime value in schedule file if its repeating
                }
             }
-            future += chanmap[zone].frequency;
-            if (chanmap[zone].frequency == 0)
+            future += frequency;
+
+            if (frequency == 0)
                break;
          }
       }

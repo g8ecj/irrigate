@@ -37,7 +37,7 @@
 
 #include "mongoose.h"
 
-#define VERSION "3.90"
+#define VERSION "4.00"
 
 #define UNUSED(arg) (arg) __attribute__ ((unused))
 
@@ -126,6 +126,7 @@ struct mapstruct
    uint16_t current;            // expected current draw in mA
    uint8_t link;                // used to map to pump or sensor list
    int lasterrno;               // copy of last system errno
+   uint8_t daylist[8];          // what days to operate
 };
 
 
