@@ -80,7 +80,7 @@ sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, 
    json_object_object_add (jobj, "desc", json_object_new_string (desc));
    json_object_object_add (jobj, "log", json_object_new_string (msg));
 
-   mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
+   mg_printf_data (conn, "%s, ", json_object_to_json_string (jobj));
    json_object_put (jobj);
 
 }
@@ -90,11 +90,11 @@ show_jsonlogs (struct mg_connection *conn)
 {
    send_headers (conn);
 
-   mg_printf_data (conn, "%s", "{ \"logs\":[ ");
+   mg_printf_data (conn, "%s", "{ \"logs\": [ ");
 
    send_log_msgs (conn, sendjsonmsg);
 
-   mg_printf_data (conn, "%s", " ] }");
+   mg_printf_data (conn, "%s", " { } ] }");
    return MG_TRUE;
 }
 

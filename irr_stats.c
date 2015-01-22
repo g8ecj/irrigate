@@ -132,21 +132,6 @@ get_statistics (uint8_t zone, bool humanreadable)
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
       json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
 
-      if (chanmap[zone].type & ISPUMP)
-      {
-         if (!humanreadable)
-            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
-         json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
-         pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
-      }
-      else if (chanmap[zone].type & ISOUTPUT)
-      {
-         if (!humanreadable)
-            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
-         json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
-         chanmap[zone].totalflow = 0;   // reset count
-      }
-
       if (chanmap[zone].lastrun > 0)
       {
          if (humanreadable)
@@ -165,9 +150,23 @@ get_statistics (uint8_t zone, bool humanreadable)
             json_object_object_add (jobj, "lastrun", json_object_new_int (chanmap[zone].lastrun));
             json_object_object_add (jobj, "lastdur", json_object_new_int (chanmap[zone].lastdur));
          }
-
-
       }
+
+      if (chanmap[zone].type & ISPUMP)
+      {
+         if (!humanreadable)
+            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
+         json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+         pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
+      }
+      else if (chanmap[zone].type & ISOUTPUT)
+      {
+         if (!humanreadable)
+            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
+         json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
+         chanmap[zone].totalflow = 0;   // reset count
+      }
+
       return jobj;
    }
    else

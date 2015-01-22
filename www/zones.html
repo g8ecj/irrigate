@@ -110,6 +110,15 @@ function display_stats()
    submit_object_as_JSON(request, "stats", stats_reply, 0)
 }
 
+function display_logs()
+{
+   var request =
+   {
+      'cmd': 'get_logs'
+   }
+   submit_object_as_JSON(request, "jlogs", logs_reply, 0)
+}
+
 // Called when the Visualization API is loaded.
 function drawVisualization(obj,id) 
 {
@@ -222,6 +231,14 @@ function status_reply(obj,id)
 function stats_reply(obj,id)
 {
    var t = buildHtmlTable(obj.zones);
+   var map = document.getElementById('map');
+   map.innerHTML = "";
+   map.appendChild(t);
+}
+
+function logs_reply(obj,id)
+{
+   var t = buildHtmlTable(obj.logs);
    var map = document.getElementById('map');
    map.innerHTML = "";
    map.appendChild(t);
@@ -471,6 +488,7 @@ function display_program()
    redraw_map(100)
    zone_input += "</select>"
    get("zone_selected").innerHTML = zone_input
+   next_timer_tick()
 }
 
 
@@ -596,7 +614,6 @@ function zoom_out()
 }
 
 
-
 addLoadEvent(next_timer_tick)
 addLoadEvent(end_popup)
 addLoadEvent(display_program)
@@ -630,9 +647,12 @@ addLoadEvent(display_program)
 
 <div id="map"></div>
 <div>
-<input id="program" type="button" name="link" value="Program" title="Program a zone or zones" onclick="display_program()">&nbsp;&nbsp;&nbsp;
-<input id="timeline" type="button" name="link" value="Timeline" title="Timeline display for last and next week of watering" onclick="display_timeline()">&nbsp;&nbsp;&nbsp;
-<input id="stats" type="button" name="stats" value="Statistics" title="Statistics on total water and pump usage" onclick="display_stats()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<select title="What to Display" onchange="window[value]();">
+  <option value="display_timeline">Timeline</option>
+  <option value="display_program">Program</option>
+  <option value="display_stats">Statistics</option>
+  <option value="display_logs">Logs</option>
+</select>&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=timer></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=temperature></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <span id=current></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
