@@ -128,18 +128,21 @@ get_statistics (uint8_t zone, bool humanreadable)
    if (chanmap[zone].type & (ISPUMP | ISOUTPUT))
    {
       jobj = json_object_new_object ();
-      json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
+      if (!humanreadable)
+         json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
       json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
 
       if (chanmap[zone].type & ISPUMP)
       {
-         json_object_object_add (jobj, "type", json_object_new_string ("pump"));
+         if (!humanreadable)
+            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
          json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
          pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
       }
       else if (chanmap[zone].type & ISOUTPUT)
       {
-         json_object_object_add (jobj, "type", json_object_new_string ("zone"));
+         if (!humanreadable)
+            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
          json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
          chanmap[zone].totalflow = 0;   // reset count
       }
@@ -151,10 +154,10 @@ get_statistics (uint8_t zone, bool humanreadable)
             // include a human readable string of historic stats
             strftime(tmp, sizeof(tmp), fmt, localtime(&chanmap[zone].lastrun));
             if (chanmap[zone].lastdur > 5400)
-               sprintf(laststr, "Last run %s for a duration of %.1f hours", tmp, chanmap[zone].lastdur / 3600.0);
+               sprintf(laststr, "%s for a duration of %.1f hours", tmp, chanmap[zone].lastdur / 3600.0);
             else
-               sprintf(laststr, "Last run %s for a duration of %d minutes", tmp, (int)chanmap[zone].lastdur / 60);
-            json_object_object_add (jobj, "laststr", json_object_new_string (laststr));
+               sprintf(laststr, "%s for a duration of %d minutes", tmp, (int)chanmap[zone].lastdur / 60);
+            json_object_object_add (jobj, "lastrun", json_object_new_string (laststr));
          }
          else
          {

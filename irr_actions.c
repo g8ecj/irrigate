@@ -453,6 +453,7 @@ pump_on (uint8_t zone)
       chanmap[zone].starttime = basictime;      // say it starts now!!
       log_printf (LOG_NOTICE, "switch ON %s", chanmap[zone].name);
       chanmap[zone].actualstart = basictime;
+      chanmap[zone].lastrun = basictime;
       insert (basictime + pumpmap[pump].maxrun, zone, PUMPOFF);
    }
    else
@@ -491,6 +492,7 @@ pump_off (uint8_t zone)
          write_history (zone, basictime, chanmap[zone].actualstart, WASFAIL);
       }
       while (delete (zone));                // remove any outstanding 'off' action
+      chanmap[zone].lastdur = basictime - chanmap[zone].actualstart;
       chanmap[zone].state = IDLE;
       chanmap[zone].locked = TRUE;
       chanmap[zone].starttime = basictime;

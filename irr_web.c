@@ -531,7 +531,7 @@ static int show_sensors(struct mg_connection *conn)
 
 }
 
-#define jjj 0
+#define jjj 1
 
 static int
 show_stats (struct mg_connection *conn)
@@ -567,7 +567,7 @@ show_stats (struct mg_connection *conn)
 
 #if jjj > 0
    jobj = json_object_new_object ();
-   json_object_object_add (jobj, "cmd", json_object_new_string ("stats"));
+   json_object_object_add (jobj, "cmd", json_object_new_string ("statistics"));
    json_object_object_add (jobj, "zones", jzones);
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
