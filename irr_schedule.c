@@ -108,9 +108,11 @@ read_schedule (void)
             chanmap[zone].starttime = json_object_get_int (json_object_object_get (jobj, "starttime"));
             chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
             chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency"));
-            jarray = json_object_object_get (jobj, "daylist");
-            for (i = 0; i < json_object_array_length (jarray); i++)
-               chanmap[zone].daylist[i] = json_object_get_int (json_object_array_get_idx (jarray, i));
+            if ((jarray = json_object_object_get (jobj, "daylist")))
+            {
+               for (i = 0; i < json_object_array_length (jarray); i++)
+                  chanmap[zone].daylist[i] = json_object_get_int (json_object_array_get_idx (jarray, i));
+            }
             chanmap[zone].useful = TRUE;        // assume useful until I try a check_schedule
             chanmap[zone].period = chanmap[zone].duration;
          }
