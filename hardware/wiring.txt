@@ -1,4 +1,9 @@
-    zone       name          cable colour         wire colour          Common
+Various 3 core cables have been used to make up multicore round the garden and orchards.
+The cables are colour coded and the common wire may be in a different cable to the active wire.
+In both cases the wire and the common are identified by both cable and conductor colours.
+
+
+    zone       name          cable colour     wire colour        Common  (cable/conductor)
 
      1       "Walnuts 1"        Red              Red             Red/Black
 
@@ -47,7 +52,7 @@
     32       "Domestic Feed"    xxxx
 
 
-Yellow/Green is spare
+Yellow/Green is spare - routed to Quake garden
 Green/Green is spare
 
 
