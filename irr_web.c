@@ -66,7 +66,7 @@ check_authorised(struct mg_connection *conn)
 */
 
 void
-sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, char *msg)
+sendjsonmsg (struct mg_connection *conn, time_t time, int UNUSED (priority), char * UNUSED (desc), char *msg)
 {
    char timestr[64];
    struct json_object *jobj;
@@ -75,10 +75,9 @@ sendjsonmsg (struct mg_connection *conn, time_t time, int priority, char *desc, 
    strftime(timestr, sizeof(timestr), fmt, localtime(&time));
 
    jobj = json_object_new_object ();
-   json_object_object_add (jobj, "time", json_object_new_string (timestr));
-   json_object_object_add (jobj, "priority", json_object_new_int (priority));
-   json_object_object_add (jobj, "desc", json_object_new_string (desc));
-   json_object_object_add (jobj, "log", json_object_new_string (msg));
+   json_object_object_add (jobj, "Time", json_object_new_string (timestr));
+   json_object_object_add (jobj, "-----", json_object_new_string (" "));
+   json_object_object_add (jobj, "Log", json_object_new_string (msg));
 
    mg_printf_data (conn, "%s, ", json_object_to_json_string (jobj));
    json_object_put (jobj);
