@@ -530,23 +530,18 @@ static int show_sensors(struct mg_connection *conn)
 
 }
 
-#define jjj 1
 
 static int
 show_stats (struct mg_connection *conn)
 {
    uint8_t zone;
    struct json_object *jobj;
-#if jjj > 0
    struct json_object *jzones;
 
    // tell the browser to expect some javascript
    send_headers(conn);
    jzones = json_object_new_array ();
    // Not implemented yet so in the meantime, just make it print/readable
-#else
-   mg_send_header (conn, "Content-Type", "text/html");
-#endif
    // load stats from file
    read_statistics();
 
@@ -555,23 +550,16 @@ show_stats (struct mg_connection *conn)
       // get stats specifying that we want the human readable stuff included
       if ((jobj = get_statistics(zone, true)) != NULL)
       {
-#if jjj > 0
          json_object_array_add (jzones, jobj);
-#else
-         mg_printf_data (conn, "%s<br>", json_object_to_json_string (jobj));
-         json_object_put (jobj);
-#endif
       }
    }
 
-#if jjj > 0
    jobj = json_object_new_object ();
    json_object_object_add (jobj, "cmd", json_object_new_string ("statistics"));
    json_object_object_add (jobj, "zones", jzones);
 
    mg_printf_data (conn, "%s", json_object_to_json_string (jobj));
    json_object_put (jobj);
-#endif
    return MG_TRUE;
 }
 
@@ -653,6 +641,7 @@ set_state (struct mg_connection *conn)
       chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
       // use frequency as a repeat
       chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency"));
+      // bit 10 is set (i.e. > 1024) if we are processing days of the week
       if (chanmap[zone].frequency > 1024)
       {
          // find out what day of the week the start time is on
@@ -689,7 +678,7 @@ set_state (struct mg_connection *conn)
       j = chanmap[zone].daylist[6];
       for (i = 6; i > 0; --i)
       {
-         chanmap[zone].daylist[i] = chanmap[zone].daylist[i -1];
+         chanmap[zone].daylist[i] = chanmap[zone].daylist[i - 1];
       }
       chanmap[zone].daylist[0] = j;
       chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
