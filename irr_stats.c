@@ -130,7 +130,7 @@ get_statistics (uint8_t zone, bool humanreadable)
       jobj = json_object_new_object ();
       if (!humanreadable)
          json_object_object_add (jobj, "zone", json_object_new_int (chanmap[zone].zone));
-      json_object_object_add (jobj, "name", json_object_new_string (chanmap[zone].name));
+      json_object_object_add (jobj, "Name", json_object_new_string (chanmap[zone].name));
 
       if (chanmap[zone].lastrun > 0)
       {
@@ -142,7 +142,7 @@ get_statistics (uint8_t zone, bool humanreadable)
                sprintf(laststr, "%s for a duration of %.1f hours", tmp, chanmap[zone].lastdur / 3600.0);
             else
                sprintf(laststr, "%s for a duration of %d minutes", tmp, (int)chanmap[zone].lastdur / 60);
-            json_object_object_add (jobj, "lastrun", json_object_new_string (laststr));
+            json_object_object_add (jobj, "Last Run", json_object_new_string (laststr));
          }
          else
          {
@@ -154,16 +154,18 @@ get_statistics (uint8_t zone, bool humanreadable)
 
       if (chanmap[zone].type & ISPUMP)
       {
-         if (!humanreadable)
-            json_object_object_add (jobj, "type", json_object_new_string ("pump"));
-         json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+         if (humanreadable)
+            json_object_object_add (jobj, "Pump Time", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+         else
+            json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
          pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
       }
       else if (chanmap[zone].type & ISOUTPUT)
       {
-         if (!humanreadable)
-            json_object_object_add (jobj, "type", json_object_new_string ("zone"));
-         json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
+         if (humanreadable)
+            json_object_object_add (jobj, "Total Flow", json_object_new_double (chanmap[zone].totalflow));
+         else
+            json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
          chanmap[zone].totalflow = 0;   // reset count
       }
 
