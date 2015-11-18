@@ -205,7 +205,7 @@ main (int argc, char **argv)
       basictime = time (NULL);
       // every time round the loop, check the head of the timer queue and see if anything needs processing
       // things are put on the queue mostly by the doaction() and set_state() functions
-      while ((zone = dequeuezone (&action)) > 0)
+      while ((zone = peek_queue (&action)) > 0)
       {
          delete (zone);         // remove from the time queue
          // the zone may be a virtual one that determines some special action
@@ -324,15 +324,15 @@ main (int argc, char **argv)
 #ifdef PC
          extern uint16_t testcurrent;
          testcurrent = 0;
+         update_statistics ();
 //#else
+#endif
 //         dump_log_msgs();
          print_chanmap ();
          print_pumpmap ();
          print_sensormap ();
          print_queue ();
-         update_statistics ();
 //         check_schedule (FALSE);
-#endif
 
          interrupt = 0;
       }

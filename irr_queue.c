@@ -23,6 +23,9 @@
 #include "irrigate.h"
 
 
+char actions[8][9] = {"NOACTION", "TURNON", "TURNOFF", "CANCEL", "TESTON", "TESTOFF", "UNLOCK", "PUMPOFF"};
+
+
 TQ *tqhead = NULL;
 
 // insert an object into the timer queue based on the time to start
@@ -32,6 +35,9 @@ insert (time_t starttime, uint8_t zone, uint8_t action)
    TQ *n, *p, *q;
    time_t t;
    uint8_t i, z, a;
+
+   if (debug)
+      printf ("Start time %lu, zone %d, action=%s\r\n", starttime, zone, actions[action]);
 
    // if the event is already queued then don't duplicate it
    for (i = 0;;)
@@ -183,7 +189,7 @@ print_queue (void)
 
 
 uint8_t
-dequeuezone (uint8_t * action)
+peek_queue (uint8_t * action)
 {
    uint8_t zone = 0;
    if (tqhead && tqhead->starttime <= basictime)

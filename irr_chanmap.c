@@ -86,7 +86,7 @@ maps_init(void)
 bool
 readchanmap (void)
 {
-   uint8_t zone, group, sensor, pump, i;
+   uint8_t zone = 0, group = 0, sensor, pump, i;
    bool ret = FALSE;
    int offset;
    char *p;
@@ -103,6 +103,8 @@ readchanmap (void)
    input = malloc (1024);
    while (fgets (input, 1024, fd) != NULL)
    {
+      zone = 0;
+      group = 0;
       if ((p = strchr (input, '{')) == NULL)    // ignore lines that don't have a '{' in them!
          continue;
       offset = p - input;
@@ -113,20 +115,30 @@ readchanmap (void)
       }
       else
       {
-         zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+         if (json_object_object_get_ex (jobj, "zone", &jtmp))
+            zone = json_object_get_int (jtmp);
          if ((zone > 0) && (zone <= REALZONES))
          {
             chanmap[zone].zone = zone;
             chanmap[zone].type = 0;
-            chanmap[zone].flow = json_object_get_int (json_object_object_get (jobj, "flow"));
-            chanmap[zone].current = json_object_get_int (json_object_object_get (jobj, "current"));
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "ispump")) ? ISPUMP : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isfrost")) ? ISFROST : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isstock")) ? ISSTOCK : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "istest")) ? ISTEST : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "issensor")) ? ISSENSOR : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isoutput")) ? ISOUTPUT : 0;
-            chanmap[zone].type |= json_object_get_boolean (json_object_object_get (jobj, "isspare")) ? ISSPARE : 0;
+            if (json_object_object_get_ex (jobj, "flow", &jtmp))
+               chanmap[zone].flow = json_object_get_int (jtmp);
+            if (json_object_object_get_ex (jobj, "current", &jtmp))
+               chanmap[zone].current = json_object_get_int (jtmp);
+            if (json_object_object_get_ex (jobj, "ispump", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISPUMP : 0;
+            if (json_object_object_get_ex (jobj, "isfrost", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISFROST : 0;
+            if (json_object_object_get_ex (jobj, "isstock", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISSTOCK : 0;
+            if (json_object_object_get_ex (jobj, "istest", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISTEST : 0;
+            if (json_object_object_get_ex (jobj, "issensor", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISSENSOR : 0;
+            if (json_object_object_get_ex (jobj, "isoutput", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISOUTPUT : 0;
+            if (json_object_object_get_ex (jobj, "isspare", &jtmp))
+               chanmap[zone].type |= json_object_get_boolean (jtmp) ? ISSPARE : 0;
 
             if (chanmap[zone].type & ISPUMP)
             {
@@ -135,15 +147,21 @@ readchanmap (void)
                {
                   if (pumpmap[pump].zone == 0)
                   {
-                     // found a free one!!
                      pumpmap[pump].zone = zone;
-                     pumpmap[pump].minflow = json_object_get_int (json_object_object_get (jobj, "minflow"));
-                     pumpmap[pump].nomflow = json_object_get_int (json_object_object_get (jobj, "nomflow"));
-                     pumpmap[pump].maxflow = json_object_get_int (json_object_object_get (jobj, "maxflow"));
-                     pumpmap[pump].maxstarts = json_object_get_int (json_object_object_get (jobj, "maxstarts"));
-                     pumpmap[pump].maxrun = json_object_get_int (json_object_object_get (jobj, "maxrun"));
-                     pumpmap[pump].start = json_object_get_int (json_object_object_get (jobj, "start"));
-                     pumpmap[pump].end = json_object_get_int (json_object_object_get (jobj, "end"));
+                     if (json_object_object_get_ex (jobj, "minflow", &jtmp))
+                        pumpmap[pump].minflow = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "nomflow", &jtmp))
+                        pumpmap[pump].nomflow = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "maxflow", &jtmp))
+                        pumpmap[pump].maxflow = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "maxstarts", &jtmp))
+                        pumpmap[pump].maxstarts = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "maxrun", &jtmp))
+                        pumpmap[pump].maxrun = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "start", &jtmp))
+                        pumpmap[pump].start = json_object_get_int (jtmp);
+                     if (json_object_object_get_ex (jobj, "end", &jtmp))
+                        pumpmap[pump].end = json_object_get_int (jtmp);
                      pumpmap[pump].pumpingtime = 0;   // reset count
                      chanmap[zone].link = pump;         // cross link refs
                      break;
@@ -161,12 +179,8 @@ readchanmap (void)
                      // found a free one!!
                      sensormap[sensor].zone = zone;
                      // extract the type string
-                     jtmp = json_object_object_get (jobj, "type");
-                     if (jtmp)
-                     {
+                     if (json_object_object_get_ex (jobj, "type", &jtmp))
                         strncpy (type, json_object_get_string (jtmp), 12);
-                        json_object_put (jtmp);
-                     }
 
                      // then try and match it (case insensitive)
                      for (i = 0; i < eMAXSENSE; i++)
@@ -184,35 +198,25 @@ readchanmap (void)
                         break;
                      }
                      chanmap[zone].link = sensor;         // cross link refs
-                     jtmp = json_object_object_get (jobj, "path");
-                     if (jtmp)
-                     {
+                     if (json_object_object_get_ex (jobj, "path", &jtmp))
                         strncpy (sensormap[sensor].path, json_object_get_string (jtmp), 33);
-                        json_object_put (jtmp);
-                     }
+
                      break;
                   }
                }
             }
 
-            chanmap[zone].AorB = json_object_get_boolean (json_object_object_get (jobj, "aorb"));
+            if (json_object_object_get_ex (jobj, "aorb", &jtmp))
+               chanmap[zone].AorB = json_object_get_boolean (jtmp);
             // careful with string input in case its not actually there!!
-            jtmp = json_object_object_get (jobj, "address");
-            if (jtmp)
-            {
+            if (json_object_object_get_ex (jobj, "address", &jtmp))
                strncpy (chanmap[zone].address, json_object_get_string (jtmp), 17);
-               json_object_put (jtmp);
-            }
-            jtmp = json_object_object_get (jobj, "name");
-            if (jtmp)
-            {
+            if (json_object_object_get_ex (jobj, "name", &jtmp))
                strncpy (chanmap[zone].name, json_object_get_string (jtmp), 33);
-               json_object_put (jtmp);
-            }
-
 
             // if a zone has the group attribute then it controls the list of zones in that group
-            group = json_object_get_int (json_object_object_get (jobj, "group"));
+            if (json_object_object_get_ex (jobj, "group", &jtmp))
+               group = json_object_get_int (jtmp);
             if ((group > 0) && (group <= MAXGROUPS))
             {
                int i;
@@ -226,13 +230,15 @@ readchanmap (void)
                   }
                }
 
-               jlist = json_object_object_get (jobj, "zones");
-               for (i = 0; i < json_object_array_length (jlist); i++)
+               if (json_object_object_get_ex (jobj, "zones", &jlist))
                {
-                  chanmap[json_object_get_int (json_object_array_get_idx (jlist, i))].group |= 1 << (group - 1);
+                  for (i = 0; i < json_object_array_length (jlist); i++)
+                  {
+                     chanmap[json_object_get_int (json_object_array_get_idx (jlist, i))].group |= 1 << (group - 1);
+                  }
+                  chanmap[zone].group = 1 << (group - 1);
+                  chanmap[zone].type |= ISGROUP;
                }
-               chanmap[zone].group = 1 << (group - 1);
-               chanmap[zone].type |= ISGROUP;
             }
             chanmap[zone].valid |= CONFIGURED;
          }

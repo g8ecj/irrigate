@@ -248,7 +248,7 @@ extern uint16_t frostlimit;
 void insert (time_t starttime, uint8_t zone, uint8_t action);
 bool delete (uint8_t zone);
 time_t findonqueue (uint8_t zone);
-uint8_t dequeuezone(uint8_t *action);
+uint8_t peek_queue(uint8_t *action);
 uint8_t walk_queue(uint8_t index, uint8_t * zone, time_t * starttime, uint8_t *action);
 
 

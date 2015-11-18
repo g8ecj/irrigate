@@ -80,10 +80,10 @@ write_schedule (void)
 bool
 read_schedule (void)
 {
-   uint8_t zone, i;
+   uint8_t zone = 0, i;
    bool ret = FALSE;
    FILE *fd;
-   struct json_object *jobj, *jarray;
+   struct json_object *jobj, *jarray, *jtmp;
    char schedulefile[MAXFILELEN];
    char *input;
 
@@ -102,13 +102,24 @@ read_schedule (void)
       }
       else
       {
-         zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+         chanmap[zone].starttime = 0;
+         chanmap[zone].duration = 0;
+         chanmap[zone].frequency = 0;
+         for (i = 0; i < 8; i++)
+            chanmap[zone].daylist[i] = 0;
+         if (json_object_object_get_ex (jobj, "zone", &jtmp))
+            zone = json_object_get_int (jtmp);
+         else
+            zone = 0;
          if (zone > 0)
          {
-            chanmap[zone].starttime = json_object_get_int (json_object_object_get (jobj, "starttime"));
-            chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
-            chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency"));
-            if ((jarray = json_object_object_get (jobj, "daylist")))
+            if (json_object_object_get_ex (jobj, "starttime", &jtmp))
+               chanmap[zone].starttime = json_object_get_int (jtmp);
+            if (json_object_object_get_ex (jobj, "duration", &jtmp))
+               chanmap[zone].duration = json_object_get_int (jtmp);
+            if (json_object_object_get_ex (jobj, "frequency", &jtmp))
+               chanmap[zone].frequency = json_object_get_int (jtmp);
+            if (json_object_object_get_ex (jobj, "daylist", &jarray))
             {
                for (i = 0; i < json_object_array_length (jarray); i++)
                   chanmap[zone].daylist[i] = json_object_get_int (json_object_array_get_idx (jarray, i));
@@ -116,8 +127,8 @@ read_schedule (void)
             chanmap[zone].useful = TRUE;        // assume useful until I try a check_schedule
             chanmap[zone].period = chanmap[zone].duration;
          }
-         else if (json_object_get_boolean (json_object_object_get (jobj, "frost_armed")))
-            frost_armed = TRUE;
+         else if (json_object_object_get_ex (jobj, "frost_armed", &jtmp))
+            frost_armed = json_object_get_boolean (jtmp);
 
          json_object_put (jobj);
          ret = TRUE;            // got something useful

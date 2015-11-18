@@ -267,6 +267,8 @@ frost_cancel (void)
    uint8_t zone;
    uint8_t group = 0;
 
+   while (delete (FROST_LOAD)); // stop it firing again
+
    for (zone = 1; zone < REALZONES; zone++)
    {
       if (chanmap[zone].type & ISFROST)
@@ -274,18 +276,18 @@ frost_cancel (void)
          zone_cancel (zone, IDLE);
          if (chanmap[zone].group)       // see if a member of a group
             group = chanmap[zone].group;
-      }
-   }
-   while (delete (FROST_LOAD)); // stop it firing again
-   if (group)                   // cancel the whole group if one is a member
-   {
-      for (zone = 1; zone < REALZONES; zone++)
-      {
-         // we're only interested in zones in this group
-         if ((chanmap[zone].group == group) && (chanmap[zone].type & ISGROUP))
+
+         if (group)                   // cancel the whole group if one is a member
          {
-            group_cancel (zone, IDLE);
-            break;
+            for (zone = 1; zone < REALZONES; zone++)
+            {
+               // we're only interested in zones in this group
+               if ((chanmap[zone].group == group) && (chanmap[zone].type & ISGROUP))
+               {
+                  group_cancel (zone, IDLE);
+                  break;
+               }
+            }
          }
       }
    }
@@ -496,11 +498,13 @@ pump_off (uint8_t zone)
       chanmap[zone].state = IDLE;
       chanmap[zone].locked = TRUE;
       chanmap[zone].starttime = basictime;
-      locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
-      chanmap[zone].period = locktime;
-      chanmap[zone].duration = locktime;
-      insert (basictime + locktime, zone, UNLOCK);
    }
+   locktime = 3600 / pumpmap[pump].maxstarts;   // convert starts per hour to lockout time
+   chanmap[zone].period = locktime;
+   chanmap[zone].duration = locktime;
+   // if its locked and an unlock hasn't yet been queueud then do one now
+   if ((chanmap[zone].locked) && (findonqueue(zone) == 0))
+      insert (basictime + locktime, zone, UNLOCK);
 }
 
 

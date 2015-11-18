@@ -573,9 +573,9 @@ show_stats (struct mg_connection *conn)
 static int
 set_state (struct mg_connection *conn)
 {
-   struct json_object *jobj;
+   struct json_object *jobj, *jtmp;
    char cmd[12];
-   uint8_t zone, days;
+   uint8_t zone = 0, days;
    int8_t i, j;
    int32_t frequency;
    time_t starttime;
@@ -592,8 +592,10 @@ set_state (struct mg_connection *conn)
       return MG_FALSE;
    }
 
-   zone = json_object_get_int (json_object_object_get (jobj, "zone"));
-   strncpy (cmd, json_object_get_string (json_object_object_get (jobj, "cmd")), 10);
+   if (json_object_object_get_ex (jobj, "zone", &jtmp))
+       zone = json_object_get_int (jtmp);
+   if (json_object_object_get_ex (jobj, "cmd", &jtmp))
+      strncpy (cmd, json_object_get_string (jtmp), 10);
    starttime = chanmap[zone].starttime; // save the current start time & freq for a mo
    frequency = chanmap[zone].frequency;
    chanmap[zone].useful = FALSE;        // assume we won't be using it any more
@@ -619,7 +621,8 @@ set_state (struct mg_connection *conn)
    if (strncmp (cmd, "program", 7) == 0)
    {
       // start time will required extra decoding
-      starttime = json_object_get_int (json_object_object_get (jobj, "start"));
+      if (json_object_object_get_ex (jobj, "start", &jtmp))
+      starttime = json_object_get_int (jtmp);
       // find the start time
       if (starttime == 2400)    // magic number for now
          starttime = basictime;
@@ -638,9 +641,11 @@ set_state (struct mg_connection *conn)
       }
       chanmap[zone].starttime = starttime;
       // duration for the whole of this zone or group members
-      chanmap[zone].duration = json_object_get_int (json_object_object_get (jobj, "duration"));
+      if (json_object_object_get_ex (jobj, "duration", &jtmp))
+      chanmap[zone].duration = json_object_get_int (jtmp);
       // use frequency as a repeat
-      chanmap[zone].frequency = json_object_get_int (json_object_object_get (jobj, "frequency"));
+      if (json_object_object_get_ex (jobj, "frequency", &jtmp))
+      chanmap[zone].frequency = json_object_get_int (jtmp);
       // bit 10 is set (i.e. > 1024) if we are processing days of the week
       if (chanmap[zone].frequency > 1024)
       {
@@ -719,7 +724,7 @@ set_state (struct mg_connection *conn)
 static int
 set_frost (struct mg_connection *conn)
 {
-   struct json_object *jobj;
+   struct json_object *jobj, *jtmp;
    char cmd[12];
 
    conn->content[conn->content_len] = 0;
@@ -734,11 +739,13 @@ set_frost (struct mg_connection *conn)
    }
 
 
-   strncpy (cmd, json_object_get_string (json_object_object_get (jobj, "cmd")), 10);
+   if (json_object_object_get_ex (jobj, "cmd", &jtmp))
+      strncpy (cmd, json_object_get_string (jtmp), 10);
    if (strncmp (cmd, "frost", 5) == 0)
    {
       char mode[7];
-      strncpy (mode, json_object_get_string (json_object_object_get (jobj, "mode")), 6);
+      if (json_object_object_get_ex (jobj, "mode", &jtmp))
+         strncpy (mode, json_object_get_string (jtmp), 6);
       if (strncmp (mode, "on", 2) == 0)
       {
          frost_cancel ();       // clear any current activity

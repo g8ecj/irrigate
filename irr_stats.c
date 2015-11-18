@@ -67,7 +67,7 @@ textpri (int pri)
 void
 read_statistics ()
 {
-   struct json_object *jobj;
+   struct json_object *jobj, *jtmp;
    char statsfile[MAXFILELEN];
    uint8_t zone;
    FILE *fd;
@@ -92,17 +92,27 @@ read_statistics ()
          }
          else
          {
-            zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+            zone = 0;
+            if (json_object_object_get_ex (jobj, "zone", &jtmp))
+               zone = json_object_get_int (jtmp);
             // make sure I actually read a zone
             if (zone > 0)
             {
                if (chanmap[zone].type & ISPUMP)
-                  pumpmap[get_pump_by_zone(zone)].pumpingtime += json_object_get_double (json_object_object_get (jobj, "pumptime")) * 3600;
+               {
+                  if (json_object_object_get_ex (jobj, "pumptime", &jtmp))
+                     pumpmap[get_pump_by_zone(zone)].pumpingtime += json_object_get_double (jtmp) * 3600;
+               }
                else
-                  chanmap[zone].totalflow += json_object_get_double (json_object_object_get (jobj, "totalflow"));
+               {
+                  if (json_object_object_get_ex (jobj, "totalflow", &jtmp))
+                     chanmap[zone].totalflow += json_object_get_double (jtmp);
+               }
 
-               lastrun = json_object_get_int (json_object_object_get (jobj, "lastrun"));
-               lastdur = json_object_get_int (json_object_object_get (jobj, "lastdur"));
+               if (json_object_object_get_ex (jobj, "lastrun", &jtmp))
+                  lastrun = json_object_get_int (jtmp);
+               if (json_object_object_get_ex (jobj, "lastdur", &jtmp))
+                  lastdur = json_object_get_int (jtmp);
                // if the value from the file is more recent than memory then update memory copy
                if (chanmap[zone].lastrun < lastrun)
                {
@@ -356,7 +366,7 @@ read_history (struct mapstruct *cmap, FILE * fd)
 {
    char *input;
    int ret = TRUE, repeats = TRUE;;
-   struct json_object *jobj;
+   struct json_object *jobj, *jtmp;
    static int lasterror = -1;
    static time_t lasttime = -1;
    static uint8_t lastzone = -1;
@@ -375,13 +385,20 @@ read_history (struct mapstruct *cmap, FILE * fd)
          }
          else
          {
-            cmap->zone = json_object_get_int (json_object_object_get (jobj, "zone"));
+            cmap->zone = 0;
+            if (json_object_object_get_ex (jobj, "zone", &jtmp))
+               cmap->zone = json_object_get_int (jtmp);
+
             if (cmap->zone > 0)
             {
-               cmap->state = json_object_get_int (json_object_object_get (jobj, "result"));
-               cmap->lasterrno = json_object_get_int (json_object_object_get (jobj, "errno"));
-               cmap->starttime = json_object_get_int (json_object_object_get (jobj, "time"));
-               cmap->period = json_object_get_int (json_object_object_get (jobj, "period"));
+               if (json_object_object_get_ex (jobj, "result", &jtmp))
+                  cmap->state = json_object_get_int (jtmp);
+               if (json_object_object_get_ex (jobj, "errno", &jtmp))
+                  cmap->lasterrno = json_object_get_int (jtmp);
+               if (json_object_object_get_ex (jobj, "time", &jtmp))
+                  cmap->starttime = json_object_get_int (jtmp);
+               if (json_object_object_get_ex (jobj, "period", &jtmp))
+                  cmap->period = json_object_get_int (jtmp);
                cmap->duration = cmap->period;
                strcpy(cmap->name, chanmap[cmap->zone].name);
                // can't repeat or be locked in the past
@@ -451,11 +468,11 @@ write_history (uint8_t zone, time_t endtime, time_t starttime, uint8_t result)
 void
 clean_history (void)
 {
-   struct json_object *jobj, *jarray;
+   struct json_object *jobj, *jarray, *jtmp;
    char histfile[MAXFILELEN];
    char *input;
    FILE *fd;
-   time_t starttime;
+   time_t starttime = 0;
    int i, changes = FALSE;
 
    strcpy (histfile, datapath);
@@ -476,7 +493,8 @@ clean_history (void)
          }
          else
          {
-            starttime = json_object_get_int (json_object_object_get (jobj, "time"));
+            if (json_object_object_get_ex (jobj, "time", &jtmp))
+               starttime = json_object_get_int (jtmp);
             if (starttime > basictime - (60 * 60 * 24 * 8))     // less than a week old
             {
                json_object_array_add (jarray, jobj);    // add to array to save it
