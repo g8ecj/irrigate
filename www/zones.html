@@ -413,6 +413,8 @@ function select_zone(new_zone_id)
 function display_program()
 {
    var map = get("map")
+   hide(map)
+   show(map)
 
    map.innerHTML = "<img src='zones.jpg' alt=''/>";
    map.style.position = "relative"

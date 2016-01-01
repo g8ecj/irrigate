@@ -165,7 +165,7 @@ get_statistics (uint8_t zone, bool humanreadable)
       if (chanmap[zone].type & ISPUMP)
       {
          if (humanreadable)
-            json_object_object_add (jobj, "Pump Time", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
+            json_object_object_add (jobj, "Total Time", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
          else
             json_object_object_add (jobj, "pumptime", json_object_new_double ((double)pumpmap[get_pump_by_zone(zone)].pumpingtime / 3600.0));
          pumpmap[get_pump_by_zone(zone)].pumpingtime = 0;   // reset count
@@ -173,7 +173,10 @@ get_statistics (uint8_t zone, bool humanreadable)
       else if (chanmap[zone].type & ISOUTPUT)
       {
          if (humanreadable)
+         {
             json_object_object_add (jobj, "Total Flow", json_object_new_double (chanmap[zone].totalflow));
+            json_object_object_add (jobj, "Total Time", json_object_new_double (chanmap[zone].totalflow / chanmap[zone].flow / 60 * 1000 ));
+         }
          else
             json_object_object_add (jobj, "totalflow", json_object_new_double (chanmap[zone].totalflow));
          chanmap[zone].totalflow = 0;   // reset count

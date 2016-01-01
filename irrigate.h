@@ -63,7 +63,7 @@
 //#define REALZONES (MAXDEVICES * 2)
 #define REALZONES 100
 #define MAXZONES (REALZONES + VIRTUALZONES)
-#define MAXGROUPS 20
+#define MAXGROUPS 16
 /* enumerate virtual zones */
 #define FROST_LOAD   (REALZONES + 1)
 #define RESCHEDULE   (REALZONES + 2)
