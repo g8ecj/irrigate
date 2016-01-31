@@ -102,17 +102,18 @@ read_schedule (void)
       }
       else
       {
-         chanmap[zone].starttime = 0;
-         chanmap[zone].duration = 0;
-         chanmap[zone].frequency = 0;
-         for (i = 0; i < 8; i++)
-            chanmap[zone].daylist[i] = 0;
          if (json_object_object_get_ex (jobj, "zone", &jtmp))
             zone = json_object_get_int (jtmp);
          else
             zone = 0;
+
          if (zone > 0)
          {
+            chanmap[zone].starttime = 0;
+            chanmap[zone].duration = 0;
+            chanmap[zone].frequency = 0;
+            for (i = 0; i < 8; i++)
+               chanmap[zone].daylist[i] = 0;
             if (json_object_object_get_ex (jobj, "starttime", &jtmp))
                chanmap[zone].starttime = json_object_get_int (jtmp);
             if (json_object_object_get_ex (jobj, "duration", &jtmp))
