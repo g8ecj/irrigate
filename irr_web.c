@@ -198,7 +198,7 @@ create_json_zone (uint8_t zone, time_t starttime, struct mapstruct *cmap)
    {
       for (i = 0, j = 0; i < 7; i++)
          if (cmap->daylist[i]) j++;
-      sprintf (tmpstr, "repeating %d days a week", j);
+            sprintf (tmpstr, "repeating %d days a week", j);
    }
    else if (cmap->locked)
    {
@@ -576,8 +576,8 @@ set_state (struct mg_connection *conn)
    struct json_object *jobj, *jtmp;
    char cmd[12];
    uint8_t zone = 0, days;
-   int8_t i, j;
-   int32_t frequency;
+   int8_t i, j, k;
+   int32_t frequency, duration = 0;
    time_t starttime;
    struct tm tm;
 
@@ -622,7 +622,7 @@ set_state (struct mg_connection *conn)
    {
       // start time will required extra decoding
       if (json_object_object_get_ex (jobj, "start", &jtmp))
-      starttime = json_object_get_int (jtmp);
+         starttime = json_object_get_int (jtmp);
       // find the start time
       if (starttime == 2400)    // magic number for now
          starttime = basictime;
@@ -642,10 +642,10 @@ set_state (struct mg_connection *conn)
       chanmap[zone].starttime = starttime;
       // duration for the whole of this zone or group members
       if (json_object_object_get_ex (jobj, "duration", &jtmp))
-      chanmap[zone].duration = json_object_get_int (jtmp);
+         chanmap[zone].duration = json_object_get_int (jtmp);
       // use frequency as a repeat
       if (json_object_object_get_ex (jobj, "frequency", &jtmp))
-      chanmap[zone].frequency = json_object_get_int (jtmp);
+         chanmap[zone].frequency = json_object_get_int (jtmp);
       // bit 10 is set (i.e. > 1024) if we are processing days of the week
       if (chanmap[zone].frequency > 1024)
       {
@@ -677,26 +677,36 @@ set_state (struct mg_connection *conn)
    // delay puts back the values we saved earlier but 24hrs further on
    else if (strncmp (cmd, "delay", 5) == 0)
    {
-      starttime += 60 * 60 * 24;        // delay by 24 hrs
+      // duration is number of days
+      if (json_object_object_get_ex (jobj, "duration", &jtmp))
+         duration = json_object_get_int (jtmp);
+      starttime += 60 * 60 * 24 * duration;        // delay by n days
       chanmap[zone].starttime = starttime;
       chanmap[zone].frequency = frequency;
-      j = chanmap[zone].daylist[6];
-      for (i = 6; i > 0; --i)
+      for (k = 0; k < duration; k++)
       {
-         chanmap[zone].daylist[i] = chanmap[zone].daylist[i - 1];
+         j = chanmap[zone].daylist[6];
+         for (i = 6; i > 0; --i)
+            chanmap[zone].daylist[i] = chanmap[zone].daylist[i - 1];
+         chanmap[zone].daylist[0] = j;
       }
-      chanmap[zone].daylist[0] = j;
       chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
    }
    else if (strncmp (cmd, "advance", 7) == 0)
    {
-      starttime -= 60 * 60 * 24;        // advance by 24 hrs - if ends up in the past then check_schedule will sort it out
+      // duration is number of days
+      if (json_object_object_get_ex (jobj, "duration", &jtmp))
+         duration = json_object_get_int (jtmp);
+      starttime -= 60 * 60 * 24 * duration;        // advance by n days - if ends up in the past then check_schedule will sort it out
       chanmap[zone].starttime = starttime;
       chanmap[zone].frequency = frequency;
-      j = chanmap[zone].daylist[0];
-      for (i = 0; i < 7; ++i)
-         chanmap[zone].daylist[i] = chanmap[zone].daylist[i + 1];
-      chanmap[zone].daylist[6] = j;
+      for (k = 0; k < duration; k++)
+      {
+         j = chanmap[zone].daylist[0];
+         for (i = 0; i < 7; ++i)
+            chanmap[zone].daylist[i] = chanmap[zone].daylist[i + 1];
+         chanmap[zone].daylist[6] = j;
+      }
       chanmap[zone].useful = TRUE;      // got some useful data here (maybe!!)
    }
    else if (strncmp (cmd, "cancel", 6) == 0)

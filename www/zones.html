@@ -540,6 +540,7 @@ function delay()
    result.cmd        = "delay"
    result.zone       = high_zone.zone
    result.id         = high_zone.id
+   result.duration   = get("delay").value
 
 //   if (confirm("Do you really want to delay the current program by 24 hours?"))
       submit_object_as_JSON(result, "set_state", status_reply, 0)
@@ -555,6 +556,7 @@ function advance()
    result.cmd        = "advance"
    result.zone       = high_zone.zone
    result.id         = high_zone.id
+   result.duration   = get("advance").value
 
 //   if (confirm("Do you really want to advance the current program by 24 hours?"))
       submit_object_as_JSON(result, "set_state", status_reply, 0)
@@ -732,12 +734,25 @@ addLoadEvent(display_program)
      <option value=1030>6 days a week</option>
    </select>
 
-   <input type="button" name="program" value="Go" title="Start or program the watering for this Zone" onclick="program()"> 
    <div class=input>
+   <input type="button" name="program" value="Go" title="Start or program the watering for this Zone" onclick="program()"> 
+   :
    <input type="button" name="cancel" value="Cancel" title="Stop off the watering on this Zone and clear the programming on it" onclick="cancel()"> 
-   <input type="button" name="advance" value="Advance 24hrs" title="Bring forward (advance) selected Zone by 24hrs" onclick="advance()"> 
-   <input type="button" name="delay" value="Delay 24hrs" title="Put off (delay) selected Zone by 24hrs" onclick="delay()"> 
    </div>
+     Advance:
+   <select name="advance" title="Bring forward (advance) Zone by selected amount" id=advance onclick="advance()"> 
+     <option value=1>1 day</option>
+     <option value=2>2 days</option>
+     <option value=3>3 days</option>
+     <option value=4>4 days</option>
+   </select>
+     Delay:
+   <select name="delay" value="Delay 24hrs" title="Put off (delay) Zone by selected amount" id=delay onclick="delay()"> 
+     <option value=1>1 day</option>
+     <option value=2>2 days</option>
+     <option value=3>3 days</option>
+     <option value=4>4 days</option>
+   </select>
    <input type="button" name="frost" value="Frost Protect"  id="frost" onclick="display_popup()"> 
 
 <!--
