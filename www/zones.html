@@ -4,7 +4,6 @@
 
 <script type="text/javascript" src="basic.js"></script>
 <script type="text/javascript" src="event.js"></script>
-<script type="text/javascript" src="xmlHttp.js"></script>
 <script type="text/javascript" src="zones.conf"></script>
 <script type="text/javascript" src="timeline-min.js"></script>
 <link rel="stylesheet" type="text/css" href="timeline.css">
@@ -85,6 +84,43 @@ function test_error(obj)
       return true
    }
    return false
+}
+
+
+function submit_object_as_JSON(cmd, url, callback, id)
+{
+   var z, request = new XMLHttpRequest();
+   request.onreadystatechange = function()
+   {
+      if (this.readyState == 4)
+      {
+         if (this.status == 200)
+         {
+            if (this.responseText != null)
+            {
+               if (request.responseText.substr(0,1) == "{")
+               {
+                  var resp = JSON.parse(request.responseText)
+                  if (!resp)
+                     resp = {}
+               }
+               else
+                  var resp = {}
+
+               callback(resp, id);
+            }
+         }
+      }
+   }
+   request.open("POST", url, true);
+   request.setRequestHeader( "pragma", "no-cache" );
+   try {
+      request.send(JSON.stringify(cmd));
+   }
+   catch(err) {
+      error(err.message);
+   }
+   setTimeout('get_status()', 2000);
 }
 
 
@@ -250,20 +286,6 @@ function logs_reply(obj,id)
    map.appendChild(t);
 }
 
-
-var timer = 0
-function start_timer()
-{
-   if(timer)
-      clearTimeout(timer)
-   timer = setTimeout("next_timer_tick()",2000)
-}
-
-function next_timer_tick()
-{
-   get_status()
-   start_timer()
-}
 
 
 
@@ -494,7 +516,7 @@ function display_program()
    redraw_map(100)
    zone_input += "</select>"
    get("zone_selected").innerHTML = zone_input
-   next_timer_tick()
+//   next_timer_tick()
 }
 
 
@@ -622,7 +644,7 @@ function zoom_out()
 }
 
 
-addLoadEvent(next_timer_tick)
+addLoadEvent(get_status)
 addLoadEvent(end_popup)
 addLoadEvent(display_program)
 
