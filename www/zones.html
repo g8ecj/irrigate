@@ -89,7 +89,7 @@ function test_error(obj)
 
 function submit_object_as_JSON(cmd, url, callback, id)
 {
-   var z, request = new XMLHttpRequest();
+   var request = new XMLHttpRequest();
    request.onreadystatechange = function()
    {
       if (this.readyState == 4)
@@ -110,16 +110,13 @@ function submit_object_as_JSON(cmd, url, callback, id)
                callback(resp, id);
             }
          }
+         else
+            error('Host Fail');
       }
    }
    request.open("POST", url, true);
    request.setRequestHeader( "pragma", "no-cache" );
-   try {
-      request.send(JSON.stringify(cmd));
-   }
-   catch(err) {
-      error(err.message);
-   }
+   request.send(JSON.stringify(cmd));
    setTimeout('get_status()', 2000);
 }
 
