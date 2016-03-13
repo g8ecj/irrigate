@@ -23,13 +23,10 @@
   .frostarm  { color: black; background-color: green;   }
   .frostrun  { color: black; background-color: fuchsia;   }
 
-/* mid blue */
   div.tlcompleted { border:2px solid black;  color: black; background-color: #1975ff; }
   div.tlcancelled { border:2px solid black;  color: black; background-color: cyan; }
   div.tlfailed    { border:2px solid black;  color: black; background-color: #ff6666; }
-/* mid red */
   div.tlerror     { border:2px solid black;  color: black; background-color: fuchsia; }
-/* mid green */
   div.tlqueued    { border:2px solid black;  color: black; background-color: #33cc33; }
   div.tlactive    { border:2px solid black;  color: black; background-color: red; }
   div.tlrepeating { border:2px solid black;  color: black; background-color: cyan; }
@@ -45,8 +42,6 @@
 
   .mymap         { border:1px solid black; background-color:transparent; height:661px; width: 1110px; overflow: hidden;}
   .mymap:hover   { overflow: auto; border-right: 1px solid gray;}
-  .mymap p       { padding-right: 0; background-color:#ff0;}
-  .mymap:hover p { padding-right: 0px;}
 
 
 </style>
@@ -58,6 +53,7 @@
 
 var error_count = 0
 
+// update error count below map window
 function error(msg)
 {
    error_count += 1
@@ -65,29 +61,8 @@ function error(msg)
 }
 
 
-function test_error(obj)
-{
-   var cmd = obj.cmd
-   if(obj.error)
-   {
-      error(obj.error)
-      return true
-   }
-   if(!cmd)
-   {
-      error('Not a valid command',cmd)
-      return true
-   }
-   if(cmd == "error")
-   {
-      error(obj.result)
-      return true
-   }
-   return false
-}
-
-
-function submit_object_as_JSON(cmd, url, callback, id)
+// submit a request to the ajax server
+function submit_object_as_JSON(cmd, url, callback)
 {
    var request = new XMLHttpRequest();
    request.onreadystatechange = function()
@@ -107,7 +82,7 @@ function submit_object_as_JSON(cmd, url, callback, id)
                else
                   var resp = {}
 
-               callback(resp, id);
+               callback(resp);
             }
          }
          else
@@ -117,49 +92,43 @@ function submit_object_as_JSON(cmd, url, callback, id)
    request.open("POST", url, true);
    request.setRequestHeader( "pragma", "no-cache" );
    request.send(JSON.stringify(cmd));
+}
+
+
+// update time, current, temperature and the status of all the zones
+function get_status()
+{
+   var request = {'cmd': 'get_status' }
+   submit_object_as_JSON(request, "status", status_reply)
    setTimeout('get_status()', 2000);
 }
 
 
-function get_status()
-{
-   var request =
-   {
-      'cmd': 'get_status'
-   }
-   submit_object_as_JSON(request, "status", status_reply, 0)
-}
-
-
+// get data for timeline display of +/ 8 days
 function display_timeline()
 {
-   var request =
-   {
-      'cmd': 'get_timedata'
-   }
-   submit_object_as_JSON(request, "timedata", drawVisualization, 0)
+   var request = {'cmd': 'get_timedata' }
+   submit_object_as_JSON(request, "timedata", drawVisualization)
 }
 
+
+// get json format statistics data
 function display_stats()
 {
-   var request =
-   {
-      'cmd': 'get_stats'
-   }
-   submit_object_as_JSON(request, "stats", stats_reply, 0)
+   var request = {'cmd': 'get_stats' }
+   submit_object_as_JSON(request, "stats", stats_reply)
 }
 
+
+// get json format log data
 function display_logs()
 {
-   var request =
-   {
-      'cmd': 'get_logs'
-   }
-   submit_object_as_JSON(request, "jlogs", logs_reply, 0)
+   var request = {'cmd': 'get_logs' }
+   submit_object_as_JSON(request, "jlogs", logs_reply)
 }
 
 // Called when the Visualization API is loaded.
-function drawVisualization(obj,id) 
+function drawVisualization(obj) 
 {
         // Create a JSON data table
        var data = [];
@@ -196,13 +165,8 @@ function drawVisualization(obj,id)
 
 
 
-function status_reply(obj,id)
+function status_reply(obj)
 {
-   if(test_error(obj))
-   {
-//      alert("Could not send data to controller "+id)
-      return
-   }
    get("timer").innerHTML = "Time: " + obj.time
    get("temperature").innerHTML = "Temperature: " + obj.temperature / 100 + "C"
    get("current").innerHTML = "Current: " + obj.current / 1000 + "A"
@@ -267,7 +231,7 @@ function status_reply(obj,id)
  }
 
 
-function stats_reply(obj,id)
+function stats_reply(obj)
 {
    var t = buildHtmlTable(obj.zones);
    var map = document.getElementById('map');
@@ -275,7 +239,7 @@ function stats_reply(obj,id)
    map.appendChild(t);
 }
 
-function logs_reply(obj,id)
+function logs_reply(obj)
 {
    var t = buildHtmlTable(obj.logs);
    var map = document.getElementById('map');
@@ -531,9 +495,7 @@ function program()
    result.duration   = get("duration").value
    result.frequency  = get("frequency").value
 
-//   alert(JSON.stringify(result))
-
-   submit_object_as_JSON(result, "set_state", status_reply, 0)
+   submit_object_as_JSON(result, "set_state", status_reply)
 }
 
 function cancel()
@@ -547,9 +509,7 @@ function cancel()
    result.zone       = high_zone.zone
    result.id         = high_zone.id
 
-//   alert(JSON.stringify(result))
-
-   submit_object_as_JSON(result, "set_state", status_reply, 0)
+   submit_object_as_JSON(result, "set_state", status_reply)
 }
 
 
@@ -565,8 +525,7 @@ function delay()
    result.id         = high_zone.id
    result.duration   = get("delay").value
 
-//   if (confirm("Do you really want to delay the current program by 24 hours?"))
-      submit_object_as_JSON(result, "set_state", status_reply, 0)
+   submit_object_as_JSON(result, "set_state", status_reply)
 }
 
 function advance()
@@ -581,8 +540,7 @@ function advance()
    result.id         = high_zone.id
    result.duration   = get("advance").value
 
-//   if (confirm("Do you really want to advance the current program by 24 hours?"))
-      submit_object_as_JSON(result, "set_state", status_reply, 0)
+   submit_object_as_JSON(result, "set_state", status_reply)
 }
 
 //callback function
@@ -592,17 +550,17 @@ function setFrostMode(frostMode){
 
    result.cmd        = "frost"
    result.mode       = frostMode
-//   alert(JSON.stringify(result))
+
    if (frostMode == "on")
    {
       if (confirm("Do you really want to mess with the Frost Protect system?"))
       {
-         submit_object_as_JSON(result, "set_frost", status_reply, 0)
+         submit_object_as_JSON(result, "set_frost", status_reply)
       }
    }
    else
    {
-      submit_object_as_JSON(result, "set_frost", status_reply, 0)
+      submit_object_as_JSON(result, "set_frost", status_reply)
    }
    end_popup();
 }
