@@ -522,9 +522,12 @@ emergency_off (uint8_t newstate)
       if (findonqueue (zone) > 0)
          delete (zone);
 
-      // if a pump then do the unlock timing etc
+      // if a pump then switch it off, manually lock it and insert an unlock onto the queue
       if ((chanmap[zone].type & ISPUMP) != 0)
+      {
+         chanmap[zone].locked = TRUE;
          pump_off(zone);
+      }
 
       // if switched on and got real hardware here then switch off 
       else if (chanmap[zone].state == ACTIVE)
