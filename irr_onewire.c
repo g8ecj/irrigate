@@ -161,11 +161,13 @@ irr_onewire_init (void)
          token[15] = '\0';
          if (debug)
             log_printf (LOG_INFO, "Device %s", token);
-         strncpy(devcopy[numdev++], token, 16);
          family = strtol(token, NULL, 16);
+         numdev++;
          switch (family)
          {
          case DS2413_FAMILY_CODE:
+         case DS2485_FAMILY_CODE:
+         strncpy(devcopy[numgpio], token, 16);
             numgpio++;
             break;
          case DS2438_FAMILY_CODE:
@@ -188,15 +190,15 @@ irr_onewire_init (void)
       exit (EXIT_FAILURE);
    }
 
-   log_printf (LOG_INFO, "Found %d GPIO chip(s) OK", numgpio);
-   log_printf (LOG_INFO, "Found %d voltage monitor chip(s) OK", numvolt);
-   log_printf (LOG_INFO, "Found %d temperature monitor chip(s) OK", numtemp);
+   log_printf (LOG_INFO, "Found %d GPIO chip(s)", numgpio);
+   log_printf (LOG_INFO, "Found %d voltage monitor chip(s)", numvolt);
+   log_printf (LOG_INFO, "Found %d temperature monitor chip(s)", numtemp);
 
    // clear all hardware outputs down
    general_reset ();
 
 
-   return numdev;
+   return numgpio;
 }
 
 void irr_onewire_match (uint16_t numdev)
@@ -558,7 +560,7 @@ SetOutput (uint8_t zone, uint8_t state)
       DoOutput(zone, OFF);
       chanmap[zone].output = OFF;
       errno = ERANGE;
-      log_printf (LOG_ERR, "Switching %s zone %u current out of spec.", state ? "ON" : "OFF", zone);
+      log_printf (LOG_ERR, "Switching %s zone %u failed.", state ? "ON" : "OFF", zone);
    }
    return ret;
 }

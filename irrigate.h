@@ -48,6 +48,7 @@
 #define DS1822_FAMILY_CODE        0x22
 
 #define DS2413_FAMILY_CODE        0x3A
+#define DS2485_FAMILY_CODE        0x85    // chinese copy of DS2413
 #define DS2438_FAMILY_CODE        0x26
 // number of 1-wire devices of any one type
 #define MAXDEVICES         20
