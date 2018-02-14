@@ -92,7 +92,10 @@ GetCurrent (void)
       }
    }
    if (testcurrent)
+   {
+      testcurrent--;
       return 88;
+   }
    else
       return mycurrent;
 }

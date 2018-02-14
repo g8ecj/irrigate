@@ -312,7 +312,7 @@ main (int argc, char **argv)
       {
 #ifdef PC
          extern uint16_t testcurrent;
-         testcurrent = 1;
+         testcurrent = 4;
 #endif
          log_printf (LOG_NOTICE,
                   "Temperature = %2.2fC, integral value = %2.2f, current = %d",
