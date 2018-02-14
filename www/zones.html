@@ -320,6 +320,9 @@ function redraw_map(zoom_percent)
       var w = Math.round(z.w * width_mult)
       var h = Math.round(z.h * height_mult)
 
+      if ((w == 0) || (h == 0))
+         continue;
+
       z.div.style.left     = x + 'px';
       z.div.style.top      = y + 'px';
       z.div.style.width    = w + 'px';
@@ -579,6 +582,15 @@ function end_popup()
    hide(get("popup_window"))
 }
 
+function cooling(current)
+{
+   if (current.options[current.selectedIndex].value<600)
+   {
+//      frequency=1
+      get("frequency").selectedIndex = 1
+   }
+}
+
 
 var zoom_level = 10
 function zoom_in()
@@ -680,8 +692,9 @@ addLoadEvent(display_program)
    </select>
 
      For:
-   <select title="How long to water the Zone for" name="duration" id="duration">
-     <option value="600">10 Mins</option>
+   <select title="How long to water the Zone for" name="duration" id="duration" onchange="cooling(this)">
+     <option value="180">Cool</option>
+     <option selected value="600">10 Mins</option>
      <option value="1200">20 Mins</option>
      <option value="1800">30 Mins</option>
      <option value="2400">40 Mins</option>
@@ -701,6 +714,7 @@ addLoadEvent(display_program)
      Repeating:
    <select title="How often to repeat the watering of the Zone" name="frequency" id="frequency">
      <option value=0>None</option>
+     <option value=1>Hourly</option>
      <option value=6>4 times daily</option>
      <option value=12>Twice daily</option>
      <option value=24>Daily</option>
